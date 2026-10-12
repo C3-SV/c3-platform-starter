@@ -4,7 +4,7 @@
 
 Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. El diseño visual lo produjo Claude y se integra tal cual; la lógica, la persistencia y los permisos viven en este repositorio.
 
-## Estado real (corte actual: 2 · Joven)
+## Estado real (corte actual: 3 · Equipos)
 
 **Implementado y verificado en esta máquina** (emuladores de Firebase, sin proyecto de producción):
 
@@ -13,6 +13,7 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 - **Visitante**: home (V01), catálogo (V02) y detalle de reto (V03) leídos de Firestore.
 - **Inscripción individual** (V06): una inscripción por experiencia, en estado pendiente hasta que C3 la apruebe o rechace. Cancelable antes del cierre y sin entrega enviada.
 - **Revisión de C3** (V12, «Inscripciones y equipos»): aprobar habilita la participación; rechazar cierra la inscripción.
+- **Equipos** (V06, Corte 3): la inscripción puede ser individual o por equipo. Una líder crea el equipo con un código `C3-XXXX`; las demás se unen con ese código y una inscripción por equipo aprobada. El equipo queda habilitado al llegar al mínimo. Cada persona tiene un solo equipo por experiencia; la líder quita, transfiere el liderazgo o disuelve el equipo, y cualquier integrante puede salir. Todo cambio se cierra al cierre de inscripciones o cuando el equipo envía la entrega.
 - **Mi C3** (V05): lo que toca ahora, las inscripciones en espera, las entregadas y las cerradas.
 - **Mi reto y entrega** (V07): borrador, envío y enlaces https, con plazo. Una entrega enviada queda estable al cerrar; un borrador sin enviar pasa a «Fuera de plazo».
 - **Permisos en servidor**: cada ruta verifica el token de Firebase, el claim `c3Admin` y la propiedad del recurso. Firestore deniega todo acceso directo desde el cliente.
@@ -20,7 +21,6 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 
 **Pendiente** (no hay botones falsos: se muestran como «Próximamente», «Próximo corte» o como sección pendiente):
 
-- Equipos por código `C3-XXXX` (Corte 3, la pantalla V06 ya muestra el bloque como pendiente).
 - Propuesta pública de empresas V10, espacio V09 y revisión de propuestas (Corte 4).
 - Evaluación con jurados, rúbricas, consolidación y publicación de resultados (Corte 5). Mi C3 todavía no muestra «Como jurado».
 - Perfil y trayectoria V08 (Corte 4–5).
@@ -32,10 +32,10 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 | --- | --- |
 | `npm run typecheck` | Sin errores |
 | `npm run lint` | Sin errores ni avisos |
-| `npm test` (dominio) | 22 de 22 |
-| `npm run test:rules` (reglas, catálogo, inscripciones y entregas con emulador) | 21 de 21 |
+| `npm test` (dominio) | 28 de 28 |
+| `npm run test:rules` (reglas, catálogo, inscripciones, equipos y entregas con emulador) | 32 de 32 |
 | `npm run build` | Compila; páginas dinámicas y API de servidor |
-| `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción) | 24 de 24 |
+| `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción) | 38 de 38 |
 
 ## Recursos de Claude
 
@@ -60,7 +60,7 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 | V03 Detalle de reto | `/retos/[challengeId]` | Público | Implementada; el llamado lleva a V04 o a V06 |
 | V04 Acceso | `/acceso` | Público | Implementada |
 | V05 Mi C3 | `/mi-c3` | Joven | Implementada |
-| V06 Inscripción | `/retos/[challengeId]/inscripcion` | Joven | Individual implementada; equipos en Corte 3 |
+| V06 Inscripción | `/retos/[challengeId]/inscripcion` | Joven | Individual y por equipo implementadas |
 | V07 Mi reto y entrega | `/mi-c3/retos/[challengeId]` | Joven | Implementada |
 | V08 Trayectoria | `/trayectoria` | Joven | Corte 4–5 |
 | V09 Espacio de empresa | `/empresa` | Empresa | Corte 4 |
@@ -167,25 +167,27 @@ diseno-claude/           Referencia del diseño exportado por Claude (no se dupl
 
 Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas públicas se hacen en el servidor, que filtra campos internos (autor, borradores). Esto es intencional: abrir lecturas directas exigiría reglas por campo.
 
-## Modelo de datos (Cortes 1–2)
+## Modelo de datos (Cortes 1–3)
 
 - `experiences/{id}`: título, tipo (`competencia`, `hackathon`, `challenge_empresarial`), resumen, estado (`draft`, `published`, `closed`, `cancelled`), ventana de inscripción.
 - `challenges/{id}`: `experienceId`, problema, entregables, rúbrica (criterios con puntaje máximo de 1 a 10), organización responsable, modalidades (`individual`, `team` con tamaño mínimo y máximo), cierre de entregas, estado.
 - `users/{uid}`: correo y nombre. Se crea la primera vez que la persona entra.
 - `enrollments/{experienceId}__{uid}`: una inscripción por persona y experiencia. Estados `pending`, `approved`, `rejected`, `cancelled`.
 - `participations/{challengeId}__{uid}`: se crea al aprobar la inscripción. Estado `active` o `cancelled`.
-- `submissions/{challengeId}__{uid}`: una entrega vigente por participación, en `draft` o `submitted`, con descripción y enlaces.
+- `submissions/{challengeId}__{uid}`: una entrega vigente por participación, en `draft` o `submitted`, con descripción y enlaces. En equipo, la clave es `{challengeId}__team__{teamId}` y solo la líder la guarda o envía.
+- `teams/{id}`: nombre, código `C3-XXXX`, líder, integrantes, estado (`incompleto` o `habilitado`), mínimo y máximo de integrantes.
+- `teamCodes/{code}`: índice que garantiza que cada código sea único.
+- `teamMemberships/{experienceId}__{uid}`: un equipo por persona y experiencia.
 
 Un reto publicado solo es público si su experiencia también está publicada. Una inscripción solo se crea mientras la ventana de inscripción está abierta, y la entrega solo se acepta con la inscripción aprobada y antes del cierre de entregas.
 
 ## Pendientes para el siguiente corte
 
-1. **Corte 3 · Equipos:** creación de equipo por código `C3-XXXX`, unión con código autorizado (inscripción aprobada), gestión de integrantes dentro de reglas y entrega grupal (el líder envía).
-2. **Corte 4 · Empresas:** propuesta pública sin cuenta con defensas anti-spam y validación en servidor; revisión por C3; vinculación de representantes; espacio V09 con retos y propuestas; perfil V08 básico.
-3. **Corte 5 · Evaluación:** asignación de jurados, rúbrica evaluada (promedio de jurados), evaluaciones finalizadas, consolidación, publicación oficial por C3 y resultados en Mi C3 y en empresas.
-4. **Corte 6:** revisión visual completa de las 12 vistas contra el diseño, auditoría de accesibilidad con herramienta y pruebas de móvil de todas las vistas.
-5. **Proyecto Firebase real:** crear el proyecto de desarrollo, configurar Auth y Firestore, y definir la asignación de administradores en producción.
-6. **Repositorio GitHub:** ver el reporte de la última sesión.
+1. **Corte 4 · Empresas:** propuesta pública sin cuenta con defensas anti-spam y validación en servidor; revisión por C3; vinculación de representantes; espacio V09 con retos y propuestas; perfil V08 básico.
+2. **Corte 5 · Evaluación:** asignación de jurados, rúbrica evaluada (promedio de jurados), evaluaciones finalizadas, consolidación, publicación oficial por C3 y resultados en Mi C3 y en empresas.
+3. **Corte 6:** revisión visual completa de las 12 vistas contra el diseño, auditoría de accesibilidad con herramienta y pruebas de móvil de todas las vistas.
+4. **Proyecto Firebase real:** crear el proyecto de desarrollo, configurar Auth y Firestore, y definir la asignación de administradores en producción.
+5. **Repositorio GitHub:** ver el reporte de la última sesión.
 
 ## Notas
 

@@ -133,6 +133,11 @@ export function EntregaPanel({ challengeId }: { challengeId: string }) {
         <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>{delivery.experience.title}</span>
         <h1 className="c3-titulo" style={{ fontSize: 26, lineHeight: 1.2, fontWeight: 700 }}>{challenge.title}</h1>
         <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>{challenge.organizationName}</span>
+        {delivery.team ? (
+          <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
+            Equipo {delivery.team.name} · {delivery.team.role === "lider" ? "Líder" : "Integrante"}
+          </span>
+        ) : null}
       </section>
 
       <div className="c3-card" style={{ padding: 16, display: "flex", alignItems: "center", gap: 8 }} aria-label="Progreso del reto">
@@ -278,7 +283,11 @@ export function EntregaPanel({ challengeId }: { challengeId: string }) {
             </div>
           ) : (
             <span className="c3-ayuda">
-              {state === "entregada" ? "La entrega quedó registrada y no se puede cambiar." : "La edición ya cerró."}
+              {state === "entregada"
+                ? "La entrega quedó registrada y no se puede cambiar."
+                : delivery.team?.role === "integrante"
+                  ? "Solo la líder del equipo puede guardar o enviar la entrega."
+                  : "La edición ya cerró."}
               {submission?.submittedAt ? ` Enviada el ${formatDate(submission.submittedAt)}.` : ""}
             </span>
           )}
@@ -309,6 +318,8 @@ function bannerFor(delivery: DeliveryView): Banner | null {
   if (enrollmentStatus === "pending") return { tone: "advertencia", title: "Inscripción en revisión", text: "Cuando C3 la apruebe, vas a poder entregar. No tenés nada que hacer hasta entonces." };
   if (enrollmentStatus === "rejected") return { tone: "error", title: "C3 no aprobó tu inscripción", text: "Este reto no quedó habilitado para tu cuenta." };
   if (enrollmentStatus === "cancelled") return { tone: "info", title: "Cancelaste esta inscripción", text: "No acredita participación ni resultado." };
+  if (delivery.mode === "team" && !delivery.team) return { tone: "info", title: "Todavía no tenés equipo", text: "Creá tu equipo o unite con un código en la inscripción para habilitar la entrega." };
+  if (delivery.mode === "team" && delivery.team?.status === "incompleto") return { tone: "advertencia", title: "Equipo incompleto", text: "Tu equipo todavía no alcanzó el mínimo de integrantes. La entrega se habilita cuando lo alcance." };
   if (!eligible) return null;
   const closes = formatDateTime(challenge.submissionClosesAt);
   if (state === "entregada") return { tone: "exito", title: "Entrega enviada", text: "Podés editarla hasta el cierre de entregas." };

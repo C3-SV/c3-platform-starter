@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createChallenge, createExperience, setChallengeStatus, setExperienceStatus } from "../../src/lib/server/catalog.ts";
 import {
   cancelMyEnrollment,
-  enrollIndividual,
+  enrollInChallenge,
   getDelivery,
   listEnrollmentsForChallenge,
   listMyEnrollments,
@@ -18,6 +18,10 @@ const now = new Date("2026-10-12T18:00:00.000Z");
 const duringDeadline = new Date("2026-11-10T18:00:00.000Z");
 const afterDeadline = new Date("2026-11-20T00:00:00.000Z");
 const otra = { uid: "joven-2", email: "otra@correo.test", isAdmin: false };
+
+/** Inscripción individual: la modalidad se pasa explícitamente, como lo hace la API. */
+const enrollIndividual = (db: Parameters<typeof enrollInChallenge>[0], actor: Parameters<typeof enrollInChallenge>[1], challengeId: string, at: Date) =>
+  enrollInChallenge(db, actor, challengeId, "individual", at);
 
 const experienceInput = {
   title: "Hackathon de prueba",

@@ -13,11 +13,13 @@ const joven = { name: "Luis Menjívar de Prueba", email: `luis.${stamp}@correo.t
 const solucion = "Heurística de inserción con penalización por ventana incumplida y una mejora local posterior.";
 let challengeId = "";
 
+/** Inicia sesión y espera a que la sesión esté confirmada («Salir» visible) antes de seguir navegando. */
 async function loginAt(page: Page, email: string, password: string, next: string) {
   await page.goto(`/acceso?next=${encodeURIComponent(next)}`);
   await page.locator("#l-correo").fill(email);
   await page.locator("#l-pass").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
 }
 
 test.describe.serial("Corte 2: participación individual", () => {

@@ -82,7 +82,7 @@ export function MiC3Panel() {
   const user = session.user;
   const firstName = user.displayName?.split(" ")[0] ?? "";
   const pending = enrollments?.filter((item) => item.status === "pending") ?? [];
-  const actionable = enrollments?.filter((item) => item.status === "approved" && (item.delivery?.state === "sin_entrega" || item.delivery?.state === "borrador")) ?? [];
+  const actionable = enrollments?.filter((item) => (item.status === "approved" && (item.delivery?.state === "sin_entrega" || item.delivery?.state === "borrador")) || (item.status === "approved" && item.mode === "team" && !item.team)) ?? [];
   const delivered = enrollments?.filter((item) => item.status === "approved" && (item.delivery?.state === "entregada" || item.delivery?.state === "fuera_de_plazo")) ?? [];
   const closed = enrollments?.filter((item) => item.status === "rejected" || item.status === "cancelled") ?? [];
 
@@ -132,10 +132,18 @@ export function MiC3Panel() {
                   {item.delivery ? <StatePill state={deliveryPresentation(item.delivery.state)} /> : null}
                 </div>
                 <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-                  {item.delivery?.state === "borrador" ? "Entrega sin enviar." : "Todavía no enviaste tu solución."}
+                  {item.mode === "team" && !item.team
+                    ? "Todavía no tenés equipo. Creá uno o unite con un código."
+                    : item.team && item.team.status === "incompleto"
+                      ? `Equipo ${item.team.name}: todavía no alcanza el mínimo de integrantes.`
+                      : item.delivery?.state === "borrador" ? "Entrega sin enviar." : "Todavía no enviaste tu solución."}
                   {item.submissionClosesAt ? ` Cierra el ${formatDateTime(item.submissionClosesAt)}.` : ""}
                 </span>
-                <Link href={`/mi-c3/retos/${item.challengeId}`} className="c3-btn c3-btn--primario" style={{ width: "100%" }}>Abrir mi reto</Link>
+                {item.mode === "team" && !item.team ? (
+                  <Link href={`/retos/${item.challengeId}/inscripcion`} className="c3-btn c3-btn--primario" style={{ width: "100%" }}>Armar equipo</Link>
+                ) : (
+                  <Link href={`/mi-c3/retos/${item.challengeId}`} className="c3-btn c3-btn--primario" style={{ width: "100%" }}>Abrir mi reto</Link>
+                )}
               </div>
             </div>
           ))}

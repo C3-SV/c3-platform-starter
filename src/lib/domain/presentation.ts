@@ -73,3 +73,10 @@ export function deliveryPresentation(state: DeliveryState): PresentedState {
     case "fuera_de_plazo": return { label: "Fuera de plazo", tone: "error" };
   }
 }
+
+/** Estados de equipo (vocabulario de la guía, sección 5). */
+export function teamPresentation(status: "incompleto" | "habilitado"): PresentedState {
+  return status === "habilitado"
+    ? { label: "Habilitado", tone: "exito" }
+    : { label: "Incompleto", tone: "advertencia" };
+}

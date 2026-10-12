@@ -9,6 +9,7 @@ import type { EnrollmentStatus } from "@/lib/domain/types";
 interface Row {
   id: string;
   status: EnrollmentStatus;
+  mode: "individual" | "team";
   userId: string;
   displayName: string | null;
   email: string | null;
@@ -113,7 +114,7 @@ export function InscripcionesPanel({ challenges }: { challenges: { id: string; t
             <div key={row.id} role="group" aria-label={row.email ?? row.userId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap", padding: "16px 20px", borderTop: "1px solid var(--c3-borde)" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
                 <span style={{ fontSize: 16, fontWeight: 600 }}>{row.displayName ?? "Sin nombre"}</span>
-                <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>{row.email ?? row.userId}</span>
+                <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>{row.email ?? row.userId} · {row.mode === "team" ? "Por equipo" : "Individual"}</span>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 <StatePill state={enrollmentState(row.status)} />

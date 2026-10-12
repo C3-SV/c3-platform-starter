@@ -10,6 +10,7 @@ import { formatDate, modalityLabel } from "@/lib/domain/format";
 import { enrollmentState, KIND_LABEL, type PresentedState } from "@/lib/domain/presentation";
 import type { ExperienceKind, ParticipationMode } from "@/lib/domain/types";
 import type { EnrollmentView, MyEnrollmentView } from "@/lib/server/participation";
+import { EquipoPanel } from "./EquipoPanel";
 
 export interface InscripcionChallenge {
   id: string;
@@ -26,14 +27,17 @@ export interface InscripcionChallenge {
   submissionClosesAt: string | null;
 }
 
-/** V06 · Inscripción. Esta versión implementa la inscripción individual; la de equipos se marca como pendiente. */
+type Enrollment = MyEnrollmentView | EnrollmentView;
+
+/** V06 · Inscripción. Individual o por equipo según lo que acepte el reto; el equipo se gestiona aquí mismo. */
 export function InscripcionPanel({ challenge }: { challenge: InscripcionChallenge }) {
   const { session } = useSession();
-  const [enrollment, setEnrollment] = useState<MyEnrollmentView | EnrollmentView | null | undefined>(undefined);
+  const [enrollment, setEnrollment] = useState<Enrollment | null | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<ParticipationMode>(challenge.allows.includes("individual") ? "individual" : "team");
   const signedIn = session.status === "signed-in";
   const individual = challenge.allows.includes("individual");
   const team = challenge.allows.includes("team");
@@ -63,9 +67,14 @@ export function InscripcionPanel({ challenge }: { challenge: InscripcionChalleng
     setNotice(null);
     setBusy(true);
     try {
-      const data = await apiRequest<{ enrollment: EnrollmentView }>(`/api/retos/${challenge.id}/inscripcion`, { method: "POST" });
+      const data = await apiRequest<{ enrollment: EnrollmentView }>(`/api/retos/${challenge.id}/inscripcion`, {
+        method: "POST",
+        body: { mode },
+      });
       setEnrollment(data.enrollment);
-      setNotice("Inscripción enviada. C3 la revisa antes de habilitarte para entregar.");
+      setNotice(data.enrollment.mode === "team"
+        ? "Inscripción enviada. C3 la revisa; después vas a poder crear tu equipo o unirte con un código."
+        : "Inscripción enviada. C3 la revisa antes de habilitarte para entregar.");
     } catch (error) {
       setFormError(error instanceof ApiError ? error.message : "No pudimos registrar tu inscripción. Intentá de nuevo.");
     } finally {
@@ -74,6 +83,8 @@ export function InscripcionPanel({ challenge }: { challenge: InscripcionChalleng
   }
 
   const modality = modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize);
+  const isTeamEnrollment = enrollment?.mode === "team";
+  const showIndividual = individual && !isTeamEnrollment;
 
   return (
     <MovilShell backHref="/mi-c3">
@@ -90,44 +101,55 @@ export function InscripcionPanel({ challenge }: { challenge: InscripcionChalleng
       {formError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{formError}</strong></div> : null}
       {loadError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{loadError}</strong></div> : null}
 
-      {individual ? (
-        <section className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }} aria-labelledby="titulo-individual">
-          <span id="titulo-individual" className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Inscripción individual</span>
-          <p style={{ fontSize: 14, lineHeight: 1.5 }}>
-            Participás solo, en un único reto de esta experiencia. C3 revisa la inscripción antes de habilitarte para entregar.
-          </p>
-
-          {session.status === "loading" ? <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Cargando…</p> : null}
-
-          {session.status === "signed-out" ? (
-            <Link href={`/acceso?next=/retos/${challenge.id}/inscripcion`} className="c3-btn c3-btn--primario">Entrar para inscribirme</Link>
-          ) : null}
-
-          {signedIn && enrollment === undefined && !loadError ? (
-            <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Cargando tu inscripción…</p>
-          ) : null}
-
-          {signedIn && enrollment ? <EnrollmentStatusNote enrollment={enrollment} challengeId={challenge.id} /> : null}
-
-          {signedIn && enrollment === null ? (
-            challenge.registrationOpen ? (
-              <button type="button" className="c3-btn c3-btn--primario" disabled={busy} onClick={() => void enroll()}>
-                {busy ? "Inscribiendo…" : "Inscribirme"}
-              </button>
-            ) : (
-              <span className="c3-btn" aria-disabled="true">Inscripciones cerradas</span>
-            )
-          ) : null}
+      {session.status === "signed-out" ? (
+        <section className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+          <p style={{ fontSize: 14, lineHeight: 1.5 }}>Necesitás una cuenta C3 para inscribirte. La revisa C3 antes de habilitarte.</p>
+          <Link href={`/acceso?next=/retos/${challenge.id}/inscripcion`} className="c3-btn c3-btn--primario">Entrar para inscribirme</Link>
         </section>
       ) : null}
 
-      {team ? (
-        <section className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }} aria-labelledby="titulo-equipo">
-          <span id="titulo-equipo" className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Equipo</span>
-          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-            La inscripción por equipos (crear un equipo, sumar integrantes con código) llega en el siguiente corte. Por ahora se inscribe de forma individual.
+      {signedIn && enrollment === undefined && !loadError ? (
+        <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Cargando tu inscripción…</p>
+      ) : null}
+
+      {signedIn && enrollment === null ? (
+        <section className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }} aria-labelledby="titulo-inscripcion">
+          <span id="titulo-inscripcion" className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Inscripción</span>
+          <p style={{ fontSize: 14, lineHeight: 1.5 }}>
+            {individual && team
+              ? "Podés inscribirte solo o en equipo. C3 revisa la inscripción antes de habilitarte para entregar."
+              : team
+                ? "Este reto se inscribe por equipo. Después de la aprobación, creás tu equipo o te unís con un código."
+                : "Participás solo, en un único reto de esta experiencia. C3 revisa la inscripción antes de habilitarte para entregar."}
           </p>
-          <span className="c3-pill c3-pill--neutro" style={{ alignSelf: "flex-start" }}>Próximo corte</span>
+          {individual && team ? (
+            <fieldset style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+              <legend className="c3-etiqueta-campo" style={{ marginBottom: 6 }}>Modalidad</legend>
+              <label style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14 }}>
+                <input type="radio" name="modo" value="individual" checked={mode === "individual"} onChange={() => setMode("individual")} style={{ width: 20, height: 20, accentColor: "var(--c3-accion)" }} />
+                Individual
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14 }}>
+                <input type="radio" name="modo" value="team" checked={mode === "team"} onChange={() => setMode("team")} style={{ width: 20, height: 20, accentColor: "var(--c3-accion)" }} />
+                Por equipo
+              </label>
+            </fieldset>
+          ) : null}
+          {registrationOpenButton(challenge.registrationOpen, busy, () => void enroll())}
+        </section>
+      ) : null}
+
+      {signedIn && enrollment && showIndividual ? (
+        <section className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }} aria-labelledby="titulo-individual">
+          <span id="titulo-individual" className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Inscripción individual</span>
+          <EnrollmentStatusNote enrollment={enrollment} challengeId={challenge.id} />
+        </section>
+      ) : null}
+
+      {signedIn && enrollment && isTeamEnrollment ? (
+        <section style={{ display: "flex", flexDirection: "column", gap: 12 }} aria-labelledby="titulo-equipo">
+          <span id="titulo-equipo" className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Inscripción por equipo</span>
+          <EquipoPanel challengeId={challenge.id} enrollmentStatus={enrollment.status} />
         </section>
       ) : null}
 
@@ -142,7 +164,16 @@ export function InscripcionPanel({ challenge }: { challenge: InscripcionChalleng
   );
 }
 
-function EnrollmentStatusNote({ enrollment, challengeId }: { enrollment: MyEnrollmentView | EnrollmentView; challengeId: string }) {
+function registrationOpenButton(open: boolean, busy: boolean, onClick: () => void) {
+  if (!open) return <span className="c3-btn" aria-disabled="true">Inscripciones cerradas</span>;
+  return (
+    <button type="button" className="c3-btn c3-btn--primario" disabled={busy} onClick={onClick}>
+      {busy ? "Inscribiendo…" : "Inscribirme"}
+    </button>
+  );
+}
+
+function EnrollmentStatusNote({ enrollment, challengeId }: { enrollment: Enrollment; challengeId: string }) {
   if (enrollment.status === "pending") {
     return <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Tu inscripción está en revisión por C3. Te avisamos cuando haya una respuesta: mientras tanto, no tenés nada que hacer.</p>;
   }
