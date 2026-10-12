@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>V10 Proponer challenge</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600&display=swap">
+<style>
+body { margin: 0; }
+a { color: #205298; } a:hover { color: #19406f; }
+</style>
+</helmet>
+
+<div style="background: #f2f6fb; font-family: 'Poppins', system-ui, sans-serif; color: #0f203e; min-height: 100%">
+
+  <header style="background: #0f203e; padding: 0 48px">
+    <div style="max-width: 1180px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; min-height: 72px">
+      <div style="display: flex; align-items: center; gap: 32px; flex-wrap: wrap">
+        <div style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: 0.02em">C3</div>
+        <nav style="display: flex; gap: 24px; flex-wrap: wrap">
+          <a href="#explorar" style="font-size: 14px; font-weight: 500; color: #a9b8d0; text-decoration: none">Explorar</a>
+          <a href="#empresas" style="font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none">Para empresas</a>
+        </nav>
+      </div>
+      <a href="#acceso" style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #ffffff; text-decoration: none; padding: 12px 8px">Entrar</a>
+    </div>
+  </header>
+
+  <main style="padding: 48px; max-width: 1276px; margin: 0 auto; box-sizing: border-box; display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start">
+
+    <div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 28px">
+
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <span style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4f5ba9">Conecta · Para empresas</span>
+        <h1 style="margin: 0; font-family: 'Montserrat', system-ui, sans-serif; font-size: 40px; line-height: 1.1; font-weight: 700">Contanos el problema técnico de tu equipo</h1>
+        <p style="margin: 0; max-width: 640px; font-size: 18px; line-height: 1.6; color: #475569">No necesitás un brief perfecto. Describí la situación con tus palabras y C3 te ayuda a convertirla en un reto que equipos jóvenes puedan resolver.</p>
+      </div>
+
+      <form style="background: #ffffff; border: 1px solid #d9e1ec; border-radius: 12px; padding: 32px; display: flex; flex-direction: column; gap: 24px">
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="p-org" style="font-size: 14px; font-weight: 500">Organización</label>
+            <input id="p-org" type="text" value="Transportes Delta" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; min-height: 44px; padding: 0 12px; box-sizing: border-box">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="p-nombre" style="font-size: 14px; font-weight: 500">Tu nombre y cargo</label>
+            <input id="p-nombre" type="text" value="Marcela Reyes, Jefa de operaciones" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; min-height: 44px; padding: 0 12px; box-sizing: border-box">
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="p-correo" style="font-size: 14px; font-weight: 500">Correo de contacto</label>
+          <input id="p-correo" type="email" value="mreyes@" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #b83227; border-radius: 6px; min-height: 44px; padding: 0 12px; box-sizing: border-box">
+          <span style="font-size: 12px; line-height: 1.4; color: #b83227">Falta completar el correo. Usaremos este medio para responderte.</span>
+        </div>
+
+        <div style="height: 1px; background: #d9e1ec"></div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="p-problema" style="font-size: 14px; font-weight: 500">¿Cuál es el problema?</label>
+          <textarea id="p-problema" rows="4" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; padding: 12px; resize: vertical">Armamos las rutas de reparto a mano cada mañana. Tarda más de una hora y no respeta las ventanas horarias que elige el cliente.</textarea>
+          <span style="font-size: 12px; line-height: 1.4; color: #475569">Qué pasa hoy, quién lo sufre y qué es lo más difícil.</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="p-objetivo" style="font-size: 14px; font-weight: 500">¿Qué resultado les gustaría explorar?</label>
+          <textarea id="p-objetivo" rows="3" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; padding: 12px; resize: vertical">Ver distintos enfoques para generar las rutas del día de forma automática y compararlos sobre los mismos datos.</textarea>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="p-limites" style="font-size: 14px; font-weight: 500">Datos disponibles y límites de confidencialidad</label>
+          <textarea id="p-limites" rows="3" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; padding: 12px; resize: vertical">Podemos compartir 400 pedidos anonimizados. No podemos compartir direcciones reales de clientes.</textarea>
+          <span style="font-size: 12px; line-height: 1.4; color: #475569">Opcional, pero ayuda a definir qué se puede publicar.</span>
+        </div>
+
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; padding-top: 8px">
+          <button type="submit" style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #ffffff; background: #205298; border: 0; border-radius: 12px; min-height: 48px; padding: 0 28px; cursor: pointer">Enviar propuesta</button>
+          <span style="font-size: 12px; line-height: 1.4; color: #475569; max-width: 360px">Enviar no publica nada. C3 revisa tu propuesta y define el reto contigo antes de que se vea.</span>
+        </div>
+
+      </form>
+    </div>
+
+    <aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+      <div style="background: #ffffff; border: 1px solid #d9e1ec; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 20px">
+        <span style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569">Qué pasa después</span>
+        <div style="display: flex; gap: 14px; align-items: flex-start">
+          <div style="width: 28px; height: 28px; border-radius: 999px; background: #4f5ba9; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0">1</div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 500">C3 revisa tu propuesta</span><span style="font-size: 14px; line-height: 1.5; color: #475569">Vemos si el problema se puede convertir en un reto resoluble.</span></div>
+        </div>
+        <div style="display: flex; gap: 14px; align-items: flex-start">
+          <div style="width: 28px; height: 28px; border-radius: 999px; background: #4f5ba9; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0">2</div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 500">Definimos el reto juntos</span><span style="font-size: 14px; line-height: 1.5; color: #475569">Alcance, entregables, rúbrica y fechas.</span></div>
+        </div>
+        <div style="display: flex; gap: 14px; align-items: flex-start">
+          <div style="width: 28px; height: 28px; border-radius: 999px; background: #4f5ba9; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0">3</div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 500">Equipos entregan soluciones</span><span style="font-size: 14px; line-height: 1.5; color: #475569">Las ves en tu espacio de empresa, lado a lado.</span></div>
+        </div>
+        <div style="display: flex; gap: 14px; align-items: flex-start">
+          <div style="width: 28px; height: 28px; border-radius: 999px; background: #4f5ba9; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0">4</div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 500">Evaluás y C3 publica</span><span style="font-size: 14px; line-height: 1.5; color: #475569">Calificás con la rúbrica y C3 publica el resultado oficial.</span></div>
+        </div>
+      </div>
+
+      <div style="background: #eaf0f8; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 14px; font-weight: 600">No necesitás cuenta para proponer</span>
+        <span style="font-size: 14px; line-height: 1.5; color: #475569">Creás una después, cuando quieras seguir tus retos y evaluar soluciones.</span>
+      </div>
+
+    </aside>
+
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

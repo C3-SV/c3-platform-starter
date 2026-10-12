@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canSubmit, canEvaluate, canSeeResult } from "../src/lib/domain/workflows.ts";
+import { canSubmit, canEvaluate, canSeeResult } from "../../src/lib/domain/workflows.ts";
 
 const close = "2026-11-01T18:00:00-06:00";
 

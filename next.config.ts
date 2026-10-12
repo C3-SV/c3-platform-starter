@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
+// La raíz de Turbopack se fija en este proyecto: hay otro pnpm-workspace.yaml en el directorio padre del usuario.
 const nextConfig: NextConfig = {
-  // La integración de los componentes visuales de Claude se hará después.
+  turbopack: { root: import.meta.dirname },
 };
 
 export default nextConfig;

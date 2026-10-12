@@ -1,0 +1,54 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-12T00:00:00Z" },
+  "title": "C3 Platform — Estilo de las vistas",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1200, "h": 2200, "title": "Fundamentos de estilo" },
+    "V03-Detalle-Reto.dc.html": { "x": 0, "y": 2600, "w": 1360, "h": 1960, "title": "V03 · Detalle de reto (público)", "expand": "fill" },
+    "V11-Empresa-Evaluacion.dc.html": { "x": 1440, "y": 2600, "w": 1360, "h": 1560, "title": "V11 · Empresa: soluciones y evaluación", "expand": "fill" },
+    "V07-Mi-Reto.dc.html": { "x": 0, "y": 4960, "w": 390, "h": 844, "title": "V07 · Mi reto y entrega (móvil)" },
+    "V08-Trayectoria.dc.html": { "x": 470, "y": 4960, "w": 390, "h": 844, "title": "V08 · Perfil y trayectoria (móvil)" },
+    "V12-Admin.dc.html": { "x": 0, "y": 6300, "w": 1360, "h": 1180, "title": "V12 · Admin: resultados oficiales (utilitaria)", "expand": "fill" },
+    "V02-Explorar.dc.html": { "x": 1440, "y": 6300, "w": 1360, "h": 1100, "title": "V02 · Explorar experiencias", "expand": "fill" },
+    "V10-Proponer-Challenge.dc.html": { "x": 2880, "y": 6300, "w": 1360, "h": 1200, "title": "V10 · Proponer challenge", "expand": "fill" },
+    "V05-Mi-C3.dc.html": { "x": 4320, "y": 6300, "w": 390, "h": 844, "title": "V05 · Mi C3 inicio (móvil)" },
+    "V01-Home.dc.html": { "x": 0, "y": 8000, "w": 1360, "h": 2150, "title": "V01 · Home C3", "expand": "fill" },
+    "V06-Inscripcion-Equipos.dc.html": { "x": 1440, "y": 8000, "w": 390, "h": 844, "title": "V06 · Inscripción y equipos (móvil)" },
+    "V04-Acceso.dc.html": { "x": 1910, "y": 8000, "w": 1360, "h": 960, "title": "V04 · Acceso C3", "expand": "fill" },
+    "V09-Espacio-Empresa.dc.html": { "x": 3350, "y": 8000, "w": 1360, "h": 1500, "title": "V09 · Espacio de empresa (representante)", "expand": "fill" }
+  },
+  "order": [
+    "Main.dc.html",
+    "V03-Detalle-Reto.dc.html",
+    "V11-Empresa-Evaluacion.dc.html",
+    "V07-Mi-Reto.dc.html",
+    "V08-Trayectoria.dc.html",
+    "V12-Admin.dc.html",
+    "V02-Explorar.dc.html",
+    "V10-Proponer-Challenge.dc.html",
+    "V05-Mi-C3.dc.html",
+    "V01-Home.dc.html",
+    "V06-Inscripcion-Equipos.dc.html",
+    "V04-Acceso.dc.html",
+    "V09-Espacio-Empresa.dc.html"
+  ],
+  "notes": {
+    "t1": { "x": 0, "y": -320, "text": "Fundamentos: color, tipografía, estados y componentes", "kind": "title1", "maxW": 1200 },
+    "t2": { "x": 0, "y": 2280, "text": "Vistas vitrina — escritorio", "kind": "title1", "maxW": 2800 },
+    "t3": { "x": 0, "y": 4640, "text": "Vistas vitrina — móvil", "kind": "title1", "maxW": 860 },
+    "n1": { "x": 2880, "y": 2600, "w": 380, "text": "VITRINA: V03, V07, V08 y V11. FUNCIONAL: V02, V05 y V10. UTILITARIA: V12. Las 12 vistas están dibujadas.", "fill": "blue" },
+    "t4": { "x": 0, "y": 6000, "text": "Funcionales y admin — completan ambas rutas", "kind": "title1", "maxW": 4710 },
+    "t5": { "x": 0, "y": 7700, "text": "Entrada pública, acceso, equipos y empresa", "kind": "title1", "maxW": 4710 }
+  },
+  "designSystems": [
+    {
+      "title": "C3",
+      "namespace": "c3",
+      "artifact": "https://claude.ai/code/artifact/3e1883b9-ab67-4d82-ac1f-6912d4978551",
+      "version": null,
+      "copiedAt": "2026-10-12T00:00:00Z"
+    }
+  ]
+}

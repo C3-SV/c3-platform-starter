@@ -12,3 +12,8 @@ firebase-debug.log
 .DS_Store
 *.pem
 service-account*.json
+
+# Artefactos de pruebas y registros de emuladores
+test-results/
+playwright-report/
+*-debug.log

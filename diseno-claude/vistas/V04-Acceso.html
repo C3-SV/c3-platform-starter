@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V04 Acceso C3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600&display=swap">
+<style>
+body { margin: 0; }
+a { color: #205298; } a:hover { color: #19406f; }
+</style>
+<style></style>
+</head>
+<body>
+<div style="background: #f2f6fb; font-family: 'Poppins', system-ui, sans-serif; color: #0f203e; min-height: 100%">
+
+  <header style="background: #0f203e; padding: 0 48px">
+    <div style="max-width: 1180px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; min-height: 72px">
+      <a href="V01-Home.html" style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: 0.02em; text-decoration: none">C3</a>
+      <a href="V02-Explorar.html" style="font-size: 14px; font-weight: 500; color: #a9b8d0; text-decoration: none">Seguir explorando sin cuenta</a>
+    </div>
+  </header>
+
+  <main style="padding: 48px; max-width: 1180px; margin: 0 auto; box-sizing: border-box; display: flex; flex-direction: column; gap: 32px">
+
+    <div style="background: #eaf0f8; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 14px; font-weight: 600">Para inscribirte a «Ruteo de última milla con ventanas horarias»</span>
+      <span style="font-size: 14px; line-height: 1.5; color: #475569">Entrá o creá tu cuenta. Al terminar volvés directo a la inscripción.</span>
+    </div>
+
+    <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start">
+
+      <section style="flex: 1 1 400px; min-width: 0; background: #ffffff; border: 1px solid #d9e1ec; border-radius: 12px; padding: 32px; display: flex; flex-direction: column; gap: 20px">
+        <h1 style="margin: 0; font-family: 'Montserrat', system-ui, sans-serif; font-size: 30px; line-height: 1.2; font-weight: 700">Entrar</h1>
+
+        <div style="background: #fae6e3; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; font-weight: 600; color: #b83227">No pudimos iniciar sesión</span>
+          <span style="font-size: 14px; line-height: 1.5">El correo o la contraseña no coinciden. Revisalos e intentá de nuevo.</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="l-correo" style="font-size: 14px; font-weight: 500">Correo</label>
+          <input id="l-correo" type="email" value="ana@correo.com" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; min-height: 44px; padding: 0 12px; box-sizing: border-box">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="l-pass" style="font-size: 14px; font-weight: 500">Contraseña</label>
+          <input id="l-pass" type="password" value="contrasena" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #b83227; border-radius: 6px; min-height: 44px; padding: 0 12px; box-sizing: border-box">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <button type="submit" style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #ffffff; background: #205298; border: 0; border-radius: 12px; min-height: 48px; padding: 0 24px; cursor: pointer">Entrar</button>
+          <a href="#recuperar" style="font-size: 14px; font-weight: 500">Olvidé mi contraseña</a>
+        </div>
+      </section>
+
+      <section style="flex: 1 1 400px; min-width: 0; background: #ffffff; border: 1px solid #d9e1ec; border-radius: 12px; padding: 32px; display: flex; flex-direction: column; gap: 20px">
+        <h2 style="margin: 0; font-family: 'Montserrat', system-ui, sans-serif; font-size: 30px; line-height: 1.2; font-weight: 700">Crear cuenta</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #475569">Solo pedimos lo mínimo. Tu perfil lo completás después.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="r-nombre" style="font-size: 14px; font-weight: 500">Nombre completo</label>
+          <input id="r-nombre" type="text" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; min-height: 44px; padding: 0 12px; box-sizing: border-box">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="r-correo" style="font-size: 14px; font-weight: 500">Correo</label>
+          <input id="r-correo" type="email" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; min-height: 44px; padding: 0 12px; box-sizing: border-box">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="r-pass" style="font-size: 14px; font-weight: 500">Contraseña</label>
+          <input id="r-pass" type="password" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 16px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; min-height: 44px; padding: 0 12px; box-sizing: border-box">
+          <span style="font-size: 12px; line-height: 1.4; color: #475569">Mínimo 8 caracteres.</span>
+        </div>
+
+        <label style="display: flex; align-items: flex-start; gap: 12px; font-size: 14px; line-height: 1.5"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #205298; margin-top: 2px; flex-shrink: 0"><span>Acepto los <a href="#terminos" style="font-weight: 500">términos</a> y la <a href="#privacidad" style="font-weight: 500">política de privacidad</a> de C3.</span></label>
+
+        <button type="submit" style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #ffffff; background: #205298; border: 0; border-radius: 12px; min-height: 48px; padding: 0 24px; cursor: pointer">Crear cuenta</button>
+      </section>
+
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; max-width: 760px">
+      <span style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4f5ba9">¿Representás a una empresa?</span>
+      <span style="font-size: 14px; line-height: 1.5; color: #475569">Usás esta misma cuenta. C3 te vincula a tu organización después de revisar tu solicitud; no se hace creando otro tipo de cuenta.</span>
+    </div>
+
+  </main>
+
+</div>
+</body>
+</html>

@@ -1,23 +1,27 @@
 import "server-only";
-import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
-import { getAuth, type DecodedIdToken } from "firebase-admin/auth";
+import { getApps, initializeApp, type App } from "firebase-admin/app";
+import { getAuth, type Auth } from "firebase-admin/auth";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
-/** Solo servidor. Requiere ADC o identidad administrada en el hosting. */
-function adminApp() {
-  return getApps().length ? getApps()[0] : initializeApp({
-    credential: applicationDefault(),
-    projectId: process.env.GOOGLE_CLOUD_PROJECT,
-  });
+/**
+ * Solo servidor. En desarrollo, las variables FIRESTORE_EMULATOR_HOST y FIREBASE_AUTH_EMULATOR_HOST
+ * dirigen el SDK a los emuladores. En producción usa credenciales del entorno (ADC) o la identidad
+ * administrada del hosting. Nunca se configuran claves privadas en NEXT_PUBLIC_*.
+ */
+function adminApp(): App {
+  const existing = getApps()[0];
+  if (existing) return existing;
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  if (!projectId) {
+    throw new Error("Falta GOOGLE_CLOUD_PROJECT o NEXT_PUBLIC_FIREBASE_PROJECT_ID. Revisá .env.local.");
+  }
+  return initializeApp({ projectId });
 }
 
-export async function verifyBearerToken(header: string | null): Promise<DecodedIdToken> {
-  if (!header?.startsWith("Bearer ")) throw new Error("Falta token de sesión");
-  const token = header.slice(7);
-  if (!token) throw new Error("Falta token de sesión");
-  return getAuth(adminApp()).verifyIdToken(token, true);
+export function getAdminDb(): Firestore {
+  return getFirestore(adminApp());
 }
 
-/** La autorización de cada recurso debe comprobarse además de la identidad. */
-export function requireC3Admin(user: DecodedIdToken): void {
-  if (user.c3Admin !== true) throw new Error("Permiso administrativo requerido");
+export function getAdminAuth(): Auth {
+  return getAuth(adminApp());
 }

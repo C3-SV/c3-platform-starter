@@ -1,5 +1,361 @@
-/* Base técnica deliberadamente neutral: Claude es la fuente del estilo visual. */
-:root { color-scheme: light; font-family: system-ui, sans-serif; }
-body { margin: 0; }
-main { max-width: 54rem; margin: 0 auto; padding: 2rem 1.25rem; }
-a { color: inherit; }
+/* Tokens oficiales de C3, usados tal cual desde la carpeta de referencia de Claude. */
+@import "../../diseno-claude/tokens/tokens.css";
+
+/*
+ * Fondos suaves de estado y tinte de tabla. No están en tokens.json: el README de la guía de
+ * estilo pide definirlos como tokens propios para que el cambio de tema no los rompa.
+ */
+:root {
+  --c3-info-fondo: #e3ecf8;
+  --c3-exito-fondo: #e0f2ea;
+  --c3-advertencia-fondo: #fbefdd;
+  --c3-error-fondo: #fae6e3;
+  --c3-advertencia-tinte: #fbf6ec;
+  --c3-texto-cabecera: #a9b8d0;
+  --c3-navy-claro: #2c3f63;
+}
+
+[data-theme="oscuro"] {
+  --c3-info-fondo: color-mix(in srgb, var(--c3-info) 22%, var(--c3-superficie));
+  --c3-exito-fondo: color-mix(in srgb, var(--c3-exito) 22%, var(--c3-superficie));
+  --c3-advertencia-fondo: color-mix(in srgb, var(--c3-advertencia) 22%, var(--c3-superficie));
+  --c3-error-fondo: color-mix(in srgb, var(--c3-error) 22%, var(--c3-superficie));
+  --c3-advertencia-tinte: color-mix(in srgb, var(--c3-advertencia) 8%, var(--c3-superficie));
+  --c3-texto-cabecera: var(--c3-texto-suave);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--c3-fondo);
+  color: var(--c3-texto);
+  font-family: var(--c3-font-texto);
+  font-size: var(--c3-cuerpo-size);
+  line-height: var(--c3-cuerpo-lh);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--c3-enlace);
+}
+
+a:hover {
+  color: var(--c3-accion-intensa);
+}
+
+:focus-visible {
+  outline: 2px solid var(--c3-foco);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+/* Contenedores de página: 48 px en escritorio, 16 px en móvil (guía de estilo, sección 8). */
+.c3-page {
+  padding: clamp(16px, 4vw, 48px);
+  box-sizing: border-box;
+}
+
+.c3-container {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* Etiquetas y textos de botón: Montserrat, MAYÚSCULAS, estilo «etiqueta» de la guía. */
+.c3-etiqueta {
+  font-family: var(--c3-font-titulo);
+  font-size: var(--c3-etiqueta-size);
+  font-weight: var(--c3-etiqueta-weight);
+  line-height: var(--c3-etiqueta-lh);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.c3-titulo {
+  font-family: var(--c3-font-titulo);
+}
+
+/* Botones. Altura mínima de 44 px; 48 px para la acción principal. */
+.c3-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: var(--c3-radius-md);
+  font-family: var(--c3-font-titulo);
+  font-size: var(--c3-etiqueta-size);
+  font-weight: var(--c3-etiqueta-weight);
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.c3-btn--primario {
+  background: var(--c3-accion);
+  color: var(--c3-texto-inverso);
+}
+
+.c3-btn--primario:hover {
+  background: var(--c3-accion-intensa);
+  color: var(--c3-texto-inverso);
+}
+
+.c3-btn--contorno {
+  background: var(--c3-superficie);
+  color: var(--c3-accion);
+  border: 1px solid var(--c3-borde-fuerte);
+}
+
+.c3-btn--blanco {
+  background: #ffffff;
+  color: var(--c3-navy);
+}
+
+.c3-btn:disabled,
+.c3-btn[aria-disabled="true"] {
+  background: var(--c3-borde);
+  color: var(--c3-texto-suave);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+/* Estados: siempre con texto además de color (guía de estilo, sección 3). */
+.c3-pill {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: var(--c3-radius-pill);
+  font-size: var(--c3-leyenda-size);
+  font-weight: 500;
+  line-height: var(--c3-leyenda-lh);
+  white-space: nowrap;
+}
+
+.c3-pill--neutro {
+  background: var(--c3-superficie-sutil);
+  color: var(--c3-texto-suave);
+}
+
+.c3-pill--info {
+  background: var(--c3-info-fondo);
+  color: var(--c3-accion);
+}
+
+.c3-pill--exito {
+  background: var(--c3-exito-fondo);
+  color: var(--c3-exito);
+}
+
+.c3-pill--advertencia {
+  background: var(--c3-advertencia-fondo);
+  color: var(--c3-advertencia);
+}
+
+.c3-pill--error {
+  background: var(--c3-error-fondo);
+  color: var(--c3-error);
+}
+
+.c3-card {
+  background: var(--c3-superficie);
+  border: 1px solid var(--c3-borde);
+  border-radius: var(--c3-radius-md);
+}
+
+/* Campos: 44 px mínimo, borde fuerte para delimitar el control (contraste 3:1). */
+.c3-campo {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--c3-borde-fuerte);
+  border-radius: var(--c3-radius-sm);
+  background: var(--c3-superficie);
+  color: var(--c3-texto);
+  font-family: var(--c3-font-texto);
+  font-size: var(--c3-cuerpo-size);
+}
+
+textarea.c3-campo {
+  padding: 10px 12px;
+  min-height: 96px;
+  resize: vertical;
+}
+
+.c3-campo--error {
+  border-color: var(--c3-error);
+}
+
+.c3-etiqueta-campo {
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 500;
+  color: var(--c3-texto);
+}
+
+.c3-ayuda {
+  font-size: var(--c3-leyenda-size);
+  line-height: var(--c3-leyenda-lh);
+  color: var(--c3-texto-suave);
+}
+
+.c3-error-campo {
+  font-size: var(--c3-leyenda-size);
+  line-height: var(--c3-leyenda-lh);
+  color: var(--c3-error);
+  font-weight: 600;
+}
+
+.c3-alerta {
+  border-radius: var(--c3-radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c3-alerta--error {
+  background: var(--c3-error-fondo);
+}
+
+.c3-alerta--error strong {
+  color: var(--c3-error);
+  font-weight: 600;
+  font-size: var(--c3-cuerpo-sm-size);
+}
+
+.c3-alerta--exito {
+  background: var(--c3-exito-fondo);
+}
+
+.c3-alerta--exito strong {
+  color: var(--c3-exito);
+  font-weight: 600;
+  font-size: var(--c3-cuerpo-sm-size);
+}
+
+.c3-alerta--info {
+  background: var(--c3-info-fondo);
+}
+
+.c3-alerta--advertencia {
+  background: var(--c3-advertencia-fondo);
+}
+
+.c3-alerta--advertencia strong {
+  color: var(--c3-advertencia);
+  font-weight: 600;
+  font-size: var(--c3-cuerpo-sm-size);
+}
+
+/* Cabecera pública (V01–V04): navy con enlaces claros. */
+.c3-cabecera {
+  background: var(--c3-navy);
+  padding: 0 clamp(16px, 4vw, 48px);
+}
+
+.c3-cabecera__interior {
+  max-width: 1180px;
+  margin: 0 auto;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.c3-cabecera__enlace {
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 500;
+  color: var(--c3-texto-cabecera);
+  text-decoration: none;
+}
+
+.c3-cabecera__enlace:hover {
+  color: #ffffff;
+}
+
+.c3-cabecera__enlace[aria-current="page"] {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.c3-cabecera__texto-etiqueta {
+  color: #ffffff;
+  text-decoration: none;
+  padding: 12px 8px;
+}
+
+.c3-logo {
+  font-family: var(--c3-font-titulo);
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+/* Grilla de tarjetas: no desborda en móvil (minmax con min(…, 100%)). */
+.c3-grilla-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  gap: 24px;
+}
+
+.c3-tarjeta-enlace {
+  text-decoration: none;
+  color: inherit;
+  background: var(--c3-superficie);
+  border: 1px solid var(--c3-borde);
+  border-radius: var(--c3-radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.c3-tarjeta-enlace:hover {
+  color: inherit;
+  border-color: var(--c3-borde-fuerte);
+}
+
+.c3-visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Móvil: las grillas de dos y tres columnas pasan a una columna sin desbordar la página. */
+@media (max-width: 760px) {
+  .c3-home-caminos,
+  .c3-grilla-tres,
+  .c3-dos-columnas,
+  .c3-form-dos {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

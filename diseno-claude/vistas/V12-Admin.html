@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V12 Admin: operación básica</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600&display=swap">
+<style>
+body { margin: 0; }
+a { color: #205298; } a:hover { color: #19406f; }
+</style>
+<style></style>
+</head>
+<body>
+<div style="background: #f2f6fb; font-family: 'Poppins', system-ui, sans-serif; color: #0f203e; min-height: 100%">
+
+  <header style="background: #0f203e; padding: 0 32px">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; min-height: 64px">
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap">
+        <div style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 24px; font-weight: 800; color: #ffffff">C3</div>
+        <span style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #a9b8d0; border-left: 1px solid #2c3f63; padding-left: 20px">Admin</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span style="font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 999px; background: #1f335a; color: #a9b8d0">Datos de demostración</span>
+        <div style="width: 32px; height: 32px; border-radius: 999px; background: #205298; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600">CM</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="padding: 32px; display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; box-sizing: border-box">
+
+    <nav style="flex: 1 1 240px; max-width: 280px; min-width: 220px; background: #ffffff; border: 1px solid #d9e1ec; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 4px">
+      <a href="#propuestas" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 6px; font-size: 14px; font-weight: 500; color: #0f203e; text-decoration: none; min-height: 20px"><span>Propuestas</span><span style="font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: #fbefdd; color: #9a5b00">1 nueva</span></a>
+      <a href="#experiencias" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 6px; font-size: 14px; font-weight: 500; color: #0f203e; text-decoration: none"><span>Experiencias y retos</span></a>
+      <a href="#inscripciones" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 6px; font-size: 14px; font-weight: 500; color: #0f203e; text-decoration: none"><span>Inscripciones y equipos</span><span style="font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: #fbefdd; color: #9a5b00">2 pendientes</span></a>
+      <a href="#entregas" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 6px; font-size: 14px; font-weight: 500; color: #0f203e; text-decoration: none"><span>Entregas</span></a>
+      <a href="#jurados" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 6px; font-size: 14px; font-weight: 500; color: #0f203e; text-decoration: none"><span>Jurados y rúbricas</span></a>
+      <a href="#resultados" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 6px; font-size: 14px; font-weight: 600; color: #ffffff; background: #205298; text-decoration: none"><span>Resultados oficiales</span></a>
+    </nav>
+
+    <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <h1 style="margin: 0; font-family: 'Montserrat', system-ui, sans-serif; font-size: 30px; line-height: 1.2; font-weight: 700">Resultados oficiales</h1>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+          <span style="font-size: 16px; color: #475569">Ruteo de última milla con ventanas horarias</span>
+          <span style="font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 999px; background: #e3ecf8; color: #205298">En evaluación</span>
+          <span style="font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 999px; background: #eaf0f8; color: #475569">Resultado no publicado</span>
+        </div>
+      </div>
+
+      <div style="background: #fbefdd; border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 14px; font-weight: 600; color: #9a5b00">No se puede publicar todavía</span>
+        <span style="font-size: 14px; line-height: 1.5">Solo 2 de 6 soluciones tienen las dos evaluaciones finalizadas. El promedio se calcula únicamente con evaluaciones finalizadas.</span>
+      </div>
+
+      <section style="background: #ffffff; border: 1px solid #d9e1ec; border-radius: 12px; overflow: hidden">
+        <div style="overflow-x: auto">
+          <div style="min-width: 760px">
+            <div style="display: flex; padding: 14px 20px; background: #eaf0f8; gap: 16px; font-size: 13px; font-weight: 600">
+              <span style="flex: 2.2">Solución</span>
+              <span style="flex: 1.2">Jurado empresa</span>
+              <span style="flex: 1.2">Jurado externo</span>
+              <span style="flex: 1">Promedio</span>
+              <span style="flex: 1.4">Reconocimiento</span>
+            </div>
+
+            <div style="display: flex; padding: 16px 20px; gap: 16px; border-top: 1px solid #d9e1ec; align-items: center; font-size: 14px">
+              <span style="flex: 2.2; font-weight: 600">Delta Planner</span>
+              <span style="flex: 1.2">34 / 40 · <span style="color: #157a52; font-weight: 500">Finalizada</span></span>
+              <span style="flex: 1.2">32 / 40 · <span style="color: #157a52; font-weight: 500">Finalizada</span></span>
+              <span style="flex: 1; font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; font-size: 16px">33.0</span>
+              <span style="flex: 1.4"><label for="r1" style="display: none">Reconocimiento Delta Planner</label><select id="r1" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 14px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; min-height: 40px; padding: 0 8px; background: #ffffff"><option>Ganador</option><option>Finalista</option><option>Mención</option><option>Ninguno</option></select></span>
+            </div>
+
+            <div style="display: flex; padding: 16px 20px; gap: 16px; border-top: 1px solid #d9e1ec; align-items: center; font-size: 14px">
+              <span style="flex: 2.2; font-weight: 600">Milla Cero</span>
+              <span style="flex: 1.2">29 / 40 · <span style="color: #157a52; font-weight: 500">Finalizada</span></span>
+              <span style="flex: 1.2">27 / 40 · <span style="color: #157a52; font-weight: 500">Finalizada</span></span>
+              <span style="flex: 1; font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; font-size: 16px">28.0</span>
+              <span style="flex: 1.4"><label for="r2" style="display: none">Reconocimiento Milla Cero</label><select id="r2" style="font-family: 'Poppins', system-ui, sans-serif; font-size: 14px; color: #0f203e; border: 1px solid #7c8ba0; border-radius: 6px; min-height: 40px; padding: 0 8px; background: #ffffff"><option>Finalista</option><option>Ganador</option><option>Mención</option><option>Ninguno</option></select></span>
+            </div>
+
+            <div style="display: flex; padding: 16px 20px; gap: 16px; border-top: 1px solid #d9e1ec; align-items: center; font-size: 14px; background: #fbf6ec">
+              <span style="flex: 2.2; font-weight: 600">Rutas en caliente</span>
+              <span style="flex: 1.2"><span style="color: #9a5b00; font-weight: 500">En curso</span></span>
+              <span style="flex: 1.2">30 / 40 · <span style="color: #157a52; font-weight: 500">Finalizada</span></span>
+              <span style="flex: 1; color: #475569">Incompleto</span>
+              <span style="flex: 1.4; color: #475569">Sin asignar</span>
+            </div>
+
+            <div style="display: flex; padding: 16px 20px; gap: 16px; border-top: 1px solid #d9e1ec; align-items: center; font-size: 14px; background: #fbf6ec">
+              <span style="flex: 2.2; font-weight: 600">Nodo Sur</span>
+              <span style="flex: 1.2; color: #475569">Pendiente</span>
+              <span style="flex: 1.2"><span style="color: #9a5b00; font-weight: 500">En curso</span></span>
+              <span style="flex: 1; color: #475569">Incompleto</span>
+              <span style="flex: 1.4; color: #475569">Sin asignar</span>
+            </div>
+
+            <div style="display: flex; padding: 16px 20px; gap: 16px; border-top: 1px solid #d9e1ec; align-items: center; font-size: 14px; background: #fbf6ec">
+              <span style="flex: 2.2; font-weight: 600">Camino Corto</span>
+              <span style="flex: 1.2; color: #475569">Pendiente</span>
+              <span style="flex: 1.2; color: #475569">Pendiente</span>
+              <span style="flex: 1; color: #475569">Incompleto</span>
+              <span style="flex: 1.4; color: #475569">Sin asignar</span>
+            </div>
+
+            <div style="display: flex; padding: 16px 20px; gap: 16px; border-top: 1px solid #d9e1ec; align-items: center; font-size: 14px; background: #fbf6ec">
+              <span style="flex: 2.2; font-weight: 600">VRP Lab</span>
+              <span style="flex: 1.2; color: #475569">Pendiente</span>
+              <span style="flex: 1.2; color: #475569">Pendiente</span>
+              <span style="flex: 1; color: #475569">Incompleto</span>
+              <span style="flex: 1.4; color: #475569">Sin asignar</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style="background: #ffffff; border: 1px solid #d9e1ec; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+        <span style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569">Qué verá cada destinatario al publicar</span>
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <label style="display: flex; align-items: center; gap: 12px; font-size: 14px; min-height: 28px"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #205298"><span>Ganadores y reconocimientos, en la página pública del reto</span></label>
+          <label style="display: flex; align-items: center; gap: 12px; font-size: 14px; min-height: 28px"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #205298"><span>Puntaje consolidado, a cada participante y a la empresa</span></label>
+          <label style="display: flex; align-items: center; gap: 12px; font-size: 14px; min-height: 28px"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #205298"><span>Comentarios de jurados, a cada equipo (desactivado por defecto)</span></label>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding-top: 8px; border-top: 1px solid #d9e1ec">
+          <button type="button" disabled style="font-family: 'Montserrat', system-ui, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; background: #d9e1ec; border: 0; border-radius: 12px; min-height: 44px; padding: 0 24px; cursor: not-allowed">Publicar resultado</button>
+          <span style="font-size: 12px; line-height: 1.4; color: #475569">Se habilita cuando todas las soluciones tengan las dos evaluaciones finalizadas.</span>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+</div>
+</body>
+</html>
