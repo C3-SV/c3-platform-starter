@@ -38,10 +38,11 @@ export default defineConfig({
     { name: "movil", use: { ...devices["Pixel 5"] } },
   ],
   webServer: {
-    command: `npm run dev -- --port ${PORT}`,
+    // Build de producción: valida el build y evita la compilación bajo demanda de `next dev` durante la prueba.
+    command: `npm run build && npm run start -- --port ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     env: { ...process.env, ...emulatorEnv } as Record<string, string>,
-    timeout: 180_000,
+    timeout: 300_000,
   },
 });

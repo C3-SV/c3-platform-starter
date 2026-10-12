@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useSession } from "@/lib/auth/AuthProvider";
 
 /**
- * Llamado a la inscripción de V03. Para visitantes lleva a V04 y vuelve al reto.
- * La inscripción real llega en el Corte 2: hasta entonces, una cuenta ve el estado explícito, no un botón falso.
+ * Llamado a la inscripción de V03. Un visitante pasa por V04 y vuelve a la inscripción del reto.
+ * Una persona con sesión va directamente a V06.
  */
 export function EnrollmentCta({
   challengeId,
@@ -17,7 +17,8 @@ export function EnrollmentCta({
   variant: "hero" | "aside";
 }) {
   const { session } = useSession();
-  const next = encodeURIComponent(`/retos/${challengeId}`);
+  const next = encodeURIComponent(`/retos/${challengeId}/inscripcion`);
+  const inscribe = `/retos/${challengeId}/inscripcion`;
 
   if (session.status === "loading") {
     return <span className="c3-btn c3-btn--contorno" aria-busy="true" aria-disabled="true">Cargando…</span>;
@@ -28,10 +29,14 @@ export function EnrollmentCta({
   }
 
   if (session.status === "signed-in") {
-    return (
-      <span className="c3-btn" aria-disabled="true" title="Disponible en el siguiente corte">
-        Inscripción próximamente
-      </span>
+    return variant === "hero" ? (
+      <Link href={inscribe} className="c3-btn c3-btn--primario" style={{ padding: "16px 28px", marginLeft: "auto" }}>
+        Inscribirme al reto
+      </Link>
+    ) : (
+      <Link href={inscribe} className="c3-btn c3-btn--primario" style={{ padding: "16px 20px" }}>
+        Inscribirme
+      </Link>
     );
   }
 

@@ -2,9 +2,10 @@
  * Estados visibles de experiencias y retos, según el vocabulario de la guía de estilo
  * (diseno-claude/README.md, sección 5). Las etiquetas y los tonos son las únicas fuentes de UI.
  */
-import type { ExperienceKind, ExperienceStatus } from "./types.ts";
+import type { EnrollmentStatus, ExperienceKind, ExperienceStatus } from "./types.ts";
+import type { DeliveryState } from "./delivery.ts";
 
-export type StateTone = "neutro" | "info" | "exito" | "error";
+export type StateTone = "neutro" | "info" | "exito" | "advertencia" | "error";
 
 export interface PresentedState {
   label: string;
@@ -51,4 +52,24 @@ export function lineTextColor(kind: ExperienceKind): string {
   if (kind === "hackathon") return "var(--c3-crea-texto)";
   if (kind === "competencia") return "var(--c3-compite)";
   return "var(--c3-conecta)";
+}
+
+/** Estados de inscripción (vocabulario de la guía, sección 5). */
+export function enrollmentState(status: EnrollmentStatus): PresentedState {
+  switch (status) {
+    case "pending": return { label: "Pendiente", tone: "advertencia" };
+    case "approved": return { label: "Aprobada", tone: "exito" };
+    case "rejected": return { label: "Rechazada", tone: "error" };
+    case "cancelled": return { label: "Cancelada", tone: "neutro" };
+  }
+}
+
+/** Estados de entrega (vocabulario de la guía, sección 5). */
+export function deliveryPresentation(state: DeliveryState): PresentedState {
+  switch (state) {
+    case "sin_entrega": return { label: "Sin entrega", tone: "neutro" };
+    case "borrador": return { label: "Borrador", tone: "advertencia" };
+    case "entregada": return { label: "Entregada", tone: "exito" };
+    case "fuera_de_plazo": return { label: "Fuera de plazo", tone: "error" };
+  }
 }

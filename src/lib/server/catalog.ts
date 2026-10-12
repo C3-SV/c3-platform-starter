@@ -89,7 +89,7 @@ function summarize(challenge: Challenge, experience: Experience, now: Date): Pub
   };
 }
 
-function windowOf(experience: Experience) {
+export function windowOf(experience: Experience) {
   return { opensAt: experience.registrationOpensAt, closesAt: experience.registrationClosesAt };
 }
 
@@ -101,13 +101,13 @@ function rubricWithIds(criteria: ChallengeInput["rubric"]): RubricCriterion[] {
   }));
 }
 
-async function loadExperience(db: Firestore, id: string): Promise<Experience> {
+export async function loadExperience(db: Firestore, id: string): Promise<Experience> {
   const snapshot = await db.collection(EXPERIENCES).doc(id).get();
   if (!snapshot.exists) throw notFound("La experiencia no existe o fue eliminada.");
   return toExperience(snapshot.id, snapshot.data() as DocumentData);
 }
 
-async function loadChallenge(db: Firestore, id: string): Promise<Challenge> {
+export async function loadChallenge(db: Firestore, id: string): Promise<Challenge> {
   const snapshot = await db.collection(CHALLENGES).doc(id).get();
   if (!snapshot.exists) throw notFound("El reto no existe o fue eliminado.");
   return toChallenge(snapshot.id, snapshot.data() as DocumentData);

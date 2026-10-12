@@ -9,6 +9,7 @@ import { formatDateTime } from "@/lib/domain/format";
 import { KIND_LABEL, presentState } from "@/lib/domain/presentation";
 import type { Challenge, Experience, ExperienceStatus } from "@/lib/domain/types";
 import { ChallengeForm, ExperienceForm } from "./forms";
+import { InscripcionesPanel } from "./InscripcionesPanel";
 
 interface Catalog {
   experiences: Experience[];
@@ -20,8 +21,8 @@ type Section = "experiencias" | "propuestas" | "inscripciones" | "entregas" | "j
 const NAV: { id: Section; label: string; pending?: string }[] = [
   { id: "propuestas", label: "Propuestas", pending: "Corte 4" },
   { id: "experiencias", label: "Experiencias y retos" },
-  { id: "inscripciones", label: "Inscripciones y equipos", pending: "Corte 2" },
-  { id: "entregas", label: "Entregas", pending: "Corte 2" },
+  { id: "inscripciones", label: "Inscripciones y equipos" },
+  { id: "entregas", label: "Entregas", pending: "Corte 5" },
   { id: "jurados", label: "Jurados y rúbricas", pending: "Corte 5" },
   { id: "resultados", label: "Resultados oficiales", pending: "Corte 5" },
 ];
@@ -171,7 +172,15 @@ export function AdminPanel() {
         </nav>
 
         <main style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
-          {section !== "experiencias" ? <PendingSection label={NAV.find((item) => item.id === section)?.label ?? ""} /> : null}
+          {section === "inscripciones" ? (
+            catalog ? (
+              <InscripcionesPanel challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title }))} />
+            ) : (
+              <p style={{ color: "var(--c3-texto-suave)" }}>Cargando retos…</p>
+            )
+          ) : null}
+
+          {section !== "experiencias" && section !== "inscripciones" ? <PendingSection label={NAV.find((item) => item.id === section)?.label ?? ""} /> : null}
 
           {section === "experiencias" ? (
             <>

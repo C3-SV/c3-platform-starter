@@ -43,6 +43,7 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           {signedIn ? (
             <>
+              <Link href="/mi-c3" className="c3-etiqueta c3-cabecera__texto-etiqueta">Mi C3</Link>
               {session.user.isAdmin ? (
                 <Link href="/admin" className="c3-etiqueta c3-cabecera__texto-etiqueta">Admin</Link>
               ) : null}

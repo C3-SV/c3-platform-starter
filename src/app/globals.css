@@ -350,6 +350,66 @@ textarea.c3-campo {
   white-space: nowrap;
 }
 
+/* Marco móvil de V05–V07: ancho del teléfono y centrado en escritorio. */
+.c3-movil {
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--c3-fondo);
+}
+
+.c3-movil__barra {
+  background: var(--c3-navy);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.c3-movil__contenido {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.c3-movil__nav {
+  position: sticky;
+  bottom: 0;
+  background: var(--c3-superficie);
+  border-top: 1px solid var(--c3-borde);
+  display: flex;
+}
+
+.c3-movil__nav-item {
+  flex: 1;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--c3-leyenda-size);
+  font-weight: 500;
+  color: var(--c3-texto-suave);
+  text-decoration: none;
+  border-top: 3px solid transparent;
+}
+
+.c3-movil__nav-item--activo {
+  color: var(--c3-accion);
+  font-weight: 600;
+  border-top-color: var(--c3-accion);
+}
+
+.c3-movil__nav-item--pendiente {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Móvil: las grillas de dos y tres columnas pasan a una columna sin desbordar la página. */
 @media (max-width: 760px) {
   .c3-home-caminos,

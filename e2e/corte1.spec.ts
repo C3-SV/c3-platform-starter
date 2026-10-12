@@ -89,8 +89,9 @@ test.describe.serial("Corte 1: primer reto", () => {
 
     await expect(page).toHaveURL(new RegExp(challengeHref.replace(/\//g, "\\/")));
     await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
-    // El estado aparece en el llamado principal y en la barra lateral, como en V03.
-    await expect(page.getByText("Inscripción próximamente")).toHaveCount(2);
+    // Con sesión, el llamado de V03 lleva a la inscripción del reto (V06).
+    await expect(page).toHaveURL(/\/inscripcion$/);
+    await expect(page.getByRole("button", { name: "Inscribirme", exact: true })).toBeVisible();
 
     await page.reload();
     await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
