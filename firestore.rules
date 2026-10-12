@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Exclusivamente contenido APTO PARA DIFUSIÓN PÚBLICA.
+    // Nunca incluir datos personales, enlaces de entrega privados, notas o borradores.
+    match /publicExperiences/{experienceId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null
+          && request.auth.token.c3Admin == true;
+    }
+
+    // Punto de partida seguro: denegar TODO lo demás.
+    // Las operaciones privadas futuras exigen reglas verificadas O rutas de servidor
+    // que comprueben Firebase ID token y autorización en cada acción.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

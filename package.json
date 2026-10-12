@@ -1,0 +1,32 @@
+{
+  "name": "c3-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MVP funcional de C3 Platform: Compite, Crea, Conecta y Challenges",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "check": "npm run typecheck && npm test"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "firebase": "13.0.0",
+    "firebase-admin": "14.5.0",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  },
+  "type": "module"
+}
