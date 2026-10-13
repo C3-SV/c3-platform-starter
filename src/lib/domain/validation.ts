@@ -34,6 +34,7 @@ export interface RubricInputCriterion {
 
 export interface ChallengeInput {
   experienceId: string;
+  organizationId: string | null;
   title: string;
   summary: string;
   problem: string;
@@ -109,6 +110,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
   const raw = asObject(input);
   const issues: FieldIssue[] = [];
   const experienceId = text(raw, "experienceId", 1, 128, issues, "Experiencia");
+  const organizationId = typeof raw.organizationId === "string" && raw.organizationId.trim() ? raw.organizationId.trim() : null;
   const title = text(raw, "title", 3, 120, issues, "Nombre del reto");
   const summary = text(raw, "summary", 10, 280, issues, "Resumen");
   const problem = text(raw, "problem", 20, 4000, issues, "Problema");
@@ -169,6 +171,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
   if (issues.length) throw new ValidationFailure(issues);
   return {
     experienceId,
+    organizationId,
     title,
     summary,
     problem,

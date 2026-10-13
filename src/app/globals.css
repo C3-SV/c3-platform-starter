@@ -415,6 +415,7 @@ textarea.c3-campo {
   .c3-home-caminos,
   .c3-grilla-tres,
   .c3-dos-columnas,
+  .c3-dos-columnas-cuatro,
   .c3-form-dos {
     grid-template-columns: minmax(0, 1fr) !important;
   }

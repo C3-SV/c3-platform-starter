@@ -16,6 +16,7 @@ import { notFound } from "./errors.ts";
 
 export const EXPERIENCES = "experiences";
 export const CHALLENGES = "challenges";
+export const ORGANIZATIONS = "organizations";
 
 export interface PublicExperience {
   experience: Experience;
@@ -138,10 +139,15 @@ export async function createChallenge(db: Firestore, actor: Actor, rawInput: unk
   requireAdmin(actor);
   const input = parseChallengeInput(rawInput, now);
   await loadExperience(db, input.experienceId);
+  if (input.organizationId) {
+    const organization = await db.collection(ORGANIZATIONS).doc(input.organizationId).get();
+    if (!organization.exists) throw notFound("La organización no existe.");
+  }
   const ref = db.collection(CHALLENGES).doc();
   const stamp = now.toISOString();
   const data = {
     experienceId: input.experienceId,
+    organizationId: input.organizationId,
     title: input.title,
     summary: input.summary,
     problem: input.problem,
@@ -170,15 +176,22 @@ export async function setChallengeStatus(db: Firestore, actor: Actor, id: string
 }
 
 /** Vista completa para el administrador, incluidos borradores. */
-export async function listAdminCatalog(db: Firestore, actor: Actor): Promise<{ experiences: Experience[]; challenges: Challenge[] }> {
+export async function listAdminCatalog(
+  db: Firestore,
+  actor: Actor,
+): Promise<{ experiences: Experience[]; challenges: Challenge[]; organizations: { id: string; name: string }[] }> {
   requireAdmin(actor);
-  const [experiences, challenges] = await Promise.all([
+  const [experiences, challenges, organizations] = await Promise.all([
     db.collection(EXPERIENCES).get(),
     db.collection(CHALLENGES).get(),
+    db.collection(ORGANIZATIONS).get(),
   ]);
   return {
     experiences: experiences.docs.map((doc) => toExperience(doc.id, doc.data())).sort(byCreatedDesc),
     challenges: challenges.docs.map((doc) => toChallenge(doc.id, doc.data())).sort(byCreatedDesc),
+    organizations: organizations.docs
+      .map((doc) => ({ id: doc.id, name: (doc.data().name as string) ?? "" }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
   };
 }
 

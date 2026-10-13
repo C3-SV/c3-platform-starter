@@ -112,9 +112,11 @@ export interface ExperienceOption {
 /** Formulario de reto. Se crea dentro de una experiencia existente, en borrador. */
 export function ChallengeForm({
   experiences,
+  organizations,
   onCreated,
 }: {
   experiences: ExperienceOption[];
+  organizations: { id: string; name: string }[];
   onCreated: (message: string) => void;
 }) {
   const [selectedExperienceId, setExperienceId] = useState("");
@@ -128,6 +130,7 @@ export function ChallengeForm({
   const [deliverables, setDeliverables] = useState("");
   const [rubric, setRubric] = useState("");
   const [organizationName, setOrganizationName] = useState("");
+  const [organizationId, setOrganizationId] = useState("");
   const [individual, setIndividual] = useState(true);
   const [team, setTeam] = useState(false);
   const [teamMin, setTeamMin] = useState(2);
@@ -162,6 +165,7 @@ export function ChallengeForm({
           deliverables: deliverables.split("\n").map((line) => line.trim()).filter(Boolean),
           rubric: rubricRows,
           organizationName,
+          organizationId: organizationId || null,
           allows,
           teamMinSize: team ? teamMin : null,
           teamMaxSize: team ? teamMax : null,
@@ -211,6 +215,12 @@ export function ChallengeForm({
       </Field>
       <Field id="ret-org" label="Organización responsable" error={issueFor(issues, "organizationName")}>
         <input id="ret-org" className="c3-campo" value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} />
+      </Field>
+      <Field id="ret-org-vinculada" label="Organización vinculada" help="Quien la represente verá este reto en su espacio de empresa." error={null}>
+        <select id="ret-org-vinculada" className="c3-campo" value={organizationId} onChange={(e) => setOrganizationId(e.target.value)}>
+          <option value="">Sin vincular</option>
+          {organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
       </Field>
       <Field id="ret-resumen" label="Resumen" help="Una frase para el catálogo." error={issueFor(issues, "summary")}>
         <textarea id="ret-resumen" className="c3-campo" rows={2} value={summary} onChange={(e) => setSummary(e.target.value)} />

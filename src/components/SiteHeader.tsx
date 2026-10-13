@@ -38,6 +38,7 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
           <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">C3</Link>
           <nav aria-label="Principal" style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
             <Link href="/explorar" className="c3-cabecera__enlace" aria-current={pathname === "/explorar" ? "page" : undefined}>Explorar</Link>
+            <Link href="/empresa/proponer" className="c3-cabecera__enlace" aria-current={pathname === "/empresa/proponer" ? "page" : undefined}>Para empresas</Link>
           </nav>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>

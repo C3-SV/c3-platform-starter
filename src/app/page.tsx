@@ -57,9 +57,9 @@ export default async function HomePage() {
                 Contanos tu necesidad. C3 la define contigo, recibís varias soluciones y las evaluás sobre la misma rúbrica.
               </p>
               <div style={{ marginTop: "auto", paddingTop: 8 }}>
-                <span className="c3-btn c3-btn--blanco" aria-disabled="true" style={{ padding: "16px 28px", display: "inline-flex", opacity: 0.85 }}>
-                  Próximamente
-                </span>
+                <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 28px", display: "inline-flex" }}>
+                  Proponer un challenge
+                </Link>
               </div>
             </div>
           </div>
@@ -135,7 +135,7 @@ export default async function HomePage() {
               No necesitás un brief perfecto. Describí la situación con tus palabras y C3 se encarga de convertirla en un reto.
             </p>
           </div>
-          <span className="c3-btn c3-btn--blanco" aria-disabled="true" style={{ padding: "16px 28px", opacity: 0.85 }}>Próximamente</span>
+          <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 28px" }}>Proponer un challenge</Link>
         </div>
       </section>
 
