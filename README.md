@@ -4,7 +4,7 @@
 
 Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. El diseño visual lo produjo Claude y se integra tal cual; la lógica, la persistencia y los permisos viven en este repositorio.
 
-## Estado real (corte actual: 5 · Evaluación y resultados)
+## Estado real (corte actual: 6 · Integración completa)
 
 **Implementado y verificado en esta máquina** (emuladores de Firebase, sin proyecto de producción):
 
@@ -22,6 +22,8 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 - **Revisión de C3** (V12, «Propuestas»): pedir ajustes con una nota para la empresa, aceptar (con la organización que la representará) o no priorizar. Crear organizaciones y vincular representantes por correo: la cuenta debe existir y es C3 quien la vincula.
 - **Espacio de empresa** (V09): la representante ve solo los retos publicados de sus organizaciones, las soluciones ya enviadas (nunca borradores) y las propuestas vinculadas con su siguiente paso. Sin vínculo, la vista no muestra datos de nadie.
 - Retos con organización vinculada: al crear un reto en V12 se elige la organización que tendrá su espacio de empresa.
+- **Perfil y trayectoria** (V08, Corte 6): la persona declara su nombre, centro de estudio, una presentación y enlaces https (GitHub, LinkedIn). La trayectoria —inscripciones, entregas, reconocimientos y puesto— la registra C3 y no se edita; la pantalla separa ambas cosas con la etiqueta «Registrada por C3».
+- **Accesibilidad** (Corte 6): auditoría automática con axe-core (WCAG 2.x A y AA) en las vistas públicas, de acceso y de una persona registrada. Sin incumplimientos serios ni críticos en las páginas auditadas.
 
 - **Jurados** (V12, «Jurados y rúbricas»): C3 asigna jurados por correo —externos o representantes de la empresa—, revoca accesos sin borrar evaluaciones finalizadas, y ve la rúbrica de cada reto.
 - **Evaluación** (Mi C3 «Como jurado» y V11): las soluciones se muestran anónimas («Solución 1», «Solución 2»…) y solo se pueden evaluar cuando cierran las entregas. Cada criterio recibe un entero dentro de su máximo. Se guarda un borrador y se finaliza una sola vez.
@@ -31,7 +33,6 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 **Pendiente** (no hay botones falsos: se muestran como «Próximamente», «Próximo corte» o como sección pendiente):
 
 - Entregas en la vista de administración (V12, «Entregas»): hoy se revisan desde cada reto.
-- Perfil y trayectoria V08 (Corte 6).
 - Respuesta de la empresa a los ajustes pedidos (V10 «Responder a C3»): hoy la empresa lee la nota y responde por correo.
 - Comentarios de jurados: desactivados por defecto y sin implementar en el MVP.
 - Textos legales (términos y privacidad) y proyecto Firebase real: ver `docs/PENDIENTES-REALES.md`.
@@ -42,10 +43,14 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 | --- | --- |
 | `npm run typecheck` | Sin errores |
 | `npm run lint` | Sin errores ni avisos |
-| `npm test` (dominio) | 39 de 39 |
+| `npm test` (dominio) | 42 de 42 |
 | `npm run test:rules` (reglas, catálogo, inscripciones, equipos, entregas, empresas y evaluación con emulador) | 47 de 47 |
 | `npm run build` | Compila; páginas dinámicas y API de servidor |
-| `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción) | 56 de 56 |
+| `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción; incluye la auditoría axe) | 68 de 68 |
+
+### Verificación visual
+
+Comparadas con capturas del diseño de Claude en escritorio: V01, V02, V03, V04, V10 y la cabecera de V12; en móvil: V05 (marco y barra inferior). Las demás vistas se revisaron por estructura y con las pruebas de recorrido, sin comparación de píxeles: V06, V07, V08, V09, V11 y el detalle de V12 quedan como revisión pendiente antes de la demo.
 
 ## Recursos de Claude
 
@@ -72,7 +77,7 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 | V05 Mi C3 | `/mi-c3` | Joven | Implementada |
 | V06 Inscripción | `/retos/[challengeId]/inscripcion` | Joven | Individual y por equipo implementadas |
 | V07 Mi reto y entrega | `/mi-c3/retos/[challengeId]` | Joven | Implementada |
-| V08 Trayectoria | `/trayectoria` | Joven | Corte 6 |
+| V08 Trayectoria | `/trayectoria` | Joven | Implementada |
 | V09 Espacio de empresa | `/empresa` | Empresa | Implementada (retos, soluciones, resultados y propuestas) |
 | V10 Proponer challenge | `/empresa/proponer` | Público | Implementada, sin cuenta |
 | V11 Evaluación | `/empresa/retos/[challengeId]/evaluacion` | Representante autorizado | Implementada |
@@ -197,7 +202,7 @@ Un reto publicado solo es público si su experiencia también está publicada. U
 
 ## Pendientes para el siguiente corte
 
-1. **Corte 6:** revisión visual completa de las 12 vistas contra el diseño, auditoría de accesibilidad con herramienta y pruebas de móvil de todas las vistas.
+1. **Revisión visual pendiente:** comparar V06, V07, V08, V09, V11 y el detalle de V12 contra el diseño con capturas, y completar la vista de entregas de V12 y el perfil público opt-in (etapa posterior).
 2. **Proyecto Firebase real:** crear el proyecto de desarrollo, configurar Auth y Firestore, y definir la asignación de administradores en producción.
 3. **Repositorio GitHub:** ver el reporte de la última sesión.
 

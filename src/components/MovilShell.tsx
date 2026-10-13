@@ -26,7 +26,7 @@ export function MovilShell({
   children: ReactNode;
   backHref?: string;
   backLabel?: string;
-  nav?: "inicio" | "explorar" | null;
+  nav?: "inicio" | "explorar" | "trayectoria" | null;
 }) {
   const { session, signOut } = useSession();
   const router = useRouter();
@@ -71,7 +71,7 @@ export function MovilShell({
         <nav aria-label="Navegación móvil" className="c3-movil__nav">
           <Link href="/mi-c3" aria-current={nav === "inicio" ? "page" : undefined} className={`c3-movil__nav-item${nav === "inicio" ? " c3-movil__nav-item--activo" : ""}`}>Inicio</Link>
           <Link href="/explorar" aria-current={nav === "explorar" ? "page" : undefined} className={`c3-movil__nav-item${nav === "explorar" ? " c3-movil__nav-item--activo" : ""}`}>Explorar</Link>
-          <span aria-disabled="true" title="Próximamente" className="c3-movil__nav-item c3-movil__nav-item--pendiente">Trayectoria</span>
+          <Link href="/trayectoria" aria-current={nav === "trayectoria" ? "page" : undefined} className={`c3-movil__nav-item${nav === "trayectoria" ? " c3-movil__nav-item--activo" : ""}`}>Trayectoria</Link>
         </nav>
       ) : null}
     </div>

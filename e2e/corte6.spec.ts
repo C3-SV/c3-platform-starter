@@ -1,0 +1,76 @@
+import { expect, test } from "@playwright/test";
+
+/**
+ * Corte 6: perfil y trayectoria (V08) con lo autodeclarado separado de lo que registra C3, y comprobación de
+ * que las vistas móviles no desbordan la pantalla.
+ */
+const stamp = Date.now().toString(36);
+const persona = { name: "Lucía Robles de Prueba", email: `lucia.${stamp}@correo.test`, password: "clave-lucia-123" };
+
+async function register(page: import("@playwright/test").Page) {
+  await page.goto("/acceso?modo=registro");
+  const form = page.locator("form").filter({ has: page.locator("#r-nombre") });
+  await page.locator("#r-nombre").fill(persona.name);
+  await page.locator("#r-correo").fill(persona.email);
+  await page.locator("#r-pass").fill(persona.password);
+  await form.locator('input[type="checkbox"]').check();
+  await form.getByRole("button", { name: "Crear cuenta", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+}
+
+test.describe.serial("Corte 6: perfil y trayectoria", () => {
+  test("la persona registrada ve su trayectoria, separada de lo que escribió", async ({ page }) => {
+    await register(page);
+    await page.goto("/trayectoria");
+    await expect(page.getByRole("heading", { level: 1, name: persona.name })).toBeVisible();
+    await expect(page.getByText("Todavía no escribiste nada.")).toBeVisible();
+    await expect(page.getByText("Registrada por C3")).toBeVisible();
+    await expect(page.getByText("Todavía no tenés trayectoria registrada.")).toBeVisible();
+  });
+
+  test("el perfil valida los enlaces y guarda lo que la persona declara", async ({ page }) => {
+    await page.goto("/acceso?next=/trayectoria");
+    await page.locator("#l-correo").fill(persona.email);
+    await page.locator("#l-pass").fill(persona.password);
+    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+    await page.goto("/trayectoria");
+
+    await page.getByRole("button", { name: "Editar perfil", exact: true }).click();
+    await page.locator("#perfil-github").fill("http://sin-seguridad.test");
+    await page.getByRole("button", { name: "Guardar perfil", exact: true }).click();
+    await expect(page.getByText("El enlace debe empezar con https://")).toBeVisible();
+
+    await page.locator("#perfil-github").fill("https://github.com/lucia-prueba");
+    await page.locator("#perfil-school").fill("Ingeniería en Sistemas · UCA");
+    await page.locator("#perfil-bio").fill("Me interesan los problemas de optimización y el backend.");
+    await page.getByRole("button", { name: "Guardar perfil", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Perfil guardado" })).toBeVisible();
+    await expect(page.getByText("Me interesan los problemas de optimización y el backend.")).toBeVisible();
+    await expect(page.getByText("Ingeniería en Sistemas · UCA")).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText("Me interesan los problemas de optimización y el backend.")).toBeVisible();
+    await expect(page.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/lucia-prueba");
+  });
+
+  test("la barra inferior de las vistas móviles lleva a la trayectoria", async ({ page }) => {
+    await page.goto("/acceso?next=/mi-c3");
+    await page.locator("#l-correo").fill(persona.email);
+    await page.locator("#l-pass").fill(persona.password);
+    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+    await page.goto("/mi-c3");
+    await page.getByRole("link", { name: "Trayectoria", exact: true }).click();
+    await expect(page).toHaveURL(/\/trayectoria$/);
+  });
+
+  test("las vistas móviles y públicas no desbordan horizontalmente", async ({ page }) => {
+    for (const path of ["/mi-c3", "/trayectoria", "/empresa/proponer", "/acceso"]) {
+      await page.goto(path);
+      await expect(page.locator("body")).toBeVisible();
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow, `desbordamiento en ${path}`).toBeLessThanOrEqual(1);
+    }
+  });
+});
