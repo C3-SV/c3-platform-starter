@@ -11,6 +11,7 @@ import { requireAdmin, type Actor } from "./auth.ts";
 import { CHALLENGES, ORGANIZATIONS, loadExperience, windowOf } from "./catalog.ts";
 import { notFound } from "./errors.ts";
 import { PROPOSALS, toProposalView, type ProposalView } from "./proposals.ts";
+import { companyResults } from "./evaluation.ts";
 import { SUBMISSIONS, TEAMS, USERS } from "./ids.ts";
 
 export const ORGANIZATION_MEMBERS = "organizationMembers";
@@ -38,6 +39,7 @@ export interface CompanyChallenge {
   organizationId: string;
   state: PresentedState;
   submissions: CompanySubmission[];
+  results: Awaited<ReturnType<typeof companyResults>>;
 }
 
 export interface CompanySpace {
@@ -117,7 +119,8 @@ export async function getCompanySpace(db: Firestore, actor: Actor, now: Date): P
       const experience = await loadExperience(db, data.experienceId).catch(() => null);
       const state = presentState(data.status, experience ? windowOf(experience) : {}, now);
       const submissions = await submittedSolutions(db, doc.id);
-      challenges.push({ id: doc.id, title: data.title, organizationId: organization.id, state, submissions });
+      const results = await companyResults(db, doc.id);
+      challenges.push({ id: doc.id, title: data.title, organizationId: organization.id, state, submissions, results });
     }
     const proposalSnapshot = await db.collection(PROPOSALS).where("organizationId", "==", organization.id).get();
     proposals.push(...proposalSnapshot.docs.map((doc) => toProposalView(doc.id, doc.data())));

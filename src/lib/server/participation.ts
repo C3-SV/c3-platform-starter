@@ -12,6 +12,7 @@ import { canSubmit } from "../domain/workflows.ts";
 import { requireAdmin, type Actor } from "./auth.ts";
 import { loadChallenge, loadExperience, windowOf } from "./catalog.ts";
 import { HttpError, notFound } from "./errors.ts";
+import { resultForSubmission } from "./evaluation.ts";
 import {
   ENROLLMENTS,
   PARTICIPATIONS,
@@ -49,6 +50,7 @@ export interface EnrollmentView {
 
 export interface MyEnrollmentView extends EnrollmentView {
   team: TeamSummary | null;
+  result: Awaited<ReturnType<typeof resultForSubmission>>;
   delivery: {
     state: DeliveryState;
     canEdit: boolean;
@@ -241,7 +243,8 @@ export async function listMyEnrollments(db: Firestore, actor: Actor, now: Date):
         submittedAt: submission?.submittedAt ?? null,
       };
     }
-    return { ...base, team: context.team, delivery };
+    const result = context.eligible ? await resultForSubmission(db, challenge.id, context.submissionId) : null;
+    return { ...base, team: context.team, delivery, result };
   }));
   return views
     .filter((view): view is MyEnrollmentView => view !== null)

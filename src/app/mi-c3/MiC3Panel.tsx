@@ -9,11 +9,15 @@ import { apiRequest, ApiError } from "@/lib/client/api";
 import { formatDate, formatDateTime } from "@/lib/domain/format";
 import { deliveryPresentation, enrollmentState } from "@/lib/domain/presentation";
 import type { MyEnrollmentView } from "@/lib/server/participation";
+import type { myAssignments } from "@/lib/server/evaluation";
+
+type Assignment = Awaited<ReturnType<typeof myAssignments>>[number];
 
 /** V05 · Mi C3 (inicio). Ordena lo que toca ahora; cada tarjeta lleva a una acción real o muestra su estado. */
 export function MiC3Panel() {
   const { session } = useSession();
   const [enrollments, setEnrollments] = useState<MyEnrollmentView[] | null>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -44,6 +48,21 @@ export function MiC3Panel() {
         if (!active) return;
         setLoadError(error instanceof ApiError ? error.message : "No pudimos cargar tu espacio. Intentá de nuevo.");
       },
+    );
+    return () => {
+      active = false;
+    };
+  }, [signedIn]);
+
+  // Retos que me asignaron como jurado. Si la consulta falla, la sección simplemente no aparece.
+  useEffect(() => {
+    if (!signedIn) return;
+    let active = true;
+    apiRequest<{ assignments: Assignment[] }>("/api/evaluaciones").then(
+      (data) => {
+        if (active) setAssignments(data.assignments);
+      },
+      () => undefined,
     );
     return () => {
       active = false;
@@ -188,7 +207,31 @@ export function MiC3Panel() {
                   ? `Tu entrega quedó registrada${item.delivery.submittedAt ? ` el ${formatDate(item.delivery.submittedAt)}` : ""}. Se evalúa cuando cierra el plazo.`
                   : "El plazo cerró sin entrega enviada."}
               </span>
-              <Link href={`/mi-c3/retos/${item.challengeId}`} style={{ fontSize: 14, fontWeight: 500 }}>Ver mi entrega</Link>
+                {item.result ? (
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>
+                    Resultado publicado: {item.result.recognition ?? "sin reconocimiento"}
+                    {item.result.average !== null ? ` · promedio ${item.result.average.toFixed(1)}` : ""}
+                    {item.result.place ? ` · puesto ${item.result.place} de ${item.result.of}` : ""}
+                  </span>
+                ) : null}
+                <Link href={`/mi-c3/retos/${item.challengeId}`} style={{ fontSize: 14, fontWeight: 500 }}>Ver mi entrega</Link>
+            </div>
+          ))}
+        </Seccion>
+      ) : null}
+
+      {assignments.length > 0 ? (
+        <Seccion titulo="Como jurado" color="var(--c3-conecta)">
+          {assignments.map((item) => (
+            <div key={item.challengeId} className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.title}</span>
+                <span className={`c3-pill c3-pill--${item.canEvaluate ? "info" : "neutro"}`}>{item.canEvaluate ? "Disponible" : "Esperando el cierre"}</span>
+              </div>
+              <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
+                {item.finalized} de {item.solutions} {item.solutions === 1 ? "solución finalizada" : "soluciones finalizadas"}. Evaluás sin ver quién entregó.
+              </span>
+              <Link href={`/mi-c3/evaluar/${item.challengeId}`} className="c3-btn c3-btn--primario">Evaluar</Link>
             </div>
           ))}
         </Seccion>

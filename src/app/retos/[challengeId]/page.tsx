@@ -6,6 +6,7 @@ import { KIND_LABEL } from "@/lib/domain/presentation";
 import { formatDate, formatDateTime, modalityLabel } from "@/lib/domain/format";
 import { database } from "@/lib/server/context";
 import { getPublicChallenge } from "@/lib/server/catalog";
+import { publicWinners } from "@/lib/server/evaluation";
 import { HttpError } from "@/lib/server/errors";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
     throw error;
   }
   const { challenge, experience, state } = detail;
+  const winners = await publicWinners(database(), challengeId);
   const registrationOpen = state.label === "Abierto";
   const modality = modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize);
 
@@ -87,6 +89,18 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
               </div>
             </section>
           </div>
+
+          {winners.length > 0 ? (
+            <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }} aria-labelledby="titulo-ganadores">
+              <h2 id="titulo-ganadores" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Ganadores y reconocimientos</h2>
+              {winners.map((winner) => (
+                <div key={`${winner.recognition}-${winner.name}`} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                  <span style={{ fontSize: 16, fontWeight: 500 }}>{winner.name ?? "Solución sin nombre"}</span>
+                  <span className="c3-pill c3-pill--exito">{winner.recognition}</span>
+                </div>
+              ))}
+            </section>
+          ) : null}
 
           <aside style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
             <div className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>

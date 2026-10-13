@@ -11,6 +11,8 @@ import type { Challenge, Experience, ExperienceStatus } from "@/lib/domain/types
 import { ChallengeForm, ExperienceForm } from "./forms";
 import { InscripcionesPanel } from "./InscripcionesPanel";
 import { PropuestasPanel } from "./PropuestasPanel";
+import { JuradosPanel } from "./JuradosPanel";
+import { ResultadosPanel } from "./ResultadosPanel";
 
 interface Catalog {
   experiences: Experience[];
@@ -24,9 +26,9 @@ const NAV: { id: Section; label: string; pending?: string }[] = [
   { id: "propuestas", label: "Propuestas" },
   { id: "experiencias", label: "Experiencias y retos" },
   { id: "inscripciones", label: "Inscripciones y equipos" },
-  { id: "entregas", label: "Entregas", pending: "Corte 5" },
-  { id: "jurados", label: "Jurados y rúbricas", pending: "Corte 5" },
-  { id: "resultados", label: "Resultados oficiales", pending: "Corte 5" },
+  { id: "entregas", label: "Entregas", pending: "Corte 6" },
+  { id: "jurados", label: "Jurados y rúbricas" },
+  { id: "resultados", label: "Resultados oficiales" },
 ];
 
 /** V12 · C3 Admin. Esta versión implementa «Experiencias y retos»; las demás secciones quedan marcadas como pendientes. */
@@ -186,7 +188,23 @@ export function AdminPanel() {
             )
           ) : null}
 
-          {section !== "experiencias" && section !== "inscripciones" && section !== "propuestas" ? <PendingSection label={NAV.find((item) => item.id === section)?.label ?? ""} /> : null}
+          {section === "jurados" ? (
+            catalog ? (
+              <JuradosPanel challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title, rubric: item.rubric }))} />
+            ) : (
+              <p style={{ color: "var(--c3-texto-suave)" }}>Cargando retos…</p>
+            )
+          ) : null}
+
+          {section === "resultados" ? (
+            catalog ? (
+              <ResultadosPanel challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title }))} />
+            ) : (
+              <p style={{ color: "var(--c3-texto-suave)" }}>Cargando retos…</p>
+            )
+          ) : null}
+
+          {section !== "experiencias" && section !== "inscripciones" && section !== "propuestas" && section !== "jurados" && section !== "resultados" ? <PendingSection label={NAV.find((item) => item.id === section)?.label ?? ""} /> : null}
 
           {section === "experiencias" ? (
             <>

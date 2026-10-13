@@ -4,7 +4,7 @@
 
 Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. El diseño visual lo produjo Claude y se integra tal cual; la lógica, la persistencia y los permisos viven en este repositorio.
 
-## Estado real (corte actual: 4 · Empresas)
+## Estado real (corte actual: 5 · Evaluación y resultados)
 
 **Implementado y verificado en esta máquina** (emuladores de Firebase, sin proyecto de producción):
 
@@ -23,11 +23,17 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 - **Espacio de empresa** (V09): la representante ve solo los retos publicados de sus organizaciones, las soluciones ya enviadas (nunca borradores) y las propuestas vinculadas con su siguiente paso. Sin vínculo, la vista no muestra datos de nadie.
 - Retos con organización vinculada: al crear un reto en V12 se elige la organización que tendrá su espacio de empresa.
 
+- **Jurados** (V12, «Jurados y rúbricas»): C3 asigna jurados por correo —externos o representantes de la empresa—, revoca accesos sin borrar evaluaciones finalizadas, y ve la rúbrica de cada reto.
+- **Evaluación** (Mi C3 «Como jurado» y V11): las soluciones se muestran anónimas («Solución 1», «Solución 2»…) y solo se pueden evaluar cuando cierran las entregas. Cada criterio recibe un entero dentro de su máximo. Se guarda un borrador y se finaliza una sola vez.
+- **Resultados** (V12, «Resultados oficiales»): promedio simple de los jurados con un decimal; reconocimientos (ganador, finalista, mención); publicación por C3 bloqueada hasta que cada solución tenga dos evaluaciones finalizadas de jurados distintos.
+- **Publicación**: los ganadores aparecen en la página pública del reto si C3 lo autoriza; cada participante ve su reconocimiento y, si C3 lo autoriza, su promedio y puesto; la empresa ve los resultados publicados de sus retos.
+
 **Pendiente** (no hay botones falsos: se muestran como «Próximamente», «Próximo corte» o como sección pendiente):
 
-- Evaluación con jurados, rúbricas, consolidación y publicación de resultados (Corte 5): la vista V11 de seguimiento y evaluación de la empresa, el bloque «Como jurado» de Mi C3 y la sección de resultados de V12.
-- Perfil y trayectoria V08 (Corte 5).
-- Ajuste de las propuestas en respuesta de la empresa (V10 «Responder a C3»): hoy la empresa lee la nota y responde por correo.
+- Entregas en la vista de administración (V12, «Entregas»): hoy se revisan desde cada reto.
+- Perfil y trayectoria V08 (Corte 6).
+- Respuesta de la empresa a los ajustes pedidos (V10 «Responder a C3»): hoy la empresa lee la nota y responde por correo.
+- Comentarios de jurados: desactivados por defecto y sin implementar en el MVP.
 - Textos legales (términos y privacidad) y proyecto Firebase real: ver `docs/PENDIENTES-REALES.md`.
 
 ### Resultados de las comprobaciones (última ejecución)
@@ -36,10 +42,10 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 | --- | --- |
 | `npm run typecheck` | Sin errores |
 | `npm run lint` | Sin errores ni avisos |
-| `npm test` (dominio) | 34 de 34 |
-| `npm run test:rules` (reglas, catálogo, inscripciones, equipos, entregas y empresas con emulador) | 40 de 40 |
+| `npm test` (dominio) | 39 de 39 |
+| `npm run test:rules` (reglas, catálogo, inscripciones, equipos, entregas, empresas y evaluación con emulador) | 47 de 47 |
 | `npm run build` | Compila; páginas dinámicas y API de servidor |
-| `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción) | 48 de 48 |
+| `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción) | 56 de 56 |
 
 ## Recursos de Claude
 
@@ -66,11 +72,12 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 | V05 Mi C3 | `/mi-c3` | Joven | Implementada |
 | V06 Inscripción | `/retos/[challengeId]/inscripcion` | Joven | Individual y por equipo implementadas |
 | V07 Mi reto y entrega | `/mi-c3/retos/[challengeId]` | Joven | Implementada |
-| V08 Trayectoria | `/trayectoria` | Joven | Corte 4–5 |
-| V09 Espacio de empresa | `/empresa` | Empresa | Implementada (retos, soluciones y propuestas) |
+| V08 Trayectoria | `/trayectoria` | Joven | Corte 6 |
+| V09 Espacio de empresa | `/empresa` | Empresa | Implementada (retos, soluciones, resultados y propuestas) |
 | V10 Proponer challenge | `/empresa/proponer` | Público | Implementada, sin cuenta |
-| V11 Evaluación | `/empresa/retos/[challengeId]/evaluacion` | Empresa y jurado | Corte 5 |
-| V12 Admin | `/admin` | Administrador | Experiencias y retos, e inscripciones implementadas; el resto pendiente |
+| V11 Evaluación | `/empresa/retos/[challengeId]/evaluacion` | Representante autorizado | Implementada |
+| Evaluación de jurado externo | `/mi-c3/evaluar/[challengeId]` | Jurado asignado | Implementada |
+| V12 Admin | `/admin` | Administrador | Experiencias, retos, inscripciones, propuestas, jurados y resultados implementadas; entregas pendiente |
 
 Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/mi-c3`, `/api/retos/*`, `/api/inscripciones/*`, `/api/admin/*`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
 
@@ -190,10 +197,9 @@ Un reto publicado solo es público si su experiencia también está publicada. U
 
 ## Pendientes para el siguiente corte
 
-1. **Corte 5 · Evaluación:** asignación de jurados, rúbrica evaluada (promedio de jurados), evaluaciones finalizadas, consolidación, publicación oficial por C3 y resultados en Mi C3 y en empresas.
-2. **Corte 6:** revisión visual completa de las 12 vistas contra el diseño, auditoría de accesibilidad con herramienta y pruebas de móvil de todas las vistas.
-3. **Proyecto Firebase real:** crear el proyecto de desarrollo, configurar Auth y Firestore, y definir la asignación de administradores en producción.
-4. **Repositorio GitHub:** ver el reporte de la última sesión.
+1. **Corte 6:** revisión visual completa de las 12 vistas contra el diseño, auditoría de accesibilidad con herramienta y pruebas de móvil de todas las vistas.
+2. **Proyecto Firebase real:** crear el proyecto de desarrollo, configurar Auth y Firestore, y definir la asignación de administradores en producción.
+3. **Repositorio GitHub:** ver el reporte de la última sesión.
 
 ## Notas
 

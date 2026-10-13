@@ -136,6 +136,16 @@ export function EmpresaPanel() {
                     ))}
                   </div>
                 </div>
+                {challenge.results ? (
+                  <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Resultado publicado</span>
+                    {challenge.results.rows.map((row) => (
+                      <span key={row.label} style={{ fontSize: 14 }}>
+                        {row.label}: {row.recognition ?? "sin reconocimiento"}{row.average !== null ? ` · promedio ${row.average.toFixed(1)}` : ""}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>
