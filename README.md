@@ -50,7 +50,7 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 
 ### Verificación visual
 
-Comparadas con capturas del diseño de Claude: V01, V02, V03, V04, V10 y la cabecera de V12 en escritorio; V05, V06 y V07 en el marco móvil de 390 px; V09 en escritorio. Diferencias conocidas y aceptadas: la entrega no tiene campo de título (solo descripción y enlaces, según el modelo aprobado); las acciones de líder y el botón «Salir» se añadieron por función; las propuestas de V09 son una lista de tarjetas y no una tabla; V09 no muestra el contador «Tenés N por evaluar». Pendientes de comparar: V08 y V11, y el detalle de las secciones de V12 que el diseño no dibuja.
+Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03 y V04 en escritorio; V10 y V09 en escritorio; V05 (estado vacío en el marco móvil de 390 px), V06 y V07 en el marco móvil. Diferencias conocidas y aceptadas: la entrega no tiene campo de título (solo descripción y enlaces, según el modelo aprobado); las acciones de líder y el botón «Salir» se añadieron por función; las propuestas de V09 son una lista de tarjetas y no una tabla; V09 no muestra el contador «Tenés N por evaluar»; V10 tiene un consentimiento obligatorio y V01 muestra «Próximamente» en el llamado de empresas. **Sin comparar todavía:** V08, V11 y V12, y las secciones de V12 que el diseño no dibuja.
 
 ## Recursos de Claude
 
