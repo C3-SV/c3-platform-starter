@@ -132,8 +132,23 @@ Ver `.env.example`. Resumen:
 - `NEXT_PUBLIC_FIREBASE_*`: configuración pública del SDK del navegador. No son secretos.
 - `NEXT_PUBLIC_USE_FIREBASE_EMULATORS`: `true` conecta el navegador al emulador de Auth.
 - `GOOGLE_CLOUD_PROJECT`: proyecto usado por el Admin SDK en el servidor.
+- `FIREBASE_SERVICE_ACCOUNT_JSON` (privada) o `FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY` (privadas): credenciales del Admin SDK cuando Vercel no tiene ADC de Google. Nunca se suben al repositorio ni se usan como `NEXT_PUBLIC_*`.
 - `FIRESTORE_EMULATOR_HOST` y `FIREBASE_AUTH_EMULATOR_HOST`: solo en desarrollo. Las define `firebase emulators:exec` cuando corren las pruebas.
 - Las credenciales privadas nunca van en `NEXT_PUBLIC_*`. En producción el Admin SDK usa Application Default Credentials o la identidad administrada del hosting.
+
+### Configuración de Vercel
+
+En Vercel configura las variables públicas del proyecto Firebase de producción:
+`NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`,
+`NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` y
+`NEXT_PUBLIC_USE_FIREBASE_EMULATORS=false`.
+
+Para el Admin SDK configura como variables privadas `GOOGLE_CLOUD_PROJECT` y
+`FIREBASE_SERVICE_ACCOUNT_JSON`, o el conjunto separado
+`FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY`.
+El comando `vercel-build` valida esta configuración antes de compilar y nunca imprime
+los valores secretos. Después de cambiar variables, crea un nuevo deploy para que
+sean tomadas por el build.
 
 ## Primer administrador
 
@@ -156,6 +171,7 @@ En producción, ejecuta el mismo script con credenciales de servicio autorizadas
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo |
 | `npm run build` | Build de producción |
+| `npm run check:vercel-env` | Valida las variables requeridas para un deploy de Vercel |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint (configuración de Next.js) |
 | `npm test` | Pruebas unitarias del dominio (sin emuladores) |
