@@ -287,6 +287,10 @@ textarea.c3-campo {
   flex-wrap: wrap;
 }
 
+.c3-cabecera__principal {
+  min-width: 0;
+}
+
 .c3-cabecera__enlace {
   font-size: var(--c3-cuerpo-sm-size);
   font-weight: 500;
@@ -308,6 +312,7 @@ textarea.c3-campo {
   gap: 18px;
   align-items: center;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .c3-footer__nav {

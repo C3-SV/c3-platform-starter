@@ -34,7 +34,7 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
   return (
     <header className="c3-cabecera">
       <div className="c3-cabecera__interior">
-        <div style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
+        <div className="c3-cabecera__principal" style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
           <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">C3</Link>
           <nav aria-label="Principal" className="c3-nav-principal">
             <Link href="/" className="c3-cabecera__enlace" aria-current={pathname === "/" ? "page" : undefined}>Inicio</Link>

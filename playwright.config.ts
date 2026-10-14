@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 3100;
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
 /**
  * Variables del cliente y del servidor apuntando a los emuladores. NEXT_PUBLIC_* se usan en
@@ -39,7 +40,7 @@ export default defineConfig({
   ],
   webServer: {
     // Build de producción: valida el build y evita la compilación bajo demanda de `next dev` durante la prueba.
-    command: `npm run build && npm run start -- --port ${PORT}`,
+    command: `${npmCommand} run build && ${npmCommand} run start -- --port ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     env: { ...process.env, ...emulatorEnv } as Record<string, string>,

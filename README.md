@@ -44,10 +44,10 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 | --- | --- |
 | `npm run typecheck` | Sin errores |
 | `npm run lint` | Sin errores ni avisos |
-| `npm test` (dominio) | 42 de 42 |
-| `npm run test:rules` (reglas, catálogo, inscripciones, equipos, entregas, empresas y evaluación con emulador) | 47 de 47 |
+| `npm test` (dominio) | 51 de 51 |
+| `npm run test:rules` (reglas, catálogo, inscripciones, equipos, entregas, empresas, Admin, seed y evaluación con emulador) | 52 de 52 |
 | `npm run build` | Compila; páginas dinámicas y API de servidor |
-| `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción; incluye la auditoría axe) | 68 de 68 |
+| `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción; incluye la auditoría axe) | 76 de 76 |
 
 ### Verificación visual
 
