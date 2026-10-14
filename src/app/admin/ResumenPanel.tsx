@@ -25,7 +25,21 @@ export function ResumenPanel() {
   }
 
   useEffect(() => {
-    void load();
+    let active = true;
+    apiRequest<Dashboard>("/api/admin/resumen").then(
+      (value) => {
+        if (!active) return;
+        setData(value);
+        setError(null);
+      },
+      (cause: unknown) => {
+        if (!active) return;
+        setError(cause instanceof ApiError ? cause.message : "No pudimos cargar el resumen. Intentá de nuevo.");
+      },
+    );
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (

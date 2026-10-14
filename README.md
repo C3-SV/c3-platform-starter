@@ -29,10 +29,11 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 - **Evaluación** (Mi C3 «Como jurado» y V11): las soluciones se muestran anónimas («Solución 1», «Solución 2»…) y solo se pueden evaluar cuando cierran las entregas. Cada criterio recibe un entero dentro de su máximo. Se guarda un borrador y se finaliza una sola vez.
 - **Resultados** (V12, «Resultados oficiales»): promedio simple de los jurados con un decimal; reconocimientos (ganador, finalista, mención); publicación por C3 bloqueada hasta que cada solución tenga dos evaluaciones finalizadas de jurados distintos.
 - **Publicación**: los ganadores aparecen en la página pública del reto si C3 lo autoriza; cada participante ve su reconocimiento y, si C3 lo autoriza, su promedio y puesto; la empresa ve los resultados publicados de sus retos.
+- **Ecosistema**: /compite, /crea y /conecta comparten el catálogo de experiencias, clasificación por línea, estados visibles y marcadores de demostración/fuente.
+- **Admin**: resumen operativo y consulta de entregas con reto, estado, participantes/equipo y autorización; las entregas no se modifican desde esta vista.
 
 **Pendiente** (no hay botones falsos: se muestran como «Próximamente», «Próximo corte» o como sección pendiente):
 
-- Entregas en la vista de administración (V12, «Entregas»): hoy se revisan desde cada reto.
 - Respuesta de la empresa a los ajustes pedidos (V10 «Responder a C3»): hoy la empresa lee la nota y responde por correo.
 - Comentarios de jurados: desactivados por defecto y sin implementar en el MVP.
 - Textos legales (términos y privacidad) y proyecto Firebase real: ver `docs/PENDIENTES-REALES.md`.
@@ -82,7 +83,10 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 | V10 Proponer challenge | `/empresa/proponer` | Público | Implementada, sin cuenta |
 | V11 Evaluación | `/empresa/retos/[challengeId]/evaluacion` | Representante autorizado | Implementada |
 | Evaluación de jurado externo | `/mi-c3/evaluar/[challengeId]` | Jurado asignado | Implementada |
-| V12 Admin | `/admin` | Administrador | Experiencias, retos, inscripciones, propuestas, jurados y resultados implementadas; entregas pendiente |
+| Compite | `/compite` | Público | Landing institucional conectada al catálogo |
+| Crea | `/crea` | Público | Landing institucional conectada al catálogo |
+| Conecta | `/conecta` | Público | Landing institucional conectada al catálogo |
+| V12 Admin | `/admin` | Administrador | Experiencias, retos, resumen, entregas, inscripciones, propuestas, jurados y resultados |
 
 Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/mi-c3`, `/api/retos/*`, `/api/inscripciones/*`, `/api/admin/*`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
 
@@ -157,6 +161,8 @@ En producción, ejecuta el mismo script con credenciales de servicio autorizadas
 | `npm test` | Pruebas unitarias del dominio (sin emuladores) |
 | `npm run test:rules` | Reglas de Firestore, servicios y entregas contra el emulador |
 | `npm run test:e2e` | Recorridos con Playwright: inicia los emuladores, prepara la cuenta administradora, construye la aplicación y la sirve |
+| `npm run seed:dry-run -- --project <id> --emulator` | Lee el catálogo seed, muestra existentes/conflictos/escrituras y no modifica datos |
+| `npm run seed:apply -- --project <id> --confirm-project <id> --allow-write --emulator` | Crea solo documentos determinísticos del seed; exige identidad repetida y autorización |
 | `npm run emulators` | Solo emuladores |
 | `npm run check` | Typecheck, lint y pruebas unitarias |
 
@@ -170,14 +176,14 @@ src/
   components/            Componentes compartidos (cabecera, marco móvil, pastillas de estado, pie, CTA de inscripción)
   lib/
     domain/              Entidades, validaciones y estados de presentación (sin Firebase)
-    server/              Servicios de catálogo, participación, autenticación, perfil y errores (reciben la base por parámetro)
+    server/              Servicios de catálogo, participación, autenticación, perfil, Admin y errores (reciben la base por parámetro)
     firebase/            Admin SDK (solo servidor) y SDK del navegador
     auth/                Proveedor de sesión del navegador
     client/              Cliente de API que adjunta el token
 tests/unit/              Pruebas del dominio
 tests/emulator/          Reglas, catálogo, inscripciones y entregas contra el emulador
 e2e/                     Recorridos de navegador (escritorio y móvil)
-scripts/                 Administración y preparación de emuladores
+scripts/                 Administración, seed y preparación de emuladores
 diseno-claude/           Referencia del diseño exportado por Claude (no se duplica)
 ```
 
@@ -186,6 +192,7 @@ Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas
 ## Modelo de datos (Cortes 1–3)
 
 - `experiences/{id}`: título, tipo (`competencia`, `hackathon`, `challenge_empresarial`), resumen, estado (`draft`, `published`, `closed`, `cancelled`), ventana de inscripción.
+- `experiences/{id}` también puede declarar `primaryLine`, `secondaryLines`, `isDemo`, `demoNote`, `sourceUrl` y `sourceLabel`; los registros legacy usan el tipo como fallback.
 - `challenges/{id}`: `experienceId`, problema, entregables, rúbrica (criterios con puntaje máximo de 1 a 10), organización responsable, modalidades (`individual`, `team` con tamaño mínimo y máximo), cierre de entregas, estado.
 - `users/{uid}`: correo y nombre. Se crea la primera vez que la persona entra.
 - `enrollments/{experienceId}__{uid}`: una inscripción por persona y experiencia. Estados `pending`, `approved`, `rejected`, `cancelled`.
@@ -202,9 +209,9 @@ Un reto publicado solo es público si su experiencia también está publicada. U
 
 ## Pendientes para el siguiente corte
 
-1. **Revisión visual pendiente:** comparar V06, V07, V08, V09, V11 y el detalle de V12 contra el diseño con capturas, y completar la vista de entregas de V12 y el perfil público opt-in (etapa posterior).
-2. **Proyecto Firebase real:** crear el proyecto de desarrollo, configurar Auth y Firestore, y definir la asignación de administradores en producción.
-3. **Repositorio GitHub:** ver el reporte de la última sesión.
+1. **Revisión visual pendiente:** comparar V06, V07, V08, V09, V11 y el detalle de V12 contra el diseño con capturas; las nuevas landings ya tienen prueba de navegación, no reemplazan la revisión visual manual.
+2. **Proyecto Firebase real:** definir el ID real, confirmar que no comparte colecciones ajenas y autorizar un dry-run con credenciales ADC; esta sesión no escribió ni desplegó nada.
+3. **Migración personal:** sigue fuera de alcance; no se migran usuarios, participantes, equipos, entregas ni resultados privados.
 
 ## Notas
 

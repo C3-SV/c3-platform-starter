@@ -38,7 +38,21 @@ export function EntregasPanel({ challenges }: { challenges: { id: string; title:
   }
 
   useEffect(() => {
-    void load();
+    let active = true;
+    apiRequest<{ deliveries: DeliveryRow[] }>("/api/admin/entregas").then(
+      (value) => {
+        if (!active) return;
+        setRows(value.deliveries);
+        setError(null);
+      },
+      (cause: unknown) => {
+        if (!active) return;
+        setError(cause instanceof ApiError ? cause.message : "No pudimos cargar las entregas. Intentá de nuevo.");
+      },
+    );
+    return () => {
+      active = false;
+    };
   }, []);
 
   const filtered = useMemo(() => selected === "all" ? rows : rows?.filter((row) => row.challengeId === selected), [rows, selected]);
