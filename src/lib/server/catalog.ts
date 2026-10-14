@@ -4,6 +4,7 @@
  */
 import type { DocumentData, Firestore } from "firebase-admin/firestore";
 import { presentState, type PresentedState } from "../domain/presentation.ts";
+import { experienceLinesOf, normalizeExperienceMetadata, presentExperienceState, type ExperienceLine } from "../domain/catalog.ts";
 import type { Challenge, Experience, ExperienceStatus, RubricCriterion } from "../domain/types.ts";
 import {
   parseChallengeInput,
@@ -21,6 +22,7 @@ export const ORGANIZATIONS = "organizations";
 export interface PublicExperience {
   experience: Experience;
   state: PresentedState;
+  lines: ExperienceLine[];
   challenges: PublicChallengeSummary[];
 }
 
@@ -33,6 +35,11 @@ export interface PublicChallengeSummary {
   teamMinSize: number | null;
   teamMaxSize: number | null;
   submissionClosesAt: string | null;
+  lines: ExperienceLine[];
+  isDemo: boolean;
+  demoNote: string | null;
+  sourceUrl: string | null;
+  sourceLabel: string | null;
   state: PresentedState;
 }
 
@@ -43,12 +50,16 @@ export interface PublicChallenge {
 }
 
 function toExperience(id: string, data: DocumentData): Experience {
+  const metadata = normalizeExperienceMetadata(data);
   return {
     id,
     title: data.title,
     kind: data.kind,
     summary: data.summary,
     status: data.status,
+    primaryLine: data.primaryLine,
+    secondaryLines: data.secondaryLines,
+    ...metadata,
     registrationOpensAt: data.registrationOpensAt ?? null,
     registrationClosesAt: data.registrationClosesAt ?? null,
     createdAt: data.createdAt,
@@ -77,6 +88,7 @@ function toChallenge(id: string, data: DocumentData): Challenge {
 }
 
 function summarize(challenge: Challenge, experience: Experience, now: Date): PublicChallengeSummary {
+  const metadata = normalizeExperienceMetadata(experience);
   return {
     id: challenge.id,
     title: challenge.title,
@@ -86,6 +98,8 @@ function summarize(challenge: Challenge, experience: Experience, now: Date): Pub
     teamMinSize: challenge.teamMinSize,
     teamMaxSize: challenge.teamMaxSize,
     submissionClosesAt: challenge.submissionClosesAt,
+    lines: experienceLinesOf(experience),
+    ...metadata,
     state: presentState(challenge.status, windowOf(experience), now),
   };
 }
@@ -120,7 +134,23 @@ export async function createExperience(db: Firestore, actor: Actor, rawInput: un
   const input = parseExperienceInput(rawInput);
   const ref = db.collection(EXPERIENCES).doc();
   const stamp = now.toISOString();
-  const data = { ...input, status: "draft" satisfies ExperienceStatus, createdAt: stamp, updatedAt: stamp, createdByUid: actor.uid };
+  const data = {
+    title: input.title,
+    kind: input.kind,
+    summary: input.summary,
+    registrationOpensAt: input.registrationOpensAt,
+    registrationClosesAt: input.registrationClosesAt,
+    ...(input.primaryLine ? { primaryLine: input.primaryLine } : {}),
+    ...(input.secondaryLines ? { secondaryLines: input.secondaryLines } : {}),
+    ...(input.isDemo ? { isDemo: true } : {}),
+    ...(input.demoNote ? { demoNote: input.demoNote } : {}),
+    ...(input.sourceUrl ? { sourceUrl: input.sourceUrl } : {}),
+    ...(input.sourceLabel ? { sourceLabel: input.sourceLabel } : {}),
+    status: "draft" satisfies ExperienceStatus,
+    createdAt: stamp,
+    updatedAt: stamp,
+    createdByUid: actor.uid,
+  };
   await ref.set(data);
   return toExperience(ref.id, data);
 }
@@ -209,7 +239,8 @@ export async function listPublicCatalog(db: Firestore, now: Date): Promise<Publi
   const challenges = challengeSnap.docs.map((doc) => toChallenge(doc.id, doc.data()));
   return experiences.map((experience) => ({
     experience,
-    state: presentState(experience.status, windowOf(experience), now),
+    state: presentExperienceState(experience.status, windowOf(experience), now),
+    lines: experienceLinesOf(experience),
     challenges: challenges
       .filter((challenge) => challenge.experienceId === experience.id)
       .map((challenge) => summarize(challenge, experience, now)),
