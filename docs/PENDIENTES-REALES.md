@@ -13,7 +13,7 @@
 ## Pendientes deliberadamente diferidos
 
 - Datos personales históricos Copa 2026 y Hackathon Turismo Creativo: no migrar usuarios, participantes, equipos, entregas ni resultados; cualquier alcance futuro requiere fuentes, privacidad y plan aprobado.
-- Proyecto Firebase real: confirmar el ID de desarrollo, acceso ADC y que las colecciones compartidas no sean ajenas antes de ejecutar el dry-run.
+- Proyecto Firebase real inicializado como `c3-platform-demo`: falta configurar las variables privadas de Vercel y revisar/desplegar reglas e índices después de una última aprobación.
 - Perfil público compartible OPT-IN y sello de evidencia verificada, sin insinuar certificaciones no otorgadas.
 - Piloto real: empresa, problema, participantes, fechas, métricas, capacidad de soporte.
 - Filtros de catálogo y automatizaciones cuando exista suficiente volumen.
@@ -24,6 +24,6 @@
 
 - Listo y verificado con emuladores: autenticación, catálogo público, administración de experiencias y retos, reglas de Firestore que deniegan acceso directo, pruebas unitarias, de reglas/servicios y de recorridos.
 - Listo y verificado con emuladores: Compite/Crea/Conecta, catálogo compartido, seed determinístico dry-run/apply protegido, dashboard Admin y consulta de entregas de solo lectura.
-- Pendiente: proyecto Firebase real y textos legales (términos y privacidad). No se hicieron escrituras ni despliegues reales.
+- Verificado en `c3-platform-demo`: Firestore `(default)` estándar en `us-central1` con protección contra borrado, Web App `C3 Platform` y Auth Email/Password habilitados. Pendientes: variables privadas/enlace de Vercel, reglas/índices reales y textos legales.
 - Pendiente de CI: `.github/workflows/ci.yml` está escrito; no se ha ejecutado en GitHub porque el repositorio remoto todavía no existe.
 - Repositorio remoto GitHub: pendiente de autenticación de la CLI (`gh auth login`) y de creación del repositorio privado `c3-platform`.

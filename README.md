@@ -36,7 +36,7 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 
 - Respuesta de la empresa a los ajustes pedidos (V10 «Responder a C3»): hoy la empresa lee la nota y responde por correo.
 - Comentarios de jurados: desactivados por defecto y sin implementar en el MVP.
-- Textos legales (términos y privacidad) y proyecto Firebase real: ver `docs/PENDIENTES-REALES.md`.
+- Textos legales (términos y privacidad), reglas/índices del proyecto real y variables privadas de Vercel: ver `docs/PENDIENTES-REALES.md`.
 
 ### Resultados de las comprobaciones (última ejecución)
 
