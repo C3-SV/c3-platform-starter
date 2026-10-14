@@ -20,6 +20,8 @@
 
 ## Estado (corte 2)
 
+- InspecciÃ³n de infraestructura (14-10-2026): el proyecto indicado `c3-platform-demo` existe, pero no tiene Web Apps Firebase y la API de Cloud Firestore estÃ¡ deshabilitada. Vercel tampoco estÃ¡ enlazado localmente; falta autenticaciÃ³n de la CLI y seleccionar el proyecto de Vercel.
+
 - Listo y verificado con emuladores: autenticación, catálogo público, administración de experiencias y retos, reglas de Firestore que deniegan acceso directo, pruebas unitarias, de reglas/servicios y de recorridos.
 - Listo y verificado con emuladores: Compite/Crea/Conecta, catálogo compartido, seed determinístico dry-run/apply protegido, dashboard Admin y consulta de entregas de solo lectura.
 - Pendiente: proyecto Firebase real y textos legales (términos y privacidad). No se hicieron escrituras ni despliegues reales.
