@@ -76,18 +76,18 @@ export default async function HomePage() {
           </div>
           <div className="c3-grilla-tres" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 24 }}>
             {[
-              { line: "var(--c3-compite)", title: "Compite", color: "var(--c3-compite)", text: "Retos y competencia técnica para medirte contra otros y mejorar.", example: "Ejemplo: Copa Salvadoreña de Programación." },
-              { line: "var(--c3-crea)", title: "Crea", color: "var(--c3-crea-texto)", text: "Construcción real: convertí lo que sabés en proyectos y soluciones.", example: "Ejemplo: Hackathon de Turismo Creativo." },
-              { line: "var(--c3-conecta)", title: "Conecta", color: "var(--c3-conecta)", text: "El puente entre talento, empresas e instituciones, con retos que plantean las propias empresas.", example: "Ejemplo: C3 Challenges." },
+              { href: "/compite", line: "var(--c3-compite)", title: "Compite", color: "var(--c3-compite)", text: "Retos y competencia técnica para medirte contra otros y mejorar.", example: "Ejemplo: Copa Salvadoreña de Programación." },
+              { href: "/crea", line: "var(--c3-crea)", title: "Crea", color: "var(--c3-crea-texto)", text: "Construcción real: convertí lo que sabés en proyectos y soluciones.", example: "Ejemplo: Hackathon de Turismo Creativo." },
+              { href: "/conecta", line: "var(--c3-conecta)", title: "Conecta", color: "var(--c3-conecta)", text: "El puente entre talento, empresas e instituciones, con retos que plantean las propias empresas.", example: "Ejemplo: C3 Challenges." },
             ].map((item) => (
-              <div key={item.title} className="c3-card" style={{ overflow: "hidden" }}>
+              <Link key={item.title} href={item.href} className="c3-card" style={{ overflow: "hidden", textDecoration: "none", color: "inherit" }}>
                 <div style={{ height: 6, background: item.line }} />
                 <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 10 }}>
                   <span className="c3-titulo" style={{ fontSize: 22, fontWeight: 600, color: item.color }}>{item.title}</span>
                   <span style={{ fontSize: 16, lineHeight: 1.6 }}>{item.text}</span>
                   <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>{item.example}</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

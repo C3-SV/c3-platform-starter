@@ -29,7 +29,7 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     // Canal del navegador: en esta máquina, Microsoft Edge instalado. En CI se usa Chromium de Playwright.
-    channel: process.env.PW_CHANNEL || undefined,
+    channel: process.env.CI ? undefined : (process.env.PW_CHANNEL || "msedge"),
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

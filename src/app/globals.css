@@ -303,6 +303,29 @@ textarea.c3-campo {
   font-weight: 600;
 }
 
+.c3-nav-principal {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.c3-footer__nav {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.c3-footer__nav a {
+  color: var(--c3-texto-cabecera);
+  font-size: var(--c3-cuerpo-sm-size);
+  text-decoration: none;
+}
+
+.c3-footer__nav a:hover {
+  color: #ffffff;
+}
+
 .c3-cabecera__texto-etiqueta {
   color: #ffffff;
   text-decoration: none;
@@ -412,6 +435,14 @@ textarea.c3-campo {
 
 /* Móvil: las grillas de dos y tres columnas pasan a una columna sin desbordar la página. */
 @media (max-width: 760px) {
+  .c3-nav-principal {
+    gap: 14px;
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+
   .c3-home-caminos,
   .c3-grilla-tres,
   .c3-dos-columnas,

@@ -36,9 +36,13 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
       <div className="c3-cabecera__interior">
         <div style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
           <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">C3</Link>
-          <nav aria-label="Principal" style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+          <nav aria-label="Principal" className="c3-nav-principal">
+            <Link href="/" className="c3-cabecera__enlace" aria-current={pathname === "/" ? "page" : undefined}>Inicio</Link>
             <Link href="/explorar" className="c3-cabecera__enlace" aria-current={pathname === "/explorar" ? "page" : undefined}>Explorar</Link>
-            <Link href="/empresa/proponer" className="c3-cabecera__enlace" aria-current={pathname === "/empresa/proponer" ? "page" : undefined}>Para empresas</Link>
+            <Link href="/compite" className="c3-cabecera__enlace" aria-current={pathname === "/compite" ? "page" : undefined}>Compite</Link>
+            <Link href="/crea" className="c3-cabecera__enlace" aria-current={pathname === "/crea" ? "page" : undefined}>Crea</Link>
+            <Link href="/conecta" className="c3-cabecera__enlace" aria-current={pathname === "/conecta" ? "page" : undefined}>Conecta</Link>
+            <Link href="/empresa/proponer" className="c3-cabecera__enlace" aria-current={pathname.startsWith("/empresa") ? "page" : undefined}>Empresas</Link>
           </nav>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
