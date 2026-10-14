@@ -114,3 +114,17 @@ test("el panel de administración ve borradores y el público no", async () => {
   assert.equal(catalog.challenges[0].status, "draft");
   await assert.rejects(listAdminCatalog(db, joven), (error) => error instanceof HttpError && error.status === 403);
 });
+
+test("las experiencias concluidas siguen visibles para consultar su historia, pero no son inscribibles", async () => {
+  const db = testDb();
+  const experience = await createExperience(db, admin, experienceInput, now);
+  const challenge = await createChallenge(db, admin, challengeInput(experience.id), now);
+  await setExperienceStatus(db, admin, experience.id, { status: "closed" }, now);
+  await setChallengeStatus(db, admin, challenge.id, { status: "closed" }, now);
+
+  const catalog = await listPublicCatalog(db, now);
+  assert.equal(catalog.length, 1);
+  assert.equal(catalog[0].state.label, "Concluido");
+  const detail = await getPublicChallenge(db, challenge.id, now);
+  assert.equal(detail.state.label, "Concluido");
+});

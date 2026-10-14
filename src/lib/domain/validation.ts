@@ -1,5 +1,5 @@
 /** Validaciones PURAS de entradas. Se usan en el servidor antes de cualquier escritura. */
-import type { ExperienceKind, ExperienceStatus, ParticipationMode } from "./types.ts";
+import type { ExperienceKind, ExperienceLine, ExperienceStatus, ParticipationMode } from "./types.ts";
 
 export const EXPERIENCE_KINDS: readonly ExperienceKind[] = ["competencia", "hackathon", "challenge_empresarial"];
 export const PARTICIPATION_MODES: readonly ParticipationMode[] = ["individual", "team"];
@@ -25,6 +25,12 @@ export interface ExperienceInput {
   summary: string;
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
+  primaryLine?: ExperienceLine;
+  secondaryLines?: ExperienceLine[];
+  isDemo?: boolean;
+  demoNote?: string | null;
+  sourceUrl?: string | null;
+  sourceLabel?: string | null;
 }
 
 export interface RubricInputCriterion {
@@ -97,12 +103,24 @@ export function parseExperienceInput(input: unknown): ExperienceInput {
     issues.push({ field: "registrationClosesAt", message: "El cierre debe ser posterior a la apertura." });
   }
   if (issues.length) throw new ValidationFailure(issues);
+  const primaryLine = typeof raw.primaryLine === "string" && ["compite", "crea", "conecta"].includes(raw.primaryLine)
+    ? raw.primaryLine as ExperienceLine
+    : undefined;
+  const secondaryLines = Array.isArray(raw.secondaryLines)
+    ? [...new Set(raw.secondaryLines.filter((line): line is ExperienceLine => typeof line === "string" && ["compite", "crea", "conecta"].includes(line)))]
+    : undefined;
   return {
     title,
     kind: kind as ExperienceKind,
     summary,
     registrationOpensAt,
     registrationClosesAt,
+    primaryLine,
+    secondaryLines,
+    isDemo: raw.isDemo === true ? true : undefined,
+    demoNote: typeof raw.demoNote === "string" && raw.demoNote.trim() ? raw.demoNote.trim().slice(0, 240) : null,
+    sourceUrl: typeof raw.sourceUrl === "string" && raw.sourceUrl.trim() ? raw.sourceUrl.trim() : null,
+    sourceLabel: typeof raw.sourceLabel === "string" && raw.sourceLabel.trim() ? raw.sourceLabel.trim().slice(0, 120) : null,
   };
 }
 

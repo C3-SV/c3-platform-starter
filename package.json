@@ -6,13 +6,17 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "npm run check:vercel-env && next build",
+    "check:vercel-env": "node scripts/check-vercel-env.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "node --experimental-strip-types --test \"tests/unit/*.test.ts\"",
     "test:rules": "firebase emulators:exec --only auth,firestore --project demo-c3-platform \"node --experimental-strip-types --test --test-concurrency=1 \\\"tests/emulator/*.test.ts\\\"\"",
-    "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-c3-platform \"node --experimental-strip-types scripts/seed-e2e.mjs && playwright test\"",
+    "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-c3-platform \"node --experimental-strip-types scripts/run-e2e.mjs\"",
     "emulators": "firebase emulators:start --only auth,firestore --project demo-c3-platform",
+    "seed:dry-run": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/seed.mjs --mode dry-run",
+    "seed:apply": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/seed.mjs --mode apply",
     "check": "npm run typecheck && npm run lint && npm test"
   },
   "engines": {
@@ -37,6 +41,11 @@
     "eslint-config-next": "16.4.0",
     "firebase-tools": "^15.33.0",
     "typescript": "~5.9.3"
+  },
+  "overrides": {
+    "jwks-rsa": {
+      "jose": "4.15.9"
+    }
   },
   "type": "module"
 }
