@@ -232,8 +232,8 @@ function byCreatedDesc<T extends { createdAt: string }>(a: T, b: T): number {
 /** Catálogo público: solo experiencias publicadas y retos publicados dentro de ellas. */
 export async function listPublicCatalog(db: Firestore, now: Date): Promise<PublicExperience[]> {
   const [experienceSnap, challengeSnap] = await Promise.all([
-    db.collection(EXPERIENCES).where("status", "==", "published").get(),
-    db.collection(CHALLENGES).where("status", "==", "published").get(),
+    db.collection(EXPERIENCES).where("status", "in", ["published", "closed"]).get(),
+    db.collection(CHALLENGES).where("status", "in", ["published", "closed"]).get(),
   ]);
   const experiences = experienceSnap.docs.map((doc) => toExperience(doc.id, doc.data())).sort(byCreatedDesc);
   const challenges = challengeSnap.docs.map((doc) => toChallenge(doc.id, doc.data()));
@@ -250,9 +250,9 @@ export async function listPublicCatalog(db: Firestore, now: Date): Promise<Publi
 /** Detalle público de un reto. Devuelve 404 si el reto o su experiencia no están publicados. */
 export async function getPublicChallenge(db: Firestore, challengeId: string, now: Date): Promise<PublicChallenge> {
   const challenge = await loadChallenge(db, challengeId);
-  if (challenge.status !== "published") throw notFound();
+  if (challenge.status !== "published" && challenge.status !== "closed") throw notFound();
   const experience = await loadExperience(db, challenge.experienceId);
-  if (experience.status !== "published") throw notFound();
+  if (experience.status !== "published" && experience.status !== "closed") throw notFound();
   return {
     challenge,
     experience,
