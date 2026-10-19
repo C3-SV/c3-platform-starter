@@ -471,7 +471,7 @@ textarea.c3-campo {
   height: 190px;
   padding: 20px;
   box-shadow: var(--c3-sombra-lg);
-  transform: rotate(3deg);
+  transform: rotate(0deg);
 }
 
 .c3-line-mark--card {
