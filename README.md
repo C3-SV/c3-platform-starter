@@ -179,6 +179,7 @@ En producción, ejecuta el mismo script con credenciales de servicio autorizadas
 | `npm run test:e2e` | Recorridos con Playwright: inicia los emuladores, prepara la cuenta administradora, construye la aplicación y la sirve |
 | `npm run seed:dry-run -- --project <id> --emulator` | Lee el catálogo seed, muestra existentes/conflictos/escrituras y no modifica datos |
 | `npm run seed:apply -- --project <id> --confirm-project <id> --allow-write --emulator` | Crea solo documentos determinísticos del seed; exige identidad repetida y autorización |
+| `FIREBASE_CLI_ACCESS_TOKEN=<token> npm run seed:dry-run -- --project <id>` | Dry-run contra Firebase real usando una sesion local autenticada de Firebase CLI; el token no se guarda |
 | `npm run emulators` | Solo emuladores |
 | `npm run check` | Typecheck, lint y pruebas unitarias |
 
