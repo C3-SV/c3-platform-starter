@@ -50,7 +50,10 @@ function serviceAccountFromEnv(): FirebaseServiceAccount | undefined {
     return normalizeServiceAccount(parsed);
   }
 
-  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
+  // GOOGLE_CLOUD_PROJECT identifica el proyecto del emulador/ADC; no es una cuenta
+  // de servicio. Solo activamos la validación de credenciales separadas cuando se
+  // proporcionó explícitamente alguna de sus variables privadas.
+  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
   if (!projectId && !clientEmail && !privateKey) return undefined;

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { C3BrandMark } from "@/components/BrandMark";
 import { useSession } from "@/lib/auth/AuthProvider";
 
 /** Iniciales para el avatar: primera letra del nombre y del apellido (o de la única palabra). */
@@ -45,10 +46,14 @@ export function MovilShell({
             ← {backLabel}
           </Link>
         ) : (
-          <Link href="/" className="c3-logo" aria-label="C3, ir al inicio" style={{ fontSize: 20, fontWeight: 800 }}>C3</Link>
+          <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
+            <C3BrandMark className="c3-brand-mark--mobile" />
+          </Link>
         )}
         {backHref ? (
-          <Link href="/" className="c3-logo" aria-label="C3, ir al inicio" style={{ fontSize: 20, fontWeight: 800 }}>C3</Link>
+          <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
+            <C3BrandMark className="c3-brand-mark--mobile" />
+          </Link>
         ) : null}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {user ? (

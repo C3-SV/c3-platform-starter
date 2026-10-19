@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LineBrandMark } from "@/components/BrandMark";
 import type { ExperienceLine } from "@/lib/domain/types";
 import type { PublicChallengeSummary, PublicExperience } from "@/lib/server/catalog";
 import { formatDate, modalityLabel } from "@/lib/domain/format";
@@ -32,8 +33,11 @@ export function ExperienceCard({
     <>
       <div style={{ height: 6, background: lineColor(line) }} />
       <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-          <span className="c3-etiqueta" style={{ color: lineTextColor(line) }}>{line}</span>
+        <div className="c3-experience-card__meta">
+          <div className="c3-experience-card__line">
+            <LineBrandMark line={line} className="c3-line-mark--card" />
+            <span className="c3-etiqueta" style={{ color: lineTextColor(line) }}>{line}</span>
+          </div>
           <StatePill state={state} />
         </div>
         {demo ? <span className="c3-pill c3-pill--advertencia" style={{ alignSelf: "flex-start" }}>Demo · no oficial</span> : null}

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import { LineBrandMark } from "@/components/BrandMark";
 import { Footer } from "@/components/Footer";
 import { ExperienceCard } from "@/components/ExperienceCard";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -26,14 +28,20 @@ export async function LineLandingPage({ line }: { line: ExperienceLine }) {
     <div>
       <SiteHeader />
       <main>
-        <section style={{ background: "var(--c3-navy)", padding: "64px clamp(16px, 4vw, 48px) 72px" }}>
-          <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            <span className="c3-etiqueta" style={{ color: content.accent }}>{content.eyebrow}</span>
-            <h1 className="c3-titulo" style={{ color: "#ffffff", fontSize: "clamp(40px, 8vw, 72px)", lineHeight: 1, fontWeight: 800 }}>{content.title}</h1>
-            <p style={{ maxWidth: 760, color: "var(--c3-texto-cabecera)", fontSize: 20, lineHeight: 1.55 }}>{content.intro}</p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingTop: 8 }}>
-              <Link href="/explorar" className="c3-btn" style={{ background: content.accent, color: "#ffffff" }}>{content.ctaLabel}</Link>
-              <Link href="#como-funciona" className="c3-btn c3-btn--contorno" style={{ background: "transparent", color: "#ffffff", borderColor: "#617595" }}>Conocer la línea</Link>
+        <section className="c3-line-hero" style={{ "--c3-line-accent": content.accent } as CSSProperties}>
+          <div className="c3-container c3-line-hero__inner">
+            <div className="c3-line-hero__copy">
+              <span className="c3-etiqueta" style={{ color: content.accent }}>{content.eyebrow}</span>
+              <h1 className="c3-titulo" style={{ color: "#ffffff", fontSize: "clamp(40px, 8vw, 72px)", lineHeight: 1, fontWeight: 800 }}>{content.title}</h1>
+              <p style={{ maxWidth: 760, color: "var(--c3-texto-cabecera)", fontSize: 20, lineHeight: 1.55 }}>{content.intro}</p>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingTop: 8 }}>
+                <Link href="/explorar" className="c3-btn" style={{ background: content.accent, color: "#ffffff" }}>{content.ctaLabel}</Link>
+                <Link href="#como-funciona" className="c3-btn c3-btn--contorno" style={{ background: "transparent", color: "#ffffff", borderColor: "#617595" }}>Conocer la línea</Link>
+              </div>
+            </div>
+            <div className="c3-line-hero__mark" aria-hidden="true">
+              <LineBrandMark line={line} />
+              <span className="c3-line-hero__mark-label">{content.title}</span>
             </div>
           </div>
         </section>

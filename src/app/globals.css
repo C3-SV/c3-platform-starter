@@ -289,6 +289,17 @@ textarea.c3-campo {
 
 .c3-cabecera__principal {
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.c3-cabecera__acciones {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .c3-cabecera__enlace {
@@ -338,12 +349,167 @@ textarea.c3-campo {
 }
 
 .c3-logo {
-  font-family: var(--c3-font-titulo);
-  font-size: 26px;
-  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
   color: #ffffff;
-  letter-spacing: 0.02em;
   text-decoration: none;
+}
+
+.c3-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border-radius: var(--c3-radius-sm);
+  overflow: hidden;
+}
+
+.c3-brand-mark img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.c3-brand-mark--header {
+  width: 98px;
+  padding: 7px 9px;
+}
+
+.c3-brand-mark--footer {
+  width: 88px;
+  padding: 6px 8px;
+}
+
+.c3-brand-mark--mobile {
+  width: 72px;
+  padding: 5px 7px;
+}
+
+.c3-cabecera__registro {
+  padding: 14px 20px;
+  border-radius: var(--c3-radius-md);
+}
+
+.c3-cabecera button.c3-cabecera__texto-etiqueta {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.c3-line-hero {
+  background: var(--c3-navy);
+  padding: 64px clamp(16px, 4vw, 48px) 72px;
+  position: relative;
+  overflow: hidden;
+}
+
+.c3-line-hero::after {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  right: -170px;
+  bottom: -230px;
+  border: 1px solid color-mix(in srgb, var(--c3-line-accent) 38%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.c3-line-hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+  align-items: center;
+  gap: clamp(32px, 8vw, 96px);
+  position: relative;
+  z-index: 1;
+}
+
+.c3-line-hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.c3-line-hero__mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.c3-line-hero__mark-label {
+  color: var(--c3-texto-cabecera);
+  font-family: var(--c3-font-titulo);
+  font-size: var(--c3-etiqueta-size);
+  font-weight: var(--c3-etiqueta-weight);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.c3-line-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border-radius: var(--c3-radius-lg);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.c3-line-mark img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.c3-line-hero__mark .c3-line-mark {
+  width: 190px;
+  height: 190px;
+  padding: 20px;
+  box-shadow: var(--c3-sombra-lg);
+  transform: rotate(3deg);
+}
+
+.c3-line-mark--card {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--c3-radius-sm);
+  padding: 4px;
+}
+
+.c3-line-mark--choice {
+  width: 72px;
+  height: 72px;
+  padding: 10px;
+  margin-bottom: 4px;
+  border: 1px solid var(--c3-borde);
+}
+
+.c3-experience-card__meta,
+.c3-experience-card__line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.c3-experience-card__meta {
+  justify-content: space-between;
+}
+
+.c3-experience-card__line {
+  align-items: center;
+}
+
+.c3-line-choice__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
 }
 
 /* Grilla de tarjetas: no desborda en móvil (minmax con min(…, 100%)). */
@@ -440,6 +606,21 @@ textarea.c3-campo {
 
 /* Móvil: las grillas de dos y tres columnas pasan a una columna sin desbordar la página. */
 @media (max-width: 760px) {
+  .c3-cabecera__interior {
+    align-items: flex-start;
+    padding: 14px 0;
+  }
+
+  .c3-cabecera__principal {
+    width: 100%;
+    gap: 18px;
+  }
+
+  .c3-cabecera__acciones {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .c3-nav-principal {
     gap: 14px;
     width: 100%;
@@ -454,5 +635,19 @@ textarea.c3-campo {
   .c3-dos-columnas-cuatro,
   .c3-form-dos {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .c3-line-hero__inner {
+    grid-template-columns: 1fr;
+  }
+
+  .c3-line-hero__mark {
+    align-items: flex-start;
+  }
+
+  .c3-line-hero__mark .c3-line-mark {
+    width: 112px;
+    height: 112px;
+    padding: 12px;
   }
 }

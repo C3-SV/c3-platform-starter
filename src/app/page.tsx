@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LineBrandMark } from "@/components/BrandMark";
 import { SiteHeader } from "@/components/SiteHeader";
 import { StatePill } from "@/components/StatePill";
 import { Footer } from "@/components/Footer";
@@ -80,9 +81,10 @@ export default async function HomePage() {
               { href: "/crea", line: "var(--c3-crea)", title: "Crea", color: "var(--c3-crea-texto)", text: "Construcción real: convertí lo que sabés en proyectos y soluciones.", example: "Ejemplo: Hackathon de Turismo Creativo." },
               { href: "/conecta", line: "var(--c3-conecta)", title: "Conecta", color: "var(--c3-conecta)", text: "El puente entre talento, empresas e instituciones, con retos que plantean las propias empresas.", example: "Ejemplo: C3 Challenges." },
             ].map((item) => (
-              <Link key={item.title} href={item.href} className="c3-card" style={{ overflow: "hidden", textDecoration: "none", color: "inherit" }}>
+              <Link key={item.title} href={item.href} className="c3-card c3-line-choice" style={{ overflow: "hidden", textDecoration: "none", color: "inherit" }}>
                 <div style={{ height: 6, background: item.line }} />
-                <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div className="c3-line-choice__body">
+                  <LineBrandMark line={item.title.toLowerCase() as "compite" | "crea" | "conecta"} className="c3-line-mark--choice" />
                   <span className="c3-titulo" style={{ fontSize: 22, fontWeight: 600, color: item.color }}>{item.title}</span>
                   <span style={{ fontSize: 16, lineHeight: 1.6 }}>{item.text}</span>
                   <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>{item.example}</span>
