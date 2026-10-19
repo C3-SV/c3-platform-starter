@@ -35,7 +35,7 @@ export function ExperienceCard({
       <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
         <div className="c3-experience-card__meta">
           <div className="c3-experience-card__line">
-            <LineBrandMark line={line} className="c3-line-mark--card" />
+            <LineBrandMark line={line} className="c3-line-mark--card" decorative />
             <span className="c3-etiqueta" style={{ color: lineTextColor(line) }}>{line}</span>
           </div>
           <StatePill state={state} />

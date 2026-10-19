@@ -190,7 +190,7 @@ function Pagina({ children, email, onSignOut }: { children: ReactNode; email?: s
         <div style={{ maxWidth: 1276, margin: "0 auto", minHeight: 72, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
             <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
-              <C3BrandMark className="c3-brand-mark--header" />
+              <C3BrandMark className="c3-brand-mark--header" priority />
             </Link>
             <span className="c3-etiqueta" style={{ color: "var(--c3-conecta-claro)", borderLeft: "1px solid var(--c3-navy-claro)", paddingLeft: 20 }}>Espacio de empresa</span>
           </div>

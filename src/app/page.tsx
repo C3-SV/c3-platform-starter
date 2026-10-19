@@ -84,7 +84,7 @@ export default async function HomePage() {
               <Link key={item.title} href={item.href} className="c3-card c3-line-choice" style={{ overflow: "hidden", textDecoration: "none", color: "inherit" }}>
                 <div style={{ height: 6, background: item.line }} />
                 <div className="c3-line-choice__body">
-                  <LineBrandMark line={item.title.toLowerCase() as "compite" | "crea" | "conecta"} className="c3-line-mark--choice" />
+                  <LineBrandMark line={item.title.toLowerCase() as "compite" | "crea" | "conecta"} className="c3-line-mark--choice" decorative />
                   <span className="c3-titulo" style={{ fontSize: 22, fontWeight: 600, color: item.color }}>{item.title}</span>
                   <span style={{ fontSize: 16, lineHeight: 1.6 }}>{item.text}</span>
                   <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>{item.example}</span>

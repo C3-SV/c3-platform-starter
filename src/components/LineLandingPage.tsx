@@ -40,7 +40,7 @@ export async function LineLandingPage({ line }: { line: ExperienceLine }) {
               </div>
             </div>
             <div className="c3-line-hero__mark" aria-hidden="true">
-              <LineBrandMark line={line} />
+              <LineBrandMark line={line} decorative />
               <span className="c3-line-hero__mark-label">{content.title}</span>
             </div>
           </div>

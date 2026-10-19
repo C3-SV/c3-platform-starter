@@ -19,7 +19,7 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
       <header className="c3-cabecera">
         <div className="c3-cabecera__interior">
           <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
-            <C3BrandMark className="c3-brand-mark--header" />
+            <C3BrandMark className="c3-brand-mark--header" priority />
           </Link>
           <Link href="/explorar" className="c3-cabecera__enlace">Seguir explorando sin cuenta</Link>
         </div>
@@ -39,7 +39,7 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
       <div className="c3-cabecera__interior">
         <div className="c3-cabecera__principal">
           <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
-            <C3BrandMark className="c3-brand-mark--header" />
+            <C3BrandMark className="c3-brand-mark--header" priority />
           </Link>
           <nav aria-label="Principal" className="c3-nav-principal">
             <Link href="/" className="c3-cabecera__enlace" aria-current={pathname === "/" ? "page" : undefined}>Inicio</Link>

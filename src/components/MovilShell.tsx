@@ -47,12 +47,12 @@ export function MovilShell({
           </Link>
         ) : (
           <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
-            <C3BrandMark className="c3-brand-mark--mobile" />
+            <C3BrandMark className="c3-brand-mark--mobile" priority />
           </Link>
         )}
         {backHref ? (
           <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
-            <C3BrandMark className="c3-brand-mark--mobile" />
+            <C3BrandMark className="c3-brand-mark--mobile" priority />
           </Link>
         ) : null}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
