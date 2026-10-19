@@ -5,6 +5,7 @@
  */
 export type ExperienceStatus = "draft" | "published" | "closed" | "cancelled";
 export type ExperienceKind = "competencia" | "hackathon" | "challenge_empresarial";
+export type ExperienceLine = "compite" | "crea" | "conecta";
 export type EnrollmentStatus = "pending" | "approved" | "rejected" | "cancelled";
 export type SubmissionStatus = "draft" | "submitted";
 export type ParticipationMode = "individual" | "team";
@@ -16,6 +17,12 @@ export interface Experience {
   kind: ExperienceKind;
   summary: string;
   status: ExperienceStatus;
+  primaryLine?: ExperienceLine;
+  secondaryLines?: ExperienceLine[];
+  isDemo?: boolean;
+  demoNote?: string | null;
+  sourceUrl?: string | null;
+  sourceLabel?: string | null;
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
   createdAt: string;

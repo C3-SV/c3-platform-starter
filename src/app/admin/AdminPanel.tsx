@@ -13,6 +13,8 @@ import { InscripcionesPanel } from "./InscripcionesPanel";
 import { PropuestasPanel } from "./PropuestasPanel";
 import { JuradosPanel } from "./JuradosPanel";
 import { ResultadosPanel } from "./ResultadosPanel";
+import { ResumenPanel } from "./ResumenPanel";
+import { EntregasPanel } from "./EntregasPanel";
 
 interface Catalog {
   experiences: Experience[];
@@ -20,13 +22,14 @@ interface Catalog {
   organizations: { id: string; name: string }[];
 }
 
-type Section = "experiencias" | "propuestas" | "inscripciones" | "entregas" | "jurados" | "resultados";
+type Section = "resumen" | "experiencias" | "propuestas" | "inscripciones" | "entregas" | "jurados" | "resultados";
 
 const NAV: { id: Section; label: string; pending?: string }[] = [
+  { id: "resumen", label: "Resumen" },
   { id: "propuestas", label: "Propuestas" },
   { id: "experiencias", label: "Experiencias y retos" },
   { id: "inscripciones", label: "Inscripciones y equipos" },
-  { id: "entregas", label: "Entregas", pending: "Corte 6" },
+  { id: "entregas", label: "Entregas" },
   { id: "jurados", label: "Jurados y rúbricas" },
   { id: "resultados", label: "Resultados oficiales" },
 ];
@@ -176,6 +179,8 @@ export function AdminPanel() {
         </nav>
 
         <main style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
+          {section === "resumen" ? <ResumenPanel /> : null}
+
           {section === "propuestas" ? (
             <PropuestasPanel organizations={catalog?.organizations ?? []} onChanged={() => void load()} />
           ) : null}
@@ -204,7 +209,11 @@ export function AdminPanel() {
             )
           ) : null}
 
-          {section !== "experiencias" && section !== "inscripciones" && section !== "propuestas" && section !== "jurados" && section !== "resultados" ? <PendingSection label={NAV.find((item) => item.id === section)?.label ?? ""} /> : null}
+          {section === "entregas" ? (
+            catalog ? <EntregasPanel challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title }))} /> : <p style={{ color: "var(--c3-texto-suave)" }}>Cargando retos…</p>
+          ) : null}
+
+          {section !== "resumen" && section !== "experiencias" && section !== "inscripciones" && section !== "propuestas" && section !== "entregas" && section !== "jurados" && section !== "resultados" ? <PendingSection label={NAV.find((item) => item.id === section)?.label ?? ""} /> : null}
 
           {section === "experiencias" ? (
             <>
