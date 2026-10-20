@@ -4,25 +4,23 @@ out/
 build/
 coverage/
 *.tsbuildinfo
-.env
-.env.local
-.env.*.local
 .firebase/
-firebase-debug.log
 .DS_Store
 *.pem
 service-account*.json
+.vercel
 
-# Artefactos de pruebas y registros de emuladores
+# Secretos y variables locales (la plantilla .env.example sí se versiona)
+.env*
+!.env.example
+
+# Artefactos de pruebas, capturas y registros de emuladores
 test-results/
 playwright-report/
+capturas/
 *-debug.log
-
 
 # Graphify — conservar únicamente información relevante
 graphify-out/*
 !graphify-out/graph.json
 !graphify-out/GRAPH_REPORT.md
-
-.vercel
-.env*

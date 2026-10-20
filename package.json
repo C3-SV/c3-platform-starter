@@ -14,7 +14,10 @@
     "test": "node --experimental-strip-types --test \"tests/unit/*.test.ts\"",
     "test:rules": "firebase emulators:exec --only auth,firestore --project demo-c3-platform \"node --experimental-strip-types --test --test-concurrency=1 \\\"tests/emulator/*.test.ts\\\"\"",
     "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-c3-platform \"node --experimental-strip-types scripts/run-e2e.mjs\"",
+    "test:capturas": "firebase emulators:exec --only auth,firestore --project demo-c3-platform \"node --experimental-strip-types scripts/run-capturas.mjs\"",
     "emulators": "firebase emulators:start --only auth,firestore --project demo-c3-platform",
+    "doctor": "node scripts/doctor.mjs",
+    "worktree": "node scripts/worktree.mjs",
     "seed:dry-run": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/seed.mjs --mode dry-run",
     "seed:apply": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/seed.mjs --mode apply",
     "check": "npm run typecheck && npm run lint && npm test"

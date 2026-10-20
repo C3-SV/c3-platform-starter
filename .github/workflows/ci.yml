@@ -46,13 +46,11 @@ jobs:
       - name: Pruebas de reglas y servicios con emuladores
         run: npm run test:rules
 
-      - name: Build de producción
-        run: npm run build
-
       - name: Instalar Chromium para Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Pruebas de recorridos (escritorio y móvil)
+      # Playwright ejecuta `npm run build` antes de servir la aplicación: este paso valida build y recorridos sin compilar dos veces.
+      - name: Build de producción y recorridos E2E (escritorio y móvil)
         run: npm run test:e2e
 
       - name: Subir informe de Playwright si falla
