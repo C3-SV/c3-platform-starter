@@ -20,6 +20,8 @@ const emulatorEnv: Record<string, string> = {
 
 export default defineConfig({
   testDir: "e2e",
+  // Las capturas solo corren con `npm run test:capturas`.
+  testIgnore: process.env.CAPTURAS ? [] : ["**/capturas.spec.ts"],
   fullyParallel: false,
   workers: 1,
   timeout: 90_000,
