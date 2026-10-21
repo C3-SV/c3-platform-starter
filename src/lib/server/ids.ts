@@ -9,6 +9,8 @@ export const SUBMISSIONS = "submissions";
 export const TEAMS = "teams";
 export const TEAM_CODES = "teamCodes";
 export const TEAM_MEMBERSHIPS = "teamMemberships";
+/** Bitácora de operaciones administrativas sensibles. Solo la escribe el servidor; Firestore deniega todo acceso directo. */
+export const AUDIT_LOG = "auditLog";
 
 /** Una inscripción por persona y experiencia. */
 export function enrollmentDocId(experienceId: string, userId: string): string {

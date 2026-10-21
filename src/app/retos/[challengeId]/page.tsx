@@ -45,7 +45,7 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
             {challenge.submissionClosesAt ? (
               <Meta label="Cierre de entregas" value={formatDateTime(challenge.submissionClosesAt) ?? ""} />
             ) : null}
-            <EnrollmentCta challengeId={challenge.id} registrationOpen={registrationOpen} variant="hero" />
+            <EnrollmentCta enrollHref={`/retos/${challenge.id}/inscripcion`} registrationOpen={registrationOpen} variant="hero" />
           </div>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
               <p style={{ fontSize: 16, lineHeight: 1.6 }}>
                 Necesitás una cuenta C3 para inscribirte. La inscripción la revisa C3 antes de habilitarte.
               </p>
-              <EnrollmentCta challengeId={challenge.id} registrationOpen={registrationOpen} variant="aside" />
+              <EnrollmentCta enrollHref={`/retos/${challenge.id}/inscripcion`} registrationOpen={registrationOpen} variant="aside" />
               <div style={{ height: 1, background: "var(--c3-borde)" }} />
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {experience.registrationClosesAt ? (

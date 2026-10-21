@@ -1,8 +1,12 @@
 /** Validaciones PURAS de entradas. Se usan en el servidor antes de cualquier escritura. */
-import type { ExperienceKind, ExperienceLine, ExperienceStatus, ParticipationMode } from "./types.ts";
+import { fallbackLineOf } from "./catalog.ts";
+import type { ExperienceKind, ExperienceLine, ExperienceModality, ExperienceStatus, ParticipationMode } from "./types.ts";
 
-export const EXPERIENCE_KINDS: readonly ExperienceKind[] = ["competencia", "hackathon", "challenge_empresarial"];
+export const EXPERIENCE_KINDS: readonly ExperienceKind[] = ["competencia", "hackathon", "challenge_empresarial", "taller", "charla", "encuentro"];
+export const EXPERIENCE_MODALITIES: readonly ExperienceModality[] = ["presencial", "virtual", "hibrida"];
+export const EXPERIENCE_LINES: readonly ExperienceLine[] = ["compite", "crea", "conecta"];
 export const PARTICIPATION_MODES: readonly ParticipationMode[] = ["individual", "team"];
+export const CAPACITY_MAX = 5000;
 
 export interface FieldIssue {
   field: string;
@@ -25,12 +29,23 @@ export interface ExperienceInput {
   summary: string;
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
-  primaryLine?: ExperienceLine;
-  secondaryLines?: ExperienceLine[];
+  primaryLine: ExperienceLine;
+  secondaryLines: ExperienceLine[];
+  startsAt: string | null;
+  endsAt: string | null;
+  modality: ExperienceModality | null;
+  location: string | null;
+  capacity: number | null;
   isDemo?: boolean;
-  demoNote?: string | null;
-  sourceUrl?: string | null;
-  sourceLabel?: string | null;
+  demoNote: string | null;
+  sourceUrl: string | null;
+  sourceLabel: string | null;
+}
+
+/** Apertura o cierre manual de inscripciones de una experiencia publicada. */
+export interface RegistrationActionInput {
+  action: "open" | "close";
+  registrationClosesAt: string | null;
 }
 
 export interface RubricInputCriterion {
@@ -88,6 +103,36 @@ function requiredDate(raw: Raw, field: string, issues: FieldIssue[], label: stri
   return optionalDate(raw, field, issues, label);
 }
 
+function isHttpsUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" && Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function optionalText(raw: Raw, field: string, max: number, issues: FieldIssue[], label: string): string | null {
+  const value = typeof raw[field] === "string" ? (raw[field] as string).trim() : "";
+  if (!value) return null;
+  if (value.length > max) {
+    issues.push({ field, message: `${label}: no puede superar ${max} caracteres.` });
+    return null;
+  }
+  return value;
+}
+
+function optionalCapacity(raw: Raw, issues: FieldIssue[]): number | null {
+  const value = raw.capacity;
+  if (value === undefined || value === null || value === "") return null;
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value.trim()) : Number.NaN;
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > CAPACITY_MAX) {
+    issues.push({ field: "capacity", message: `Cupos: indicá un entero de 1 a ${CAPACITY_MAX}, o dejalo vacío si no hay límite.` });
+    return null;
+  }
+  return parsed;
+}
+
 export function parseExperienceInput(input: unknown): ExperienceInput {
   const raw = asObject(input);
   const issues: FieldIssue[] = [];
@@ -102,26 +147,78 @@ export function parseExperienceInput(input: unknown): ExperienceInput {
   if (registrationOpensAt && registrationClosesAt && Date.parse(registrationClosesAt) <= Date.parse(registrationOpensAt)) {
     issues.push({ field: "registrationClosesAt", message: "El cierre debe ser posterior a la apertura." });
   }
+
+  const startsAt = optionalDate(raw, "startsAt", issues, "Inicio");
+  const endsAt = optionalDate(raw, "endsAt", issues, "Fin");
+  if (endsAt && !startsAt) {
+    issues.push({ field: "startsAt", message: "Inicio: indicá cuándo empieza si definís el fin." });
+  } else if (startsAt && endsAt && Date.parse(endsAt) <= Date.parse(startsAt)) {
+    issues.push({ field: "endsAt", message: "El fin debe ser posterior al inicio." });
+  }
+  if (registrationClosesAt && endsAt && Date.parse(registrationClosesAt) > Date.parse(endsAt)) {
+    issues.push({ field: "registrationClosesAt", message: "Las inscripciones deben cerrar antes de que termine la sesión." });
+  }
+
+  const modalityRaw = raw.modality;
+  let modality: ExperienceModality | null = null;
+  if (modalityRaw !== undefined && modalityRaw !== null && modalityRaw !== "") {
+    if (typeof modalityRaw === "string" && (EXPERIENCE_MODALITIES as readonly string[]).includes(modalityRaw)) {
+      modality = modalityRaw as ExperienceModality;
+    } else {
+      issues.push({ field: "modality", message: "Elegí una modalidad válida: presencial, virtual o híbrida." });
+    }
+  }
+  const location = optionalText(raw, "location", 200, issues, "Sede o enlace");
+  if (location && modality === "virtual" && !isHttpsUrl(location)) {
+    issues.push({ field: "location", message: "Para una sesión virtual, indicá el enlace completo que empieza con https://." });
+  }
+  const capacity = optionalCapacity(raw, issues);
+
+  const sourceUrl = typeof raw.sourceUrl === "string" ? raw.sourceUrl.trim() : "";
+  if (sourceUrl && !isHttpsUrl(sourceUrl)) {
+    issues.push({ field: "sourceUrl", message: "Fuente: indicá un enlace completo que empiece con https://." });
+  }
+  const sourceLabel = optionalText(raw, "sourceLabel", 120, issues, "Nombre de la fuente");
+  const demoNote = optionalText(raw, "demoNote", 240, issues, "Nota de demostración");
+
   if (issues.length) throw new ValidationFailure(issues);
-  const primaryLine = typeof raw.primaryLine === "string" && ["compite", "crea", "conecta"].includes(raw.primaryLine)
+  const experienceKind = kind as ExperienceKind;
+  const primaryLine = typeof raw.primaryLine === "string" && (EXPERIENCE_LINES as readonly string[]).includes(raw.primaryLine)
     ? raw.primaryLine as ExperienceLine
-    : undefined;
+    : fallbackLineOf(experienceKind);
   const secondaryLines = Array.isArray(raw.secondaryLines)
-    ? [...new Set(raw.secondaryLines.filter((line): line is ExperienceLine => typeof line === "string" && ["compite", "crea", "conecta"].includes(line)))]
-    : undefined;
+    ? [...new Set(raw.secondaryLines.filter((line): line is ExperienceLine => typeof line === "string" && (EXPERIENCE_LINES as readonly string[]).includes(line)))]
+        .filter((line) => line !== primaryLine)
+    : [];
   return {
     title,
-    kind: kind as ExperienceKind,
+    kind: experienceKind,
     summary,
     registrationOpensAt,
     registrationClosesAt,
     primaryLine,
     secondaryLines,
+    startsAt,
+    endsAt,
+    modality,
+    location,
+    capacity,
     isDemo: raw.isDemo === true ? true : undefined,
-    demoNote: typeof raw.demoNote === "string" && raw.demoNote.trim() ? raw.demoNote.trim().slice(0, 240) : null,
-    sourceUrl: typeof raw.sourceUrl === "string" && raw.sourceUrl.trim() ? raw.sourceUrl.trim() : null,
-    sourceLabel: typeof raw.sourceLabel === "string" && raw.sourceLabel.trim() ? raw.sourceLabel.trim().slice(0, 120) : null,
+    demoNote,
+    sourceUrl: sourceUrl || null,
+    sourceLabel,
   };
+}
+
+export function parseRegistrationAction(input: unknown): RegistrationActionInput {
+  const raw = asObject(input);
+  if (raw.action !== "open" && raw.action !== "close") {
+    throw new ValidationFailure([{ field: "action", message: "Elegí si abrir o cerrar las inscripciones." }]);
+  }
+  const issues: FieldIssue[] = [];
+  const registrationClosesAt = optionalDate(raw, "registrationClosesAt", issues, "Inscripciones cierran");
+  if (issues.length) throw new ValidationFailure(issues);
+  return { action: raw.action, registrationClosesAt };
 }
 
 export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
