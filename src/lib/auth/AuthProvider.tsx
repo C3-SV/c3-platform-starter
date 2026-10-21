@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { onAuthStateChanged, reload, signOut as firebaseSignOut } from "firebase/auth";
 import { getClientAuth, isClientConfigured } from "../firebase/client.ts";
 
 export interface SessionUser {
   uid: string;
   email: string | null;
   displayName: string | null;
+  emailVerified: boolean;
   isAdmin: boolean;
 }
 
@@ -20,6 +21,7 @@ export type SessionState =
 interface AuthContextValue {
   session: SessionState;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -43,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
+          emailVerified: user.emailVerified,
           isAdmin: tokenResult.claims.c3Admin === true,
         },
       });
@@ -58,6 +61,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session: current,
     signOut: async () => {
       await firebaseSignOut(getClientAuth());
+    },
+    refreshUser: async () => {
+      const user = getClientAuth().currentUser;
+      if (!user) return;
+      await reload(user);
+      const tokenResult = await user.getIdTokenResult();
+      setSession({
+        status: "signed-in",
+        user: {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          emailVerified: user.emailVerified,
+          isAdmin: tokenResult.claims.c3Admin === true,
+        },
+      });
     },
   }), [current]);
 

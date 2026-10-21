@@ -53,7 +53,9 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
         <div className="c3-cabecera__acciones">
           {signedIn ? (
             <>
-              <Link href="/mi-c3" className="c3-etiqueta c3-cabecera__texto-etiqueta">Mi C3</Link>
+              <Link href="/mi-c3" className="c3-etiqueta c3-cabecera__texto-etiqueta" aria-current={pathname.startsWith("/mi-c3") ? "page" : undefined}>Mi C3</Link>
+              <Link href="/cuenta" className="c3-etiqueta c3-cabecera__texto-etiqueta" aria-current={pathname.startsWith("/cuenta") ? "page" : undefined}>Cuenta</Link>
+              <Link href="/trayectoria" className="c3-etiqueta c3-cabecera__texto-etiqueta" aria-current={pathname === "/trayectoria" ? "page" : undefined}>Trayectoria</Link>
               {session.user.isAdmin ? (
                 <Link href="/admin" className="c3-etiqueta c3-cabecera__texto-etiqueta">Admin</Link>
               ) : null}

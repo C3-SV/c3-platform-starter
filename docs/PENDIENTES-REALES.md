@@ -9,6 +9,7 @@
 - Acordar texto legal mínimo: aviso de privacidad, términos, tratamiento de menores, permisos de fotografía/nombres cuando aplique y propiedad intelectual de soluciones (validación legal local).
 - Propuestas sin cuenta: validación backend, mecanismo anti-spam y política de retención/contacto. NO habilitar endpoint público sin esas defensas.
 - Decidir comunicación básica para pilotos (al menos confirmaciones y estados; manual primero si se documenta).
+- Eliminación de cuentas: no habilitarla hasta definir cómo se retienen, anonimizan o eliminan las participaciones, entregas, evaluaciones y resultados oficiales, junto con la política de privacidad aplicable.
 
 ## Pendientes deliberadamente diferidos
 

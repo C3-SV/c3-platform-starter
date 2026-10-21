@@ -28,28 +28,29 @@ test.describe.serial("Corte 6: perfil y trayectoria", () => {
     await expect(page.getByText("Todavía no tenés trayectoria registrada.")).toBeVisible();
   });
 
-  test("el perfil valida los enlaces y guarda lo que la persona declara", async ({ page }) => {
+  test("Cuenta valida los enlaces y guarda el perfil separado de la trayectoria", async ({ page }) => {
     await page.goto("/acceso?next=/trayectoria");
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
     await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
-    await page.goto("/trayectoria");
+    await page.goto("/cuenta");
 
-    await page.getByRole("button", { name: "Editar perfil", exact: true }).click();
-    await page.locator("#perfil-github").fill("http://sin-seguridad.test");
-    await page.getByRole("button", { name: "Guardar perfil", exact: true }).click();
+    await page.locator("#cuenta-github").fill("http://sin-seguridad.test");
+    await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
     await expect(page.getByText("El enlace debe empezar con https://")).toBeVisible();
 
-    await page.locator("#perfil-github").fill("https://github.com/lucia-prueba");
-    await page.locator("#perfil-school").fill("Ingeniería en Sistemas · UCA");
-    await page.locator("#perfil-bio").fill("Me interesan los problemas de optimización y el backend.");
-    await page.getByRole("button", { name: "Guardar perfil", exact: true }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Perfil guardado" })).toBeVisible();
-    await expect(page.getByText("Me interesan los problemas de optimización y el backend.")).toBeVisible();
-    await expect(page.getByText("Ingeniería en Sistemas · UCA")).toBeVisible();
+    await page.locator("#cuenta-github").fill("https://github.com/lucia-prueba");
+    await page.locator("#cuenta-school").fill("Ingeniería en Sistemas · UCA");
+    await page.locator("#cuenta-bio").fill("Me interesan los problemas de optimización y el backend.");
+    await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Cambios guardados" })).toBeVisible();
+    await expect(page.locator("#cuenta-bio")).toHaveValue("Me interesan los problemas de optimización y el backend.");
+    await expect(page.locator("#cuenta-school")).toHaveValue("Ingeniería en Sistemas · UCA");
 
     await page.reload();
+    await expect(page.locator("#cuenta-bio")).toHaveValue("Me interesan los problemas de optimización y el backend.");
+    await page.goto("/trayectoria");
     await expect(page.getByText("Me interesan los problemas de optimización y el backend.")).toBeVisible();
     await expect(page.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/lucia-prueba");
   });
