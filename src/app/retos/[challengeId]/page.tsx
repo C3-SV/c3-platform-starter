@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { StatePill } from "@/components/StatePill";
 import { EnrollmentCta } from "@/components/EnrollmentCta";
-import { KIND_LABEL } from "@/lib/domain/presentation";
+import { experienceLabel } from "@/lib/domain/presentation";
 import { formatDate, formatDateTime, modalityLabel } from "@/lib/domain/format";
 import { database } from "@/lib/server/context";
 import { getPublicChallenge } from "@/lib/server/catalog";
@@ -33,7 +33,7 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
       <div style={{ background: "var(--c3-navy)", padding: "8px clamp(16px, 4vw, 48px) 56px" }}>
         <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span className="c3-etiqueta" style={{ color: "var(--c3-conecta-claro)" }}>{KIND_LABEL[experience.kind]}</span>
+            <span className="c3-etiqueta" style={{ color: "var(--c3-conecta-claro)" }}>{experienceLabel(experience)}</span>
             <StatePill state={state} />
           </div>
           <h1 className="c3-titulo" style={{ margin: 0, maxWidth: 900, fontSize: 40, lineHeight: 1.1, fontWeight: 700, color: "#ffffff" }}>
