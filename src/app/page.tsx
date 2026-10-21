@@ -3,18 +3,53 @@ import { LineBrandMark } from "@/components/BrandMark";
 import { SiteHeader } from "@/components/SiteHeader";
 import { StatePill } from "@/components/StatePill";
 import { Footer } from "@/components/Footer";
-import { KIND_LABEL, lineColor, lineTextColor } from "@/lib/domain/presentation";
-import { modalityLabel } from "@/lib/domain/format";
+import { experienceLabel, lineColorOf, lineTextColorOf, primaryLineOf, type PresentedState } from "@/lib/domain/presentation";
+import { modalityLabel, sessionSummary } from "@/lib/domain/format";
+import type { ExperienceLine } from "@/lib/domain/types";
 import { database } from "@/lib/server/context";
 import { listPublicCatalog } from "@/lib/server/catalog";
 
 export const dynamic = "force-dynamic";
 
+interface FeaturedItem {
+  key: string;
+  href: string;
+  line: ExperienceLine;
+  label: string;
+  state: PresentedState;
+  title: string;
+  footer: string;
+}
+
 /** V01 · Home. Las experiencias destacadas salen del catálogo público real. */
 export default async function HomePage() {
   const catalog = await listPublicCatalog(database(), new Date());
-  const featured = catalog
-    .flatMap((item) => item.challenges.map((challenge) => ({ kind: item.experience.kind, challenge })))
+  // Cada reto publicado y cada experiencia sin retos (talleres, charlas, encuentros) es una tarjeta destacada.
+  const featured: FeaturedItem[] = catalog
+    .flatMap((item): FeaturedItem[] => {
+      const line = primaryLineOf(item.experience);
+      const label = experienceLabel(item.experience);
+      if (item.challenges.length === 0) {
+        return [{
+          key: item.experience.id,
+          href: `/experiencias/${item.experience.id}`,
+          line,
+          label,
+          state: item.state,
+          title: item.experience.title,
+          footer: sessionSummary(item.experience) ?? "Experiencia C3",
+        }];
+      }
+      return item.challenges.map((challenge) => ({
+        key: challenge.id,
+        href: `/retos/${challenge.id}`,
+        line,
+        label,
+        state: challenge.state,
+        title: challenge.title,
+        footer: `${challenge.organizationName} · ${modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize)}`,
+      }));
+    })
     .slice(0, 3);
 
   return (
@@ -103,21 +138,21 @@ export default async function HomePage() {
           </div>
           {featured.length === 0 ? (
             <div className="c3-card" style={{ padding: 24 }}>
-              <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>Todavía no hay retos publicados. Volvé pronto.</p>
+              <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>Todavía no hay experiencias publicadas. Volvé pronto.</p>
             </div>
           ) : (
             <div className="c3-grilla-tarjetas">
-              {featured.map(({ kind, challenge }) => (
-                <Link key={challenge.id} href={`/retos/${challenge.id}`} className="c3-tarjeta-enlace">
-                  <div style={{ height: 6, background: lineColor(kind) }} />
+              {featured.map((item) => (
+                <Link key={item.key} href={item.href} className="c3-tarjeta-enlace">
+                  <div style={{ height: 6, background: lineColorOf(item.line) }} />
                   <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                      <span className="c3-etiqueta" style={{ color: lineTextColor(kind) }}>{KIND_LABEL[kind]}</span>
-                      <StatePill state={challenge.state} />
+                      <span className="c3-etiqueta" style={{ color: lineTextColorOf(item.line) }}>{item.label}</span>
+                      <StatePill state={item.state} />
                     </div>
-                    <div className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{challenge.title}</div>
+                    <div className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{item.title}</div>
                     <div style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--c3-borde)", fontSize: 14, color: "var(--c3-texto-suave)" }}>
-                      {challenge.organizationName} · {modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize)}
+                      {item.footer}
                     </div>
                   </div>
                 </Link>

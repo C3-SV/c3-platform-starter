@@ -112,7 +112,7 @@ export function MiC3Panel() {
   const firstName = user.displayName?.split(" ")[0] ?? "";
   const overview = enrollments ? organizeParticipation(enrollments, assignments, now) : null;
   const empty = overview !== null && overview.total === 0;
-  const nextTitle = overview?.nextDeadline?.item.challengeTitle;
+  const nextTitle = overview?.nextDeadline ? (overview.nextDeadline.item.challengeTitle ?? overview.nextDeadline.item.experienceTitle) : undefined;
   const nextDate = formatDateTime(overview?.nextDeadline?.item.submissionClosesAt);
 
   return (

@@ -1,26 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { StatePill } from "@/components/StatePill";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
-import { formatDateTime } from "@/lib/domain/format";
-import { KIND_LABEL, presentState } from "@/lib/domain/presentation";
-import type { Challenge, Experience, ExperienceStatus } from "@/lib/domain/types";
-import { ChallengeForm, ExperienceForm } from "./forms";
-import { InscripcionesPanel } from "./InscripcionesPanel";
+import type { AdminCatalog } from "@/lib/server/catalog";
+import { ExperienciasPanel } from "./ExperienciasPanel";
+import { InscripcionesPanel, type EnrollmentTarget } from "./InscripcionesPanel";
 import { PropuestasPanel } from "./PropuestasPanel";
 import { JuradosPanel } from "./JuradosPanel";
 import { ResultadosPanel } from "./ResultadosPanel";
 import { ResumenPanel } from "./ResumenPanel";
 import { EntregasPanel } from "./EntregasPanel";
-
-interface Catalog {
-  experiences: Experience[];
-  challenges: Challenge[];
-  organizations: { id: string; name: string }[];
-}
 
 type Section = "resumen" | "experiencias" | "propuestas" | "inscripciones" | "entregas" | "jurados" | "resultados";
 
@@ -38,16 +29,13 @@ const NAV: { id: Section; label: string; pending?: string }[] = [
 export function AdminPanel() {
   const { session, signOut } = useSession();
   const [section, setSection] = useState<Section>("experiencias");
-  const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const [catalog, setCatalog] = useState<AdminCatalog | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const now = useMemo(() => new Date(), []);
+  const [enrollmentTarget, setEnrollmentTarget] = useState<EnrollmentTarget | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setCatalog(await apiRequest<Catalog>("/api/admin/catalogo"));
+      setCatalog(await apiRequest<AdminCatalog>("/api/admin/catalogo"));
       setLoadError(null);
     } catch (error) {
       setLoadError(error instanceof ApiError ? error.message : "No pudimos cargar el catálogo. Intentá de nuevo.");
@@ -60,7 +48,7 @@ export function AdminPanel() {
   useEffect(() => {
     if (!isAdmin) return;
     let active = true;
-    apiRequest<Catalog>("/api/admin/catalogo").then(
+    apiRequest<AdminCatalog>("/api/admin/catalogo").then(
       (data) => {
         if (!active) return;
         setCatalog(data);
@@ -94,27 +82,6 @@ export function AdminPanel() {
       </Centered>
     );
   }
-
-  async function changeStatus(kind: "experiencia" | "reto", id: string, status: ExperienceStatus) {
-    setActionError(null);
-    setNotice(null);
-    setBusyId(id);
-    try {
-      if (kind === "experiencia") {
-        await apiRequest(`/api/admin/experiencias/${id}`, { method: "PATCH", body: { status } });
-      } else {
-        await apiRequest(`/api/admin/retos/${id}`, { method: "PATCH", body: { status } });
-      }
-      setNotice(status === "published" ? "Publicado. Ya aparece en el catálogo público." : "Estado actualizado.");
-      await load();
-    } catch (error) {
-      setActionError(error instanceof ApiError ? error.message : "No pudimos cambiar el estado. Intentá de nuevo.");
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  const experienceOptions = catalog?.experiences.map((item) => ({ id: item.id, title: item.title })) ?? [];
 
   return (
     <div>
@@ -187,7 +154,15 @@ export function AdminPanel() {
 
           {section === "inscripciones" ? (
             catalog ? (
-              <InscripcionesPanel challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title }))} />
+              <InscripcionesPanel
+                key={enrollmentTarget ? `${enrollmentTarget.kind}:${enrollmentTarget.id}` : "sin-seleccion"}
+                challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title }))}
+                experiences={catalog.experiences
+                  .filter((item) => !catalog.challenges.some((challenge) => challenge.experienceId === item.id))
+                  .map((item) => ({ id: item.id, title: item.title }))}
+                initialTarget={enrollmentTarget}
+                onChanged={() => void load()}
+              />
             ) : (
               <p style={{ color: "var(--c3-texto-suave)" }}>Cargando retos…</p>
             )
@@ -217,16 +192,6 @@ export function AdminPanel() {
 
           {section === "experiencias" ? (
             <>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias y retos</h1>
-                <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>
-                  Todo se guarda como borrador. Solo aparece en el sitio público cuando lo publicás.
-                </p>
-              </div>
-
-              {notice ? <div className="c3-alerta c3-alerta--exito" role="status"><strong>{notice}</strong></div> : null}
-              {actionError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{actionError}</strong></div> : null}
-
               {loadError ? (
                 <div className="c3-alerta c3-alerta--error" role="alert">
                   <strong>No pudimos cargar el catálogo</strong>
@@ -234,126 +199,27 @@ export function AdminPanel() {
                   <button type="button" className="c3-btn c3-btn--contorno" style={{ marginTop: 8, alignSelf: "flex-start" }} onClick={() => void load()}>Reintentar</button>
                 </div>
               ) : null}
-
-              {!catalog && !loadError ? <p style={{ color: "var(--c3-texto-suave)" }}>Cargando catálogo…</p> : null}
-
-              {catalog ? (
+              {!catalog && !loadError ? (
                 <>
-                  {catalog.experiences.length === 0 ? (
-                    <div className="c3-card" style={{ padding: 24 }}>
-                      <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay experiencias. Creá la primera abajo.</p>
-                    </div>
-                  ) : null}
-
-                  {catalog.experiences.map((experience) => {
-                    const challenges = catalog.challenges.filter((challenge) => challenge.experienceId === experience.id);
-                    const window = { opensAt: experience.registrationOpensAt, closesAt: experience.registrationClosesAt };
-                    return (
-                      <section key={experience.id} className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }} aria-label={experience.title}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>{KIND_LABEL[experience.kind]}</span>
-                            <h2 className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{experience.title}</h2>
-                          </div>
-                          <StatePill state={presentState(experience.status, window, now)} />
-                        </div>
-                        <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>{experience.summary}</p>
-                        {experience.registrationClosesAt ? (
-                          <p style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>Inscripciones hasta el {formatDateTime(experience.registrationClosesAt)}</p>
-                        ) : null}
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          <StatusButtons
-                            busy={busyId === experience.id}
-                            status={experience.status}
-                            onChange={(status) => void changeStatus("experiencia", experience.id, status)}
-                          />
-                        </div>
-
-                        <div style={{ borderTop: "1px solid var(--c3-borde)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-                          <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Retos</span>
-                          {challenges.length === 0 ? (
-                            <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Esta experiencia todavía no tiene retos.</p>
-                          ) : null}
-                          {challenges.map((challenge) => (
-                            <div key={challenge.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "12px 0", borderTop: "1px solid var(--c3-borde)" }}>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-                                <span style={{ fontSize: 16, fontWeight: 600 }}>{challenge.title}</span>
-                                <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>
-                                  {challenge.organizationName}
-                                  {challenge.submissionClosesAt ? ` · Entregas hasta el ${formatDateTime(challenge.submissionClosesAt)}` : ""}
-                                </span>
-                              </div>
-                              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                                <StatePill state={presentState(challenge.status, window, now)} />
-                                <StatusButtons
-                                  busy={busyId === challenge.id}
-                                  status={challenge.status}
-                                  onChange={(status) => void changeStatus("reto", challenge.id, status)}
-                                  compact
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    );
-                  })}
-
-                  <ExperienceForm
-                    onCreated={(message) => {
-                      setNotice(message);
-                      void load();
-                    }}
-                  />
-                  <ChallengeForm
-                    experiences={experienceOptions}
-                    organizations={catalog.organizations}
-                    onCreated={(message) => {
-                      setNotice(message);
-                      void load();
-                    }}
-                  />
+                  <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias y retos</h1>
+                  <p style={{ color: "var(--c3-texto-suave)" }}>Cargando catálogo…</p>
                 </>
+              ) : null}
+              {catalog ? (
+                <ExperienciasPanel
+                  catalog={catalog}
+                  onChanged={() => void load()}
+                  onOpenEnrollments={(target) => {
+                    setEnrollmentTarget(target);
+                    setSection("inscripciones");
+                  }}
+                />
               ) : null}
             </>
           ) : null}
         </main>
       </div>
     </div>
-  );
-}
-
-function StatusButtons({
-  status,
-  busy,
-  onChange,
-  compact = false,
-}: {
-  status: ExperienceStatus;
-  busy: boolean;
-  onChange: (status: ExperienceStatus) => void;
-  compact?: boolean;
-}) {
-  const style = compact ? { minHeight: 40, padding: "0 14px", fontSize: 12 } : undefined;
-  if (status === "cancelled") return null;
-  return (
-    <>
-      {status === "draft" ? (
-        <button type="button" className="c3-btn c3-btn--primario" style={style} disabled={busy} onClick={() => onChange("published")}>
-          {busy ? "Guardando…" : "Publicar"}
-        </button>
-      ) : null}
-      {status === "published" ? (
-        <>
-          <button type="button" className="c3-btn c3-btn--contorno" style={style} disabled={busy} onClick={() => onChange("draft")}>
-            Pasar a borrador
-          </button>
-          <button type="button" className="c3-btn c3-btn--contorno" style={style} disabled={busy} onClick={() => onChange("closed")}>
-            Marcar concluida
-          </button>
-        </>
-      ) : null}
-    </>
   );
 }
 

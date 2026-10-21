@@ -33,51 +33,68 @@ interface CardContent {
   secondary: CardAction | null;
 }
 
-/** Qué le pasa a la persona con esta inscripción y qué puede hacer: una sola fuente para texto y acciones. */
+const action = (href: string | null, label: string): CardAction | null => (href ? { href, label } : null);
+
+/**
+ * Qué le pasa a la persona con esta inscripción y qué puede hacer: una sola fuente para texto y acciones.
+ * Una inscripción a una experiencia sin reto (`challengeId` nulo) no tiene entrega ni equipo y enlaza a la experiencia.
+ */
 function enrollmentContent(item: MyEnrollmentView, reason: EnrollmentReason): CardContent {
-  const retoHref = `/retos/${item.challengeId}`;
-  const miRetoHref = `/mi-c3/retos/${item.challengeId}`;
+  const challengeId = item.challengeId;
+  const retoHref = challengeId ? `/retos/${challengeId}` : null;
+  const miRetoHref = challengeId ? `/mi-c3/retos/${challengeId}` : null;
+  const experienceHref = `/experiencias/${item.experienceId}`;
   const team = item.team;
   const closes = item.submissionClosesAt ? `Cierra el ${formatDateTime(item.submissionClosesAt)}` : null;
+  // Reto o experiencia a la que lleva «Ver …»: lo que exista para esta inscripción.
+  const view = retoHref ? action(retoHref, "Ver reto") : action(experienceHref, "Ver experiencia");
   const base = {
-    kicker: item.experienceTitle,
-    title: item.challengeTitle,
-    meta: [item.organizationName, item.mode === "team" ? (team ? `Equipo ${team.name}` : "Por equipo") : "Individual"].join(" · "),
-    headline: null,
+    kicker: challengeId ? item.experienceTitle : "Experiencia",
+    title: item.challengeTitle ?? item.experienceTitle,
+    meta: challengeId ? [item.organizationName, item.mode === "team" ? (team ? `Equipo ${team.name}` : "Por equipo") : "Individual"].join(" · ") : null,
+    headline: null as string | null,
     date: null as string | null,
     primary: null as CardAction | null,
-    secondary: { href: retoHref, label: "Ver reto" } as CardAction | null,
+    secondary: view,
   };
 
   switch (reason) {
     case "sin_equipo":
-      return { ...base, headline: "Armá tu equipo para participar.", text: "Tu inscripción fue aprobada, pero todavía no tenés equipo. Creá uno o unite con un código.", date: closes, primary: { href: `${retoHref}/inscripcion`, label: "Armar equipo" } };
+      return { ...base, headline: "Armá tu equipo para participar.", text: "Tu inscripción fue aprobada, pero todavía no tenés equipo. Creá uno o unite con un código.", date: closes, primary: action(retoHref && `${retoHref}/inscripcion`, "Armar equipo") };
     case "equipo_incompleto":
-      return { ...base, headline: "Tu equipo está incompleto.", text: team ? `Equipo ${team.name}: todavía no alcanza el mínimo de integrantes.` : "Tu equipo todavía no alcanza el mínimo de integrantes.", date: closes, primary: { href: `${retoHref}/inscripcion`, label: "Gestionar equipo" } };
+      return { ...base, headline: "Tu equipo está incompleto.", text: team ? `Equipo ${team.name}: todavía no alcanza el mínimo de integrantes.` : "Tu equipo todavía no alcanza el mínimo de integrantes.", date: closes, primary: action(retoHref && `${retoHref}/inscripcion`, "Gestionar equipo") };
     case "entrega_pendiente":
-      return { ...base, headline: "Todavía no enviaste tu entrega.", text: "Describí tu solución y agregá al menos un enlace antes del cierre.", date: closes, primary: { href: miRetoHref, label: "Abrir mi reto" } };
+      return { ...base, headline: "Todavía no enviaste tu entrega.", text: "Describí tu solución y agregá al menos un enlace antes del cierre.", date: closes, primary: action(miRetoHref, "Abrir mi reto") };
     case "entrega_borrador":
-      return { ...base, headline: "Tenés un borrador sin enviar.", text: "Tu entrega está guardada, pero todavía no la enviaste.", date: closes, primary: { href: miRetoHref, label: "Abrir mi reto" } };
+      return { ...base, headline: "Tenés un borrador sin enviar.", text: "Tu entrega está guardada, pero todavía no la enviaste.", date: closes, primary: action(miRetoHref, "Abrir mi reto") };
     case "revision_c3":
       return {
         ...base,
         headline: "Esperando respuesta de C3.",
         text: "C3 está revisando tu inscripción. No tenés nada que hacer hasta que la apruebe o la rechace.",
         date: `Enviada el ${formatDate(item.createdAt)}`,
-        primary: { href: `${retoHref}/inscripcion`, label: "Ver inscripción" },
+        primary: action(retoHref ? `${retoHref}/inscripcion` : `${experienceHref}/inscripcion`, "Ver inscripción"),
         secondary: null,
       };
     case "entregada":
       return {
         ...base,
         text: `Tu entrega quedó registrada${item.delivery?.submittedAt ? ` el ${formatDate(item.delivery.submittedAt)}` : ""}. Se evalúa cuando cierra el plazo.`,
-        primary: { href: miRetoHref, label: "Ver mi entrega" },
-        secondary: { href: retoHref, label: "Ver reto" },
+        primary: action(miRetoHref, "Ver mi entrega"),
       };
     case "entrega_del_equipo":
-      return { ...base, text: team ? `Participás con el equipo ${team.name}. La entrega la envía la líder del equipo.` : "La entrega la envía la líder del equipo.", date: closes, primary: { href: miRetoHref, label: "Abrir mi reto" } };
+      return { ...base, text: team ? `Participás con el equipo ${team.name}. La entrega la envía la líder del equipo.` : "La entrega la envía la líder del equipo.", date: closes, primary: action(miRetoHref, "Abrir mi reto") };
     case "aprobada":
-      return { ...base, text: "Tu inscripción está aprobada.", date: closes, primary: { href: miRetoHref, label: "Abrir mi reto" } };
+      return { ...base, text: "Tu inscripción está aprobada.", date: closes, primary: action(miRetoHref, "Abrir mi reto") };
+    case "confirmada":
+      return {
+        ...base,
+        headline: "C3 confirmó tu lugar.",
+        text: "",
+        date: [formatDateTime(item.startsAt), item.location].filter(Boolean).join(" · ") || null,
+        primary: action(experienceHref, "Ver la experiencia"),
+        secondary: null,
+      };
     case "resultado": {
       const result = item.result;
       const detail = result
@@ -87,10 +104,10 @@ function enrollmentContent(item: MyEnrollmentView, reason: EnrollmentReason): Ca
             result.place ? `puesto ${result.place} de ${result.of}` : null,
           ].filter(Boolean).join(" · ")
         : "Resultado publicado.";
-      return { ...base, text: detail, primary: { href: miRetoHref, label: "Ver mi entrega" }, secondary: { href: "/trayectoria", label: "Ver en Trayectoria" } };
+      return { ...base, text: detail, primary: action(miRetoHref, "Ver mi entrega"), secondary: { href: "/trayectoria", label: "Ver en Trayectoria" } };
     }
     case "sin_entrega":
-      return { ...base, text: "El plazo cerró sin entrega enviada.", secondary: { href: retoHref, label: "Ver reto" } };
+      return { ...base, text: "El plazo cerró sin entrega enviada." };
     case "rechazada":
       return { ...base, text: "C3 no aprobó esta inscripción." };
     case "cancelada":
@@ -186,7 +203,7 @@ export function EnrollmentCard({
       ) : null}
     >
       {cancellable && confirming ? (
-        <div className="c3-mi-c3__confirmar" role="group" aria-label={`Confirmar la cancelación de ${item.challengeTitle}`}>
+        <div className="c3-mi-c3__confirmar" role="group" aria-label={`Confirmar la cancelación de ${item.challengeTitle ?? item.experienceTitle}`}>
           <p>¿Cancelar tu inscripción? No acredita participación ni resultado.</p>
           <div className="c3-mi-c3__confirmar-acciones">
             <button type="button" className="c3-btn c3-btn--contorno c3-mi-c3__boton-compacto" disabled={busy} onClick={() => onCancel(item.id)}>

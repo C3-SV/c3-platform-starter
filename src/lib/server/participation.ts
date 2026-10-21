@@ -2,15 +2,20 @@
  * Inscripciones, participaciones y entregas (Cortes 2–3).
  * Una inscripción por persona y experiencia; una participación y una entrega vigente por reto
  * (individual: por persona; por equipo: por equipo, enviada solo por la líder).
+ * La inscripción pertenece a la experiencia: entra por un reto (challengeId) o, si la experiencia no tiene
+ * retos publicados, directamente por la experiencia (challengeId null). Nunca se duplica entre ambos.
  */
-import type { DocumentData, Firestore } from "firebase-admin/firestore";
+import type { DocumentData, Firestore, QueryDocumentSnapshot, Transaction } from "firebase-admin/firestore";
+import { presentExperienceState } from "../domain/catalog.ts";
 import { deliveryState, canEditDelivery, parseDeliveryInput, type DeliveryState } from "../domain/delivery.ts";
+import { countEnrollments, spotsLeft, type EnrollmentCounts } from "../domain/lifecycle.ts";
 import { presentState } from "../domain/presentation.ts";
 import type { Challenge, Experience, EnrollmentStatus, ParticipationMode, RubricCriterion } from "../domain/types.ts";
 import { ValidationFailure } from "../domain/validation.ts";
 import { canSubmit } from "../domain/workflows.ts";
+import { recordAudit } from "./audit.ts";
 import { requireAdmin, type Actor } from "./auth.ts";
-import { loadChallenge, loadExperience, windowOf } from "./catalog.ts";
+import { CHALLENGES, EXPERIENCES, loadChallenge, loadExperience, windowOf } from "./catalog.ts";
 import { HttpError, notFound } from "./errors.ts";
 import { resultForSubmission } from "./evaluation.ts";
 import {
@@ -40,11 +45,15 @@ export interface EnrollmentView {
   status: EnrollmentStatus;
   mode: ParticipationMode;
   experienceId: string;
-  challengeId: string;
-  challengeTitle: string;
+  /** null cuando la inscripción es a la experiencia (sin reto). */
+  challengeId: string | null;
+  challengeTitle: string | null;
   experienceTitle: string;
   organizationName: string;
   submissionClosesAt: string | null;
+  /** Fecha y lugar de la sesión de la experiencia, cuando los tiene. */
+  startsAt: string | null;
+  location: string | null;
   createdAt: string;
 }
 
@@ -99,19 +108,31 @@ interface SubmissionContext {
   team: TeamSummary | null;
 }
 
-function toEnrollmentBase(id: string, data: DocumentData, challenge: Challenge, experience: Experience): EnrollmentView {
+function toEnrollmentBase(id: string, data: DocumentData, challenge: Challenge | null, experience: Experience): EnrollmentView {
   return {
     id,
     status: data.status,
     mode: data.mode === "team" ? "team" : "individual",
     experienceId: experience.id,
-    challengeId: challenge.id,
-    challengeTitle: challenge.title,
+    challengeId: challenge?.id ?? null,
+    challengeTitle: challenge?.title ?? null,
     experienceTitle: experience.title,
-    organizationName: challenge.organizationName,
-    submissionClosesAt: challenge.submissionClosesAt,
+    organizationName: challenge?.organizationName ?? "C3",
+    submissionClosesAt: challenge?.submissionClosesAt ?? null,
+    startsAt: experience.startsAt ?? null,
+    location: experience.location ?? null,
     createdAt: data.createdAt,
   };
+}
+
+/** Cuenta las inscripciones que ocupan cupo (pendientes y aprobadas) dentro de una transacción. */
+async function activeEnrollmentsIn(db: Firestore, transaction: Transaction, experienceId: string): Promise<number> {
+  const snapshot = await transaction.get(db.collection(ENROLLMENTS).where("experienceId", "==", experienceId));
+  return countEnrollments(snapshot.docs.map((doc) => doc.data().status as string)).active;
+}
+
+function fullError(): HttpError {
+  return new HttpError(409, "sin_cupos", "Los cupos de esta experiencia están completos.");
 }
 
 function toSubmission(data: DocumentData | undefined): SubmissionView | null {
@@ -167,9 +188,51 @@ export async function enrollInChallenge(db: Firestore, actor: Actor, challengeId
     if (snapshot.exists) {
       throw new HttpError(409, "ya_inscrito", "Ya tenés una inscripción en esta experiencia.");
     }
+    if (experience.capacity != null && (await activeEnrollmentsIn(db, transaction, experience.id)) >= experience.capacity) {
+      throw fullError();
+    }
     transaction.set(ref, data);
   });
   return toEnrollmentBase(ref.id, data, challenge, experience);
+}
+
+/**
+ * Inscripción a una experiencia sin reto (taller, charla, encuentro o cualquier experiencia sin retos publicados).
+ * Es individual y la revisa C3. Si la experiencia tiene retos publicados, la persona se inscribe desde el reto.
+ */
+export async function enrollInExperience(db: Firestore, actor: Actor, experienceId: string, now: Date): Promise<EnrollmentView> {
+  const experience = await loadExperience(db, experienceId);
+  if (experience.status !== "published") throw notFound();
+  const challenges = await db.collection(CHALLENGES).where("experienceId", "==", experience.id).get();
+  if (challenges.docs.some((doc) => doc.data().status === "published")) {
+    throw new HttpError(409, "inscripcion_por_reto", "Esta experiencia se inscribe desde cada uno de sus retos.");
+  }
+  if (presentExperienceState(experience.status, windowOf(experience), now).label !== "Abierto") {
+    throw new HttpError(409, "inscripcion_cerrada", "Las inscripciones de esta experiencia no están abiertas.");
+  }
+
+  const ref = db.collection(ENROLLMENTS).doc(enrollmentDocId(experience.id, actor.uid));
+  const stamp = now.toISOString();
+  const data = {
+    experienceId: experience.id,
+    challengeId: null,
+    userId: actor.uid,
+    mode: "individual" as ParticipationMode,
+    status: "pending" as EnrollmentStatus,
+    createdAt: stamp,
+    updatedAt: stamp,
+  };
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    if (snapshot.exists) {
+      throw new HttpError(409, "ya_inscrito", "Ya tenés una inscripción en esta experiencia.");
+    }
+    if (experience.capacity != null && (await activeEnrollmentsIn(db, transaction, experience.id)) >= experience.capacity) {
+      throw fullError();
+    }
+    transaction.set(ref, data);
+  });
+  return toEnrollmentBase(ref.id, data, null, experience);
 }
 
 /** Contexto de entrega de la persona en un reto: individual, o equipo con su líder como única que envía. */
@@ -184,6 +247,11 @@ async function resolveContext(
   const mode: ParticipationMode = enrollment?.mode === "team" ? "team" : "individual";
   const approved = enrollment?.status === "approved";
   const inWindow = canEditDelivery(challenge.submissionClosesAt, now);
+
+  // Una inscripción a la experiencia (sin reto) es individual: no habilita retos que se juegan solo por equipo.
+  if (mode === "individual" && enrollment && enrollment.challengeId == null && !challenge.allows.includes("individual")) {
+    return { mode, eligible: false, canEdit: false, isLeader: false, submissionId: null, team: null };
+  }
 
   if (mode === "individual") {
     return {
@@ -225,6 +293,12 @@ export async function listMyEnrollments(db: Firestore, actor: Actor, now: Date):
   const snapshot = await db.collection(ENROLLMENTS).where("userId", "==", actor.uid).get();
   const views = await Promise.all(snapshot.docs.map(async (doc) => {
     const data = doc.data();
+    if (data.challengeId == null) {
+      // Inscripción a la experiencia (sin reto): no hay entrega ni resultado que consultar.
+      const experience = await loadExperience(db, data.experienceId).catch(() => null);
+      if (!experience) return null;
+      return { ...toEnrollmentBase(doc.id, data, null, experience), team: null, delivery: null, result: null } satisfies MyEnrollmentView;
+    }
     const challenge = await loadChallenge(db, data.challengeId).catch(() => null);
     const experience = challenge ? await loadExperience(db, challenge.experienceId).catch(() => null) : null;
     if (!challenge || !experience) return null;
@@ -262,6 +336,16 @@ export async function cancelMyEnrollment(db: Firestore, actor: Actor, enrollment
   if (data.status !== "pending" && data.status !== "approved") {
     throw new HttpError(409, "no_cancelable", "Esta inscripción ya no se puede cancelar.");
   }
+  if (data.challengeId == null) {
+    // Inscripción a la experiencia: se cancela mientras esté publicada y la sesión no haya terminado.
+    const experience = await loadExperience(db, data.experienceId);
+    const ended = experience.endsAt ? Date.parse(experience.endsAt) <= now.getTime() : false;
+    if (experience.status !== "published" || ended) {
+      throw new HttpError(409, "plazo_cerrado", "La experiencia ya concluyó; la inscripción no se puede cancelar.");
+    }
+    await ref.update({ status: "cancelled", updatedAt: now.toISOString() });
+    return;
+  }
   const challenge = await loadChallenge(db, data.challengeId);
   if (!canEditDelivery(challenge.submissionClosesAt, now)) {
     throw new HttpError(409, "plazo_cerrado", "El plazo de entregas ya cerró; la inscripción no se puede cancelar.");
@@ -296,8 +380,17 @@ export async function reviewEnrollment(db: Firestore, actor: Actor, enrollmentId
     if (data.status !== "pending") {
       throw new HttpError(409, "ya_revisada", "Solo se revisan inscripciones pendientes.");
     }
+    const experienceStatus = (await transaction.get(db.collection(EXPERIENCES).doc(data.experienceId))).data()?.status;
+    if (experienceStatus === "closed" || experienceStatus === "cancelled") {
+      throw new HttpError(409, "experiencia_cerrada", "La experiencia ya concluyó o se canceló: no se revisan más inscripciones.");
+    }
     transaction.update(ref, { status: rawStatus, reviewedAt: stamp, reviewedByUid: actor.uid, updatedAt: stamp });
-    if (rawStatus === "approved" && data.mode !== "team") {
+    recordAudit(db, transaction, actor, now, {
+      action: "enrollment.review",
+      target: { type: "enrollment", id: enrollmentId },
+      details: { decision: rawStatus, experienceId: data.experienceId, challengeId: data.challengeId ?? null },
+    });
+    if (rawStatus === "approved" && data.mode !== "team" && data.challengeId != null) {
       const participation = db.collection(PARTICIPATIONS).doc(participationDocId(data.challengeId, data.userId));
       transaction.set(participation, {
         challengeId: data.challengeId,
@@ -316,23 +409,22 @@ export interface AdminEnrollmentRow {
   id: string;
   status: EnrollmentStatus;
   mode: ParticipationMode;
+  challengeId: string | null;
   userId: string;
   displayName: string | null;
   email: string | null;
   createdAt: string;
 }
 
-/** Inscripciones de un reto para la revisión de C3. */
-export async function listEnrollmentsForChallenge(db: Firestore, actor: Actor, challengeId: string): Promise<AdminEnrollmentRow[]> {
-  requireAdmin(actor);
-  const snapshot = await db.collection(ENROLLMENTS).where("challengeId", "==", challengeId).get();
-  const rows = await Promise.all(snapshot.docs.map(async (doc) => {
+async function toAdminRows(db: Firestore, docs: QueryDocumentSnapshot[]): Promise<AdminEnrollmentRow[]> {
+  const rows = await Promise.all(docs.map(async (doc) => {
     const data = doc.data();
     const user = await db.collection(USERS).doc(data.userId).get();
     return {
       id: doc.id,
       status: data.status as EnrollmentStatus,
       mode: (data.mode === "team" ? "team" : "individual") as ParticipationMode,
+      challengeId: (data.challengeId as string | null | undefined) ?? null,
       userId: data.userId,
       displayName: (user.data()?.displayName as string | undefined) ?? null,
       email: (user.data()?.email as string | undefined) ?? null,
@@ -340,6 +432,34 @@ export async function listEnrollmentsForChallenge(db: Firestore, actor: Actor, c
     };
   }));
   return rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+/** Inscripciones de un reto para la revisión de C3. */
+export async function listEnrollmentsForChallenge(db: Firestore, actor: Actor, challengeId: string): Promise<AdminEnrollmentRow[]> {
+  requireAdmin(actor);
+  const snapshot = await db.collection(ENROLLMENTS).where("challengeId", "==", challengeId).get();
+  return toAdminRows(db, snapshot.docs);
+}
+
+export interface ExperienceEnrollments {
+  enrollments: AdminEnrollmentRow[];
+  summary: {
+    capacity: number | null;
+    spotsLeft: number | null;
+    counts: EnrollmentCounts;
+  };
+}
+
+/** Todas las inscripciones de una experiencia (con o sin reto) y su ocupación de cupos. */
+export async function listEnrollmentsForExperience(db: Firestore, actor: Actor, experienceId: string): Promise<ExperienceEnrollments> {
+  requireAdmin(actor);
+  const experience = await loadExperience(db, experienceId);
+  const snapshot = await db.collection(ENROLLMENTS).where("experienceId", "==", experienceId).get();
+  const counts = countEnrollments(snapshot.docs.map((doc) => doc.data().status as string));
+  return {
+    enrollments: await toAdminRows(db, snapshot.docs),
+    summary: { capacity: experience.capacity ?? null, spotsLeft: spotsLeft(experience, counts), counts },
+  };
 }
 
 /** Vista de la entrega para la persona inscrita. Solo lee la entrega de su propio contexto. */

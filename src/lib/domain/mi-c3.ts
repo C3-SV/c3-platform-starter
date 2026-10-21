@@ -4,7 +4,7 @@
  *
  * - atencion: algo que le toca hacer a la persona (entregar, armar el equipo, evaluar).
  * - espera: depende de C3 u de otro proceso (revisión de una inscripción, cierre de entregas).
- * - en_curso: participación activa sin nada urgente (entrega enviada, entrega a cargo de la líder).
+ * - en_curso: participación activa sin nada urgente (entrega enviada, entrega a cargo de la líder, lugar confirmado).
  * - finalizada: ya terminó (resultado, plazo cerrado, inscripción rechazada o cancelada).
  */
 import type { DeliveryState } from "./delivery.ts";
@@ -31,6 +31,7 @@ export type EnrollmentReason =
   | "entregada"
   | "entrega_del_equipo"
   | "aprobada"
+  | "confirmada"
   | "resultado"
   | "sin_entrega"
   | "rechazada"
@@ -42,6 +43,8 @@ export type AssignmentReason = "evaluar" | "esperando_cierre" | "completa" | "si
 export interface EnrollmentFacts {
   status: EnrollmentStatus;
   mode: ParticipationMode;
+  /** null cuando la inscripción es a la experiencia misma (sin reto): no hay entrega ni equipo. */
+  challengeId: string | null;
   submissionClosesAt: string | null;
   team: { status: "incompleto" | "habilitado"; role: "lider" | "integrante" } | null;
   delivery: { state: DeliveryState; canEdit: boolean } | null;
@@ -70,6 +73,7 @@ export function classifyEnrollment(item: EnrollmentFacts, now: Date): { group: P
   if (item.status === "cancelled") return { group: "finalizada", reason: "cancelada" };
 
   // Aprobada.
+  if (item.challengeId === null) return { group: "en_curso", reason: "confirmada" };
   if (item.result) return { group: "finalizada", reason: "resultado" };
   if (item.delivery?.state === "entregada") return { group: "en_curso", reason: "entregada" };
   // Sin entrega enviada, con el plazo vencido ya no hay nada que hacer.
@@ -106,6 +110,7 @@ export function enrollmentReasonState(reason: EnrollmentReason, item: Pick<Enrol
     case "entrega_del_equipo": return deliveryPresentation(item.delivery?.state ?? "sin_entrega");
     case "sin_entrega": return deliveryPresentation("fuera_de_plazo");
     case "resultado": return { label: "Resultado publicado", tone: "exito" };
+    case "confirmada":
     case "revision_c3":
     case "aprobada":
     case "rechazada":

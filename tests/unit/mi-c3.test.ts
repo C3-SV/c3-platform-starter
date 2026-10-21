@@ -14,7 +14,7 @@ const future = "2026-11-12T05:59:00.000Z";
 const past = "2026-10-01T05:59:00.000Z";
 
 function enrollment(overrides: Partial<EnrollmentFacts> = {}): EnrollmentFacts {
-  return { status: "approved", mode: "individual", submissionClosesAt: future, team: null, delivery: { state: "sin_entrega", canEdit: true }, result: null, ...overrides };
+  return { status: "approved", mode: "individual", challengeId: "reto-1", submissionClosesAt: future, team: null, delivery: { state: "sin_entrega", canEdit: true }, result: null, ...overrides };
 }
 
 test("una inscripción pendiente está en espera de C3, no es una tarea de la persona", () => {
@@ -63,6 +63,14 @@ test("por equipo: solo la líder envía; un integrante queda en curso", () => {
 
 test("una persona sin equipo que no puede editar no recibe un texto sobre su líder", () => {
   assert.deepEqual(classifyEnrollment(enrollment({ delivery: { state: "sin_entrega", canEdit: false } }), now), { group: "en_curso", reason: "aprobada" });
+});
+
+test("una inscripción a una experiencia sin reto: pendiente espera a C3 y aprobada queda confirmada, en curso", () => {
+  const pending = enrollment({ challengeId: null, status: "pending", delivery: null, submissionClosesAt: null });
+  assert.deepEqual(classifyEnrollment(pending, now), { group: "espera", reason: "revision_c3" });
+  const approved = enrollment({ challengeId: null, delivery: null, submissionClosesAt: null });
+  assert.deepEqual(classifyEnrollment(approved, now), { group: "en_curso", reason: "confirmada" });
+  assert.deepEqual(classifyEnrollment({ ...approved, status: "cancelled" }, now), { group: "finalizada", reason: "cancelada" });
 });
 
 test("jurado: evaluar solo cuando cerró el plazo y quedan soluciones por finalizar", () => {

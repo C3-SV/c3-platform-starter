@@ -19,11 +19,11 @@ import { ValidationFailure } from "../domain/validation.ts";
 import { requireAdmin, type Actor } from "./auth.ts";
 import { loadChallenge } from "./catalog.ts";
 import { HttpError, notFound } from "./errors.ts";
-import { SUBMISSIONS, TEAMS, USERS } from "./ids.ts";
+import { RESULTS, SUBMISSIONS, TEAMS, USERS } from "./ids.ts";
 
 export const JUDGE_ASSIGNMENTS = "judgeAssignments";
 export const EVALUATIONS = "evaluations";
-export const RESULTS = "results";
+export { RESULTS };
 export const JUDGE_KINDS = ["empresa", "externo"] as const;
 export type JudgeKind = (typeof JUDGE_KINDS)[number];
 

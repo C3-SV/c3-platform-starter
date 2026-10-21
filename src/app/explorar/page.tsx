@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { StatePill } from "@/components/StatePill";
-import { KIND_LABEL, lineColor, lineTextColor, type PresentedState } from "@/lib/domain/presentation";
-import { formatDate, modalityLabel } from "@/lib/domain/format";
-import type { ExperienceKind } from "@/lib/domain/types";
+import { experienceLabel, lineColor, lineColorOf, lineTextColorOf, primaryLineOf, type PresentedState } from "@/lib/domain/presentation";
+import { formatDate, modalityLabel, sessionSummary } from "@/lib/domain/format";
+import type { ExperienceKind, ExperienceLine } from "@/lib/domain/types";
 import { database } from "@/lib/server/context";
 import { listPublicCatalog } from "@/lib/server/catalog";
 
@@ -18,8 +18,9 @@ const LEYENDA: { kind: ExperienceKind; label: string }[] = [
 
 interface CardItem {
   key: string;
-  href: string | null;
-  kind: ExperienceKind;
+  href: string;
+  line: ExperienceLine;
+  label: string;
   state: PresentedState;
   title: string;
   summary: string;
@@ -31,21 +32,26 @@ interface CardItem {
 export default async function ExplorarPage() {
   const catalog = await listPublicCatalog(database(), new Date());
   const cards: CardItem[] = catalog.flatMap((item): CardItem[] => {
+    const line = primaryLineOf(item.experience);
+    const label = experienceLabel(item.experience);
     if (item.challenges.length === 0) {
       return [{
         key: item.experience.id,
-        href: null,
-        kind: item.experience.kind,
+        href: `/experiencias/${item.experience.id}`,
+        line,
+        label,
         state: item.state,
         title: item.experience.title,
         summary: item.experience.summary,
-        footer: "Solo informativa",
+        footer: sessionSummary(item.experience) ?? "Experiencia C3",
+        detail: item.experience.location ?? (item.experience.registrationClosesAt ? `Inscripciones hasta el ${formatDate(item.experience.registrationClosesAt)}` : null),
       }];
     }
     return item.challenges.map((challenge) => ({
       key: challenge.id,
       href: `/retos/${challenge.id}`,
-      kind: item.experience.kind,
+      line,
+      label,
       state: challenge.state,
       title: challenge.title,
       summary: challenge.summary,
@@ -82,10 +88,10 @@ export default async function ExplorarPage() {
             {cards.map((card) => {
               const body = (
                 <>
-                  <div style={{ height: 6, background: lineColor(card.kind) }} />
+                  <div style={{ height: 6, background: lineColorOf(card.line) }} />
                   <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                      <span className="c3-etiqueta" style={{ color: lineTextColor(card.kind) }}>{KIND_LABEL[card.kind]}</span>
+                      <span className="c3-etiqueta" style={{ color: lineTextColorOf(card.line) }}>{card.label}</span>
                       <StatePill state={card.state} />
                     </div>
                     <div className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{card.title}</div>
@@ -97,11 +103,7 @@ export default async function ExplorarPage() {
                   </div>
                 </>
               );
-              return card.href ? (
-                <Link key={card.key} href={card.href} className="c3-tarjeta-enlace">{body}</Link>
-              ) : (
-                <article key={card.key} className="c3-tarjeta-enlace" style={{ cursor: "default" }}>{body}</article>
-              );
+              return <Link key={card.key} href={card.href} className="c3-tarjeta-enlace">{body}</Link>;
             })}
           </div>
         )}
