@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { initialsOf, MovilShell } from "@/components/MovilShell";
 import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
-import { apiRequest, ApiError, type FieldIssue } from "@/lib/client/api";
+import { apiRequest, ApiError } from "@/lib/client/api";
 import { formatDate } from "@/lib/domain/format";
 import { deliveryPresentation, enrollmentState } from "@/lib/domain/presentation";
 import type { Profile } from "@/lib/server/profile";
@@ -16,22 +16,12 @@ interface Trajectory {
   enrollments: MyEnrollmentView[];
 }
 
-function issueFor(issues: FieldIssue[], field: string): string | null {
-  return issues.find((issue) => issue.field === field)?.message ?? null;
-}
-
 /** V08 · Perfil y trayectoria. Lo que la persona escribe y lo que C3 registra se muestran por separado. */
 export function TrayectoriaPanel() {
   const { session } = useSession();
   const signedIn = session.status === "signed-in";
   const [data, setData] = useState<Trajectory | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ displayName: "", school: "", bio: "", github: "", linkedin: "" });
-  const [issues, setIssues] = useState<FieldIssue[]>([]);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   // Carga inicial: la respuesta actualiza el estado; no se escribe dentro del efecto.
   useEffect(() => {
@@ -41,13 +31,6 @@ export function TrayectoriaPanel() {
       (response) => {
         if (!active) return;
         setData(response);
-        setForm({
-          displayName: response.profile.displayName ?? "",
-          school: response.profile.school,
-          bio: response.profile.bio,
-          github: response.profile.github,
-          linkedin: response.profile.linkedin,
-        });
         setLoadError(null);
       },
       (error: unknown) => {
@@ -59,29 +42,6 @@ export function TrayectoriaPanel() {
       active = false;
     };
   }, [signedIn]);
-
-  async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIssues([]);
-    setFormError(null);
-    setNotice(null);
-    setBusy(true);
-    try {
-      const response = await apiRequest<{ profile: Profile }>("/api/perfil", { method: "PUT", body: form });
-      setData((current) => (current ? { ...current, profile: response.profile } : current));
-      setEditing(false);
-      setNotice("Perfil guardado. Lo que escribiste está separado de la trayectoria que registra C3.");
-    } catch (error) {
-      if (error instanceof ApiError) {
-        setIssues(error.issues);
-        setFormError(error.message);
-      } else {
-        setFormError("No pudimos guardar el perfil. Intentá de nuevo.");
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
 
   const profile = data?.profile;
   const name = profile?.displayName || (session.status === "signed-in" ? (session.user.displayName ?? "") : "");
@@ -109,9 +69,7 @@ export function TrayectoriaPanel() {
                 <h1 className="c3-titulo" style={{ fontSize: 22, fontWeight: 700, color: "#ffffff" }}>{name || "Tu perfil"}</h1>
                 {profile.school ? <span style={{ fontSize: 14, color: "var(--c3-texto-cabecera)" }}>{profile.school}</span> : null}
               </div>
-              <button type="button" onClick={() => setEditing((value) => !value)} style={{ marginLeft: "auto", background: "none", border: 0, color: "var(--c3-texto-cabecera)", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>
-                {editing ? "Cerrar" : "Editar perfil"}
-              </button>
+              <Link href="/cuenta" style={{ marginLeft: "auto", color: "var(--c3-texto-cabecera)", fontSize: 14, fontWeight: 500 }}>Editar en Cuenta</Link>
             </div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {profile.github ? <a href={profile.github} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 500, color: "var(--c3-conecta-claro)" }}>GitHub</a> : null}
@@ -119,32 +77,6 @@ export function TrayectoriaPanel() {
               <span aria-disabled="true" title="Próximamente" style={{ marginLeft: "auto", fontSize: 14, color: "var(--c3-texto-cabecera)", opacity: 0.6 }}>Compartir perfil (próximamente)</span>
             </div>
           </section>
-
-          {notice ? <div className="c3-alerta c3-alerta--exito" role="status"><strong>{notice}</strong></div> : null}
-
-          {editing ? (
-            <form onSubmit={(event) => void save(event)} noValidate className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }} aria-label="Editar perfil">
-              {formError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{formError}</strong></div> : null}
-              {[
-                ["displayName", "Nombre completo"],
-                ["school", "Centro de estudio o trabajo"],
-                ["github", "Enlace de GitHub (https://)"],
-                ["linkedin", "Enlace de LinkedIn (https://)"],
-              ].map(([field, label]) => (
-                <div key={field} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <label htmlFor={`perfil-${field}`} className="c3-etiqueta-campo">{label}</label>
-                  <input id={`perfil-${field}`} className={`c3-campo${issueFor(issues, field) ? " c3-campo--error" : ""}`} value={form[field as keyof typeof form]} onChange={(event) => setForm((current) => ({ ...current, [field]: event.target.value }))} />
-                  {issueFor(issues, field) ? <span className="c3-error-campo">{issueFor(issues, field)}</span> : null}
-                </div>
-              ))}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label htmlFor="perfil-bio" className="c3-etiqueta-campo">Contá en unas líneas qué te interesa</label>
-                <textarea id="perfil-bio" rows={3} className="c3-campo" value={form.bio} onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))} />
-                {issueFor(issues, "bio") ? <span className="c3-error-campo">{issueFor(issues, "bio")}</span> : null}
-              </div>
-              <button type="submit" className="c3-btn c3-btn--primario" disabled={busy}>{busy ? "Guardando…" : "Guardar perfil"}</button>
-            </form>
-          ) : null}
 
           <section className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }} aria-labelledby="escribio">
             <span id="escribio" className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Lo que escribió</span>

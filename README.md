@@ -23,6 +23,7 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 - **Espacio de empresa** (V09): la representante ve solo los retos publicados de sus organizaciones, las soluciones ya enviadas (nunca borradores) y las propuestas vinculadas con su siguiente paso. Sin vínculo, la vista no muestra datos de nadie.
 - Retos con organización vinculada: al crear un reto en V12 se elige la organización que tendrá su espacio de empresa.
 - **Perfil y trayectoria** (V08, Corte 6): la persona declara su nombre, centro de estudio, una presentación y enlaces https (GitHub, LinkedIn). La trayectoria —inscripciones, entregas, reconocimientos y puesto— la registra C3 y no se edita; la pantalla separa ambas cosas con la etiqueta «Registrada por C3».
+- **Cuenta**: consulta correo y verificación, edita los datos personales del perfil, solicita verificación del correo, cambia la contraseña con reautenticación de Firebase y cierra sesión. Los resultados oficiales no se modifican desde Cuenta; la eliminación queda pendiente de una política de retención.
 - **Accesibilidad** (Corte 6): auditoría automática con axe-core (WCAG 2.x A y AA) en las vistas públicas, de acceso y de una persona registrada. Sin incumplimientos serios ni críticos en las páginas auditadas.
 
 - **Jurados** (V12, «Jurados y rúbricas»): C3 asigna jurados por correo —externos o representantes de la empresa—, revoca accesos sin borrar evaluaciones finalizadas, y ve la rúbrica de cada reto.
@@ -79,6 +80,7 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 | V06 Inscripción | `/retos/[challengeId]/inscripcion` | Joven | Individual y por equipo implementadas |
 | V07 Mi reto y entrega | `/mi-c3/retos/[challengeId]` | Joven | Implementada |
 | V08 Trayectoria | `/trayectoria` | Joven | Implementada |
+| Cuenta | `/cuenta` | Joven | Perfil, correo, seguridad y sesión |
 | V09 Espacio de empresa | `/empresa` | Empresa | Implementada (retos, soluciones, resultados y propuestas) |
 | V10 Proponer challenge | `/empresa/proponer` | Público | Implementada, sin cuenta |
 | V11 Evaluación | `/empresa/retos/[challengeId]/evaluacion` | Representante autorizado | Implementada |

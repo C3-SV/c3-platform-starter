@@ -599,6 +599,26 @@ textarea.c3-campo {
   border-top-color: var(--c3-accion);
 }
 
+/* Gestión de Cuenta: formularios en columnas en escritorio y apilados en móvil. */
+.c3-cuenta {
+  max-width: 1080px;
+}
+
+.c3-cuenta__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px;
+}
+
+.c3-cuenta__panel {
+  min-width: 0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .c3-movil__nav-item--pendiente {
   opacity: 0.6;
   cursor: not-allowed;
@@ -606,6 +626,14 @@ textarea.c3-campo {
 
 /* Móvil: las grillas de dos y tres columnas pasan a una columna sin desbordar la página. */
 @media (max-width: 760px) {
+  .c3-cuenta__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .c3-cuenta__panel {
+    padding: 18px;
+  }
+
   .c3-cabecera__interior {
     align-items: flex-start;
     padding: 14px 0;
