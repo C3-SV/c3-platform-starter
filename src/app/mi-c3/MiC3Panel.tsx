@@ -1,23 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MovilShell } from "@/components/MovilShell";
-import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
-import { formatDate, formatDateTime } from "@/lib/domain/format";
-import { deliveryPresentation, enrollmentState } from "@/lib/domain/presentation";
+import { formatDateTime } from "@/lib/domain/format";
+import { GROUP_COPY, GROUP_ORDER, organizeParticipation, overviewMessage, type ParticipationEntry, type ParticipationGroup } from "@/lib/domain/mi-c3";
 import type { MyEnrollmentView } from "@/lib/server/participation";
-import type { myAssignments } from "@/lib/server/evaluation";
+import { AssignmentCard, EnrollmentCard, type Assignment } from "./MiC3Cards";
+import { MiC3Lateral } from "./MiC3Lateral";
 
-type Assignment = Awaited<ReturnType<typeof myAssignments>>[number];
+type Entry = ParticipationEntry<MyEnrollmentView, Assignment>;
 
-/** V05 · Mi C3 (inicio). Ordena lo que toca ahora; cada tarjeta lleva a una acción real o muestra su estado. */
+/**
+ * V05 · Mi C3 (inicio). Separa lo que le toca a la persona («Requiere tu atención»), lo que espera a C3 u otro
+ * proceso («En espera»), lo activo («En curso») y lo terminado («Finalizadas»). Cada tarjeta lleva a una
+ * acción real o muestra su estado. Una sola composición responsiva: el CSS la presenta como app móvil o como
+ * panel de dos columnas (ver `.c3-movil--panel` y `.c3-mi-c3__*` en globals.css).
+ */
 export function MiC3Panel() {
   const { session } = useSession();
   const [enrollments, setEnrollments] = useState<MyEnrollmentView[] | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [now, setNow] = useState(() => new Date());
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -29,6 +35,7 @@ export function MiC3Panel() {
     try {
       const data = await apiRequest<{ enrollments: MyEnrollmentView[] }>("/api/mi-c3");
       setEnrollments(data.enrollments);
+      setNow(new Date());
     } catch (error) {
       setLoadError(error instanceof ApiError ? error.message : "No pudimos cargar tu espacio. Intentá de nuevo.");
     }
@@ -42,6 +49,7 @@ export function MiC3Panel() {
       (data) => {
         if (!active) return;
         setEnrollments(data.enrollments);
+        setNow(new Date());
         setLoadError(null);
       },
       (error: unknown) => {
@@ -84,15 +92,17 @@ export function MiC3Panel() {
     }
   }
 
-  if (session.status === "loading") return <MovilShell><p>Cargando…</p></MovilShell>;
-  if (session.status === "unavailable") return <MovilShell><p role="alert">{session.message}</p></MovilShell>;
+  if (session.status === "loading") return <MovilShell layout="panel"><div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo"><p>Cargando…</p></div></MovilShell>;
+  if (session.status === "unavailable") return <MovilShell layout="panel"><div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo"><p role="alert">{session.message}</p></div></MovilShell>;
   if (session.status === "signed-out") {
     return (
-      <MovilShell nav={null}>
-        <div className="c3-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-          <h1 className="c3-titulo" style={{ fontSize: 22, fontWeight: 700 }}>Entrá para ver tu espacio</h1>
-          <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Acá vas a ver tus inscripciones, tus entregas y lo que toca ahora.</p>
-          <Link href="/acceso?next=/mi-c3" className="c3-btn c3-btn--primario">Entrar</Link>
+      <MovilShell layout="panel" nav={null}>
+        <div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo">
+          <div className="c3-card c3-mi-c3__acceso-requerido">
+            <h1 className="c3-titulo">Entrá para ver tu espacio</h1>
+            <p>Acá vas a ver tus inscripciones, tus entregas y lo que toca ahora.</p>
+            <Link href="/acceso?next=/mi-c3" className="c3-btn c3-btn--primario">Entrar</Link>
+          </div>
         </div>
       </MovilShell>
     );
@@ -100,169 +110,88 @@ export function MiC3Panel() {
 
   const user = session.user;
   const firstName = user.displayName?.split(" ")[0] ?? "";
-  const pending = enrollments?.filter((item) => item.status === "pending") ?? [];
-  const actionable = enrollments?.filter((item) => (item.status === "approved" && (item.delivery?.state === "sin_entrega" || item.delivery?.state === "borrador")) || (item.status === "approved" && item.mode === "team" && !item.team)) ?? [];
-  const delivered = enrollments?.filter((item) => item.status === "approved" && (item.delivery?.state === "entregada" || item.delivery?.state === "fuera_de_plazo")) ?? [];
-  const closed = enrollments?.filter((item) => item.status === "rejected" || item.status === "cancelled") ?? [];
+  const overview = enrollments ? organizeParticipation(enrollments, assignments, now) : null;
+  const empty = overview !== null && overview.total === 0;
+  const nextTitle = overview?.nextDeadline?.item.challengeTitle;
+  const nextDate = formatDateTime(overview?.nextDeadline?.item.submissionClosesAt);
 
   return (
-    <MovilShell>
-      <section style={{ background: "var(--c3-navy)", margin: "-20px -20px 0", padding: "8px 20px 24px", display: "flex", flexDirection: "column", gap: 4 }}>
-        <h1 className="c3-titulo" style={{ fontSize: 26, lineHeight: 1.2, fontWeight: 700, color: "#ffffff" }}>
-          {firstName ? `Hola, ${firstName}` : "Hola"}
-        </h1>
-        <span style={{ fontSize: 14, color: "var(--c3-texto-cabecera)" }}>
-          {enrollments === null
-            ? "Cargando tu espacio…"
-            : actionable.length > 0
-              ? `Tenés ${actionable.length} ${actionable.length === 1 ? "cosa" : "cosas"} que hacer ahora.`
-              : "No tenés nada pendiente ahora."}
-        </span>
+    <MovilShell layout="panel">
+      <section className="c3-mi-c3__resumen" aria-labelledby="mi-c3-titulo">
+        <div className="c3-mi-c3__contenedor c3-mi-c3__resumen-interior">
+          <div className="c3-mi-c3__resumen-texto">
+            <h1 id="mi-c3-titulo" className="c3-titulo">{firstName ? `Hola, ${firstName}` : "Hola"}</h1>
+            <p>{overview ? overviewMessage(overview) : "Cargando tu espacio…"}</p>
+            {nextTitle && nextDate ? <p className="c3-mi-c3__proximo">Próximo cierre: <strong>{nextTitle}</strong>, el {nextDate}.</p> : null}
+          </div>
+          {overview && overview.total > 0 ? (
+            <ul className="c3-mi-c3__conteo" aria-label="Resumen de tu participación">
+              {GROUP_ORDER.map((group) => (
+                <li key={group} className={`c3-mi-c3__conteo-item${group === "atencion" && overview.counts[group] > 0 ? " c3-mi-c3__conteo-item--alerta" : ""}`}>
+                  <span className="c3-mi-c3__conteo-valor">{overview.counts[group]}</span>
+                  <span className="c3-mi-c3__conteo-etiqueta">{GROUP_COPY[group].short}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       </section>
 
-      {notice ? <div className="c3-alerta c3-alerta--exito" role="status"><strong>{notice}</strong></div> : null}
-      {actionError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{actionError}</strong></div> : null}
+      <div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo">
+        {notice ? <div className="c3-alerta c3-alerta--exito" role="status"><strong>{notice}</strong></div> : null}
+        {actionError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{actionError}</strong></div> : null}
 
-      {loadError ? (
-        <div className="c3-alerta c3-alerta--error" role="alert">
-          <strong>No pudimos cargar tu espacio</strong>
-          <span style={{ fontSize: 14 }}>{loadError}</span>
-          <button type="button" className="c3-btn c3-btn--contorno" style={{ marginTop: 8, alignSelf: "flex-start" }} onClick={() => void load()}>Reintentar</button>
-        </div>
-      ) : null}
+        {loadError ? (
+          <div className="c3-alerta c3-alerta--error" role="alert">
+            <strong>No pudimos cargar tu espacio</strong>
+            <span style={{ fontSize: 14 }}>{loadError}</span>
+            <button type="button" className="c3-btn c3-btn--contorno" style={{ marginTop: 8, alignSelf: "flex-start" }} onClick={() => void load()}>Reintentar</button>
+          </div>
+        ) : null}
 
-      {enrollments === null && !loadError ? <p style={{ color: "var(--c3-texto-suave)" }}>Cargando tus inscripciones…</p> : null}
+        {enrollments === null && !loadError ? <p className="c3-mi-c3__cargando">Cargando tus inscripciones…</p> : null}
 
-      {enrollments && enrollments.length === 0 ? (
-        <div className="c3-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-          <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Todavía no tenés inscripciones</span>
-          <p style={{ fontSize: 14, lineHeight: 1.5 }}>Explorá los retos abiertos y sumate a uno.</p>
-          <Link href="/explorar" className="c3-btn c3-btn--primario">Explorar retos</Link>
-        </div>
-      ) : null}
-
-      {actionable.length > 0 ? (
-        <Seccion titulo="Te toca ahora" color="var(--c3-advertencia)">
-          {actionable.map((item) => (
-            <div key={item.id} className="c3-card" style={{ borderColor: "var(--c3-advertencia)", overflow: "hidden" }}>
-              <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                  <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle}</span>
-                  {item.delivery ? <StatePill state={deliveryPresentation(item.delivery.state)} /> : null}
-                </div>
-                <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-                  {item.mode === "team" && !item.team
-                    ? "Todavía no tenés equipo. Creá uno o unite con un código."
-                    : item.team && item.team.status === "incompleto"
-                      ? `Equipo ${item.team.name}: todavía no alcanza el mínimo de integrantes.`
-                      : item.delivery?.state === "borrador" ? "Entrega sin enviar." : "Todavía no enviaste tu solución."}
-                  {item.submissionClosesAt ? ` Cierra el ${formatDateTime(item.submissionClosesAt)}.` : ""}
-                </span>
-                {item.mode === "team" && !item.team ? (
-                  <Link href={`/retos/${item.challengeId}/inscripcion`} className="c3-btn c3-btn--primario" style={{ width: "100%" }}>Armar equipo</Link>
-                ) : (
-                  <Link href={`/mi-c3/retos/${item.challengeId}`} className="c3-btn c3-btn--primario" style={{ width: "100%" }}>Abrir mi reto</Link>
-                )}
-              </div>
+        {overview ? (
+          <div className={`c3-mi-c3__grilla${empty ? " c3-mi-c3__grilla--simple" : ""}`}>
+            <div className="c3-mi-c3__principal">
+              {empty ? (
+                <section className="c3-card c3-mi-c3__vacio" aria-labelledby="mi-c3-vacio">
+                  <h2 id="mi-c3-vacio" className="c3-titulo">Elegí tu primer reto</h2>
+                  <p>Explorá los retos abiertos y sumate a uno. Cuando te inscribas, acá vas a ver qué te toca hacer y qué espera la respuesta de C3.</p>
+                  <Link href="/explorar" className="c3-btn c3-btn--primario">Explorar retos</Link>
+                </section>
+              ) : null}
+              {GROUP_ORDER.map((group) => (
+                <Seccion key={group} group={group} entries={overview.groups[group]} busyId={busyId} onCancel={(id) => void cancel(id)} />
+              ))}
             </div>
-          ))}
-        </Seccion>
-      ) : null}
-
-      {pending.length > 0 ? (
-        <Seccion titulo="En espera" color="var(--c3-texto-suave)">
-          {pending.map((item) => (
-            <div key={item.id} className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle}</span>
-                <StatePill state={enrollmentState(item.status)} />
-              </div>
-              <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-                Inscripción en revisión por C3. No tenés nada que hacer hasta que se apruebe.
-              </span>
-              <button
-                type="button"
-                className="c3-btn c3-btn--contorno"
-                disabled={busyId === item.id}
-                onClick={() => void cancel(item.id)}
-                style={{ alignSelf: "flex-start", minHeight: 40, padding: "0 16px", fontSize: 12 }}
-              >
-                {busyId === item.id ? "Cancelando…" : "Cancelar inscripción"}
-              </button>
-            </div>
-          ))}
-        </Seccion>
-      ) : null}
-
-      {delivered.length > 0 ? (
-        <Seccion titulo="Entregado" color="var(--c3-texto-suave)">
-          {delivered.map((item) => (
-            <div key={item.id} className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle}</span>
-                {item.delivery ? <StatePill state={deliveryPresentation(item.delivery.state)} /> : null}
-              </div>
-              <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-                {item.delivery?.state === "entregada"
-                  ? `Tu entrega quedó registrada${item.delivery.submittedAt ? ` el ${formatDate(item.delivery.submittedAt)}` : ""}. Se evalúa cuando cierra el plazo.`
-                  : "El plazo cerró sin entrega enviada."}
-              </span>
-                {item.result ? (
-                  <span style={{ fontSize: 14, fontWeight: 600 }}>
-                    Resultado publicado: {item.result.recognition ?? "sin reconocimiento"}
-                    {item.result.average !== null ? ` · promedio ${item.result.average.toFixed(1)}` : ""}
-                    {item.result.place ? ` · puesto ${item.result.place} de ${item.result.of}` : ""}
-                  </span>
-                ) : null}
-                <Link href={`/mi-c3/retos/${item.challengeId}`} style={{ fontSize: 14, fontWeight: 500 }}>Ver mi entrega</Link>
-            </div>
-          ))}
-        </Seccion>
-      ) : null}
-
-      {assignments.length > 0 ? (
-        <Seccion titulo="Como jurado" color="var(--c3-conecta)">
-          {assignments.map((item) => (
-            <div key={item.challengeId} className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.title}</span>
-                <span className={`c3-pill c3-pill--${item.canEvaluate ? "info" : "neutro"}`}>{item.canEvaluate ? "Disponible" : "Esperando el cierre"}</span>
-              </div>
-              <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
-                {item.finalized} de {item.solutions} {item.solutions === 1 ? "solución finalizada" : "soluciones finalizadas"}. Evaluás sin ver quién entregó.
-              </span>
-              <Link href={`/mi-c3/evaluar/${item.challengeId}`} className="c3-btn c3-btn--primario">Evaluar</Link>
-            </div>
-          ))}
-        </Seccion>
-      ) : null}
-
-      {closed.length > 0 ? (
-        <Seccion titulo="Cerradas" color="var(--c3-texto-suave)">
-          {closed.map((item) => (
-            <div key={item.id} className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8, opacity: 0.85 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle}</span>
-                <StatePill state={enrollmentState(item.status)} />
-              </div>
-              <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
-                {item.status === "rejected"
-                  ? "C3 no aprobó esta inscripción."
-                  : "Inscripción cancelada. No acredita participación ni resultado."}
-              </span>
-            </div>
-          ))}
-        </Seccion>
-      ) : null}
+            <MiC3Lateral user={user} />
+          </div>
+        ) : null}
+      </div>
     </MovilShell>
   );
 }
 
-function Seccion({ titulo, color, children }: { titulo: string; color: string; children: ReactNode }) {
+function Seccion({ group, entries, busyId, onCancel }: { group: ParticipationGroup; entries: Entry[]; busyId: string | null; onCancel: (id: string) => void }) {
+  if (entries.length === 0) return null;
+  const copy = GROUP_COPY[group];
   return (
-    <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <span className="c3-etiqueta" style={{ color }}>{titulo}</span>
-      {children}
+    <section className={`c3-mi-c3__seccion c3-mi-c3__seccion--${group}`} aria-labelledby={`mi-c3-${group}`}>
+      <header className="c3-mi-c3__seccion-cabecera">
+        <h2 id={`mi-c3-${group}`} className="c3-titulo">{copy.title}</h2>
+        <span className="c3-mi-c3__seccion-conteo">{entries.length}</span>
+        <p>{copy.description}</p>
+      </header>
+      <div className="c3-mi-c3__lista">
+        {entries.map((entry) =>
+          entry.kind === "inscripcion" ? (
+            <EnrollmentCard key={entry.item.id} item={entry.item} group={group} reason={entry.reason} busy={busyId === entry.item.id} onCancel={onCancel} />
+          ) : (
+            <AssignmentCard key={entry.item.challengeId} item={entry.item} group={group} reason={entry.reason} />
+          ),
+        )}
+      </div>
     </section>
   );
 }
