@@ -171,7 +171,7 @@ test.describe.serial("Experiencias sin reto: del borrador al cierre", () => {
     await expect(page.getByRole("button", { name: "Inscribirme", exact: true })).toHaveCount(0);
 
     await page.goto("/mi-c3");
-    await expect(page.getByText("En espera")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "En espera" })).toBeVisible();
     await expect(page.getByText(editedTitle)).toBeVisible();
   });
 
@@ -203,7 +203,7 @@ test.describe.serial("Experiencias sin reto: del borrador al cierre", () => {
 
   test("la persona ve su lugar confirmado en Mi C3", async ({ page }) => {
     await login(page, joven.email, joven.password, "/mi-c3");
-    await expect(page.getByText("Confirmadas")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "En curso" })).toBeVisible();
     await expect(page.getByText("C3 confirmó tu lugar.")).toBeVisible();
     await expect(page.getByRole("link", { name: "Ver la experiencia" })).toBeVisible();
   });

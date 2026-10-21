@@ -679,3 +679,706 @@ textarea.c3-campo {
     padding: 12px;
   }
 }
+
+/*
+ * Mi C3 como panel adaptable (MovilShell layout="panel").
+ * Breakpoints de la plataforma: 760 px (móvil: grillas a una columna, ya definido arriba), 640 px (tarjetas con
+ * la acción al costado y columna de lectura de 760 px) y 1024 px (escritorio: cabecera superior, sin barra
+ * inferior y dos columnas). Es el mismo DOM en todos los anchos; solo cambia cómo se presenta.
+ */
+.c3-movil--panel {
+  --c3-panel-margen: clamp(16px, 4vw, 48px);
+  --c3-panel-ancho: 100%;
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.c3-movil--panel .c3-movil__barra {
+  padding-inline: var(--c3-panel-margen);
+}
+
+.c3-movil--panel .c3-movil__contenido {
+  padding: 0;
+  gap: 0;
+}
+
+.c3-movil--panel .c3-cabecera--panel {
+  display: none;
+}
+
+.c3-mi-c3__contenedor {
+  width: min(100% - 2 * var(--c3-panel-margen), var(--c3-panel-ancho));
+  margin-inline: auto;
+}
+
+/* Resumen superior: saludo, estado general y conteo por estado. */
+.c3-mi-c3__resumen {
+  background: var(--c3-navy);
+  padding-block: 4px 24px;
+}
+
+.c3-mi-c3__resumen-interior {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.c3-mi-c3__resumen-texto {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.c3-mi-c3__resumen h1 {
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.c3-mi-c3__resumen-texto p {
+  font-size: var(--c3-cuerpo-sm-size);
+  line-height: var(--c3-cuerpo-sm-lh);
+  color: var(--c3-texto-cabecera);
+}
+
+.c3-mi-c3__proximo strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.c3-mi-c3__conteo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.c3-mi-c3__conteo-item {
+  background: var(--c3-navy-claro);
+  border-top: 3px solid transparent;
+  border-radius: var(--c3-radius-md);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.c3-mi-c3__conteo-item--alerta {
+  border-top-color: var(--c3-oro);
+}
+
+.c3-mi-c3__conteo-valor {
+  font-family: var(--c3-font-titulo);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.c3-mi-c3__conteo-etiqueta {
+  font-size: var(--c3-leyenda-size);
+  line-height: 1.2;
+  text-align: center;
+  color: var(--c3-texto-cabecera);
+}
+
+/* Cuerpo: una columna en móvil; en escritorio, principal (2/3) y lateral (1/3). */
+.c3-mi-c3__cuerpo {
+  padding-block: 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.c3-mi-c3__cargando {
+  color: var(--c3-texto-suave);
+}
+
+.c3-mi-c3__grilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.c3-mi-c3__principal,
+.c3-mi-c3__lateral {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.c3-mi-c3__principal {
+  gap: 28px;
+}
+
+.c3-mi-c3__lateral {
+  gap: 16px;
+}
+
+/* Sin participaciones no hay nada que llene dos columnas: el aviso va arriba y los accesos se reparten debajo. */
+.c3-mi-c3__grilla--simple .c3-mi-c3__lateral {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  align-items: start;
+}
+
+.c3-mi-c3__vacio,
+.c3-mi-c3__acceso-requerido {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.c3-mi-c3__vacio h2,
+.c3-mi-c3__acceso-requerido h1 {
+  font-size: 22px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.c3-mi-c3__vacio p,
+.c3-mi-c3__acceso-requerido p {
+  max-width: 60ch;
+  font-size: var(--c3-cuerpo-sm-size);
+  line-height: var(--c3-cuerpo-sm-lh);
+  color: var(--c3-texto-suave);
+}
+
+.c3-mi-c3__vacio .c3-btn,
+.c3-mi-c3__acceso-requerido .c3-btn {
+  width: 100%;
+}
+
+.c3-mi-c3__acceso-requerido {
+  max-width: 520px;
+  margin: 24px auto;
+}
+
+/* Secciones por estado. */
+.c3-mi-c3__seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.c3-mi-c3__seccion-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+}
+
+.c3-mi-c3__seccion-cabecera h2 {
+  font-size: var(--c3-cuerpo-lg-size);
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.c3-mi-c3__seccion-cabecera p {
+  flex-basis: 100%;
+  font-size: var(--c3-cuerpo-sm-size);
+  color: var(--c3-texto-suave);
+}
+
+.c3-mi-c3__seccion-conteo {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--c3-radius-pill);
+  background: var(--c3-superficie-sutil);
+  color: var(--c3-texto-suave);
+  font-size: var(--c3-leyenda-size);
+  font-weight: 600;
+}
+
+.c3-mi-c3__seccion--atencion h2 {
+  color: var(--c3-advertencia);
+}
+
+.c3-mi-c3__seccion--atencion .c3-mi-c3__seccion-conteo {
+  background: var(--c3-advertencia-fondo);
+  color: var(--c3-advertencia);
+}
+
+.c3-mi-c3__seccion--en_curso h2 {
+  color: var(--c3-accion);
+}
+
+.c3-mi-c3__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Tarjetas de inscripción y de jurado. */
+.c3-mi-c3__tarjeta {
+  --c3-acento: var(--c3-borde-fuerte);
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px 24px;
+  border-left-width: 4px;
+  border-left-color: var(--c3-acento);
+}
+
+.c3-mi-c3__tarjeta--atencion {
+  --c3-acento: var(--c3-advertencia);
+  box-shadow: var(--c3-sombra-sm);
+}
+
+.c3-mi-c3__tarjeta--en_curso {
+  --c3-acento: var(--c3-accion);
+}
+
+.c3-mi-c3__tarjeta--finalizada {
+  --c3-acento: var(--c3-borde);
+}
+
+.c3-mi-c3__tarjeta-cuerpo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.c3-mi-c3__tarjeta-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.c3-mi-c3__kicker {
+  min-width: 0;
+  padding-top: 6px;
+  font-size: var(--c3-leyenda-size);
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--c3-texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.c3-mi-c3__tarjeta-titulo {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.c3-mi-c3__meta {
+  font-size: 13px;
+  color: var(--c3-texto-suave);
+}
+
+.c3-mi-c3__estado {
+  margin-top: 4px;
+  font-size: var(--c3-cuerpo-sm-size);
+  line-height: var(--c3-cuerpo-sm-lh);
+  color: var(--c3-texto-suave);
+}
+
+.c3-mi-c3__estado strong {
+  color: var(--c3-texto);
+  font-weight: 600;
+}
+
+.c3-mi-c3__fecha {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c3-texto);
+}
+
+.c3-mi-c3__acciones {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+/* Acción secundaria (consulta) o terciaria (cancelar): sin relleno, para no competir con la principal. */
+.c3-mi-c3__accion-secundaria {
+  min-height: 44px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 500;
+  color: var(--c3-enlace);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.c3-mi-c3__accion-cancelar {
+  color: var(--c3-texto-suave);
+}
+
+.c3-mi-c3__accion-cancelar:hover:not(:disabled) {
+  color: var(--c3-error);
+}
+
+.c3-mi-c3__accion-secundaria:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.c3-mi-c3__confirmar {
+  margin-top: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: var(--c3-radius-sm);
+  background: var(--c3-error-fondo);
+}
+
+.c3-mi-c3__confirmar p {
+  font-size: var(--c3-cuerpo-sm-size);
+  color: var(--c3-texto);
+}
+
+.c3-mi-c3__confirmar-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.c3-mi-c3__boton-compacto {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: var(--c3-leyenda-size);
+  color: var(--c3-error);
+  border-color: var(--c3-error);
+}
+
+/* Columna lateral: cuenta y accesos. */
+.c3-mi-c3__panel {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.c3-mi-c3__perfil {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.c3-mi-c3__avatar {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--c3-radius-pill);
+  background: var(--c3-conecta);
+  color: #ffffff;
+  font-family: var(--c3-font-titulo);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.c3-mi-c3__perfil-datos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.c3-mi-c3__perfil-nombre {
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.c3-mi-c3__perfil-correo {
+  font-size: 13px;
+  color: var(--c3-texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.c3-mi-c3__perfil-estado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.c3-mi-c3__panel-titulo {
+  font-size: var(--c3-etiqueta-size);
+  font-weight: var(--c3-etiqueta-weight);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c3-texto-suave);
+}
+
+.c3-mi-c3__accesos,
+.c3-mi-c3__lineas ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.c3-mi-c3__accesos li + li {
+  border-top: 1px solid var(--c3-borde);
+}
+
+.c3-mi-c3__acceso {
+  min-height: 44px;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+  color: var(--c3-texto);
+}
+
+.c3-mi-c3__acceso strong {
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 600;
+  color: var(--c3-enlace);
+}
+
+.c3-mi-c3__acceso:hover strong {
+  text-decoration: underline;
+}
+
+.c3-mi-c3__acceso span {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--c3-texto-suave);
+}
+
+.c3-mi-c3__lineas {
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--c3-borde);
+}
+
+.c3-mi-c3__lineas-titulo {
+  font-size: var(--c3-leyenda-size);
+  font-weight: 500;
+  color: var(--c3-texto-suave);
+}
+
+.c3-mi-c3__lineas ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.c3-mi-c3__linea {
+  min-height: 44px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--c3-borde);
+  border-radius: var(--c3-radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--c3-texto);
+}
+
+.c3-mi-c3__linea::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: var(--c3-radius-pill);
+  background: var(--c3-linea);
+}
+
+.c3-mi-c3__linea:hover {
+  color: var(--c3-texto);
+  border-color: var(--c3-borde-fuerte);
+}
+
+.c3-mi-c3__linea--compite {
+  --c3-linea: var(--c3-compite);
+}
+
+.c3-mi-c3__linea--crea {
+  --c3-linea: var(--c3-crea);
+}
+
+.c3-mi-c3__linea--conecta {
+  --c3-linea: var(--c3-conecta);
+}
+
+/* Cuenta de la cabecera de escritorio: identidad y acceso a Cuenta. */
+.c3-cabecera--panel :focus-visible {
+  outline-color: #ffffff;
+}
+
+.c3-cabecera__cuenta {
+  padding: 5px 14px 5px 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--c3-radius-pill);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.c3-cabecera__cuenta:hover {
+  color: #ffffff;
+  background: var(--c3-navy-claro);
+}
+
+.c3-cabecera__avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--c3-radius-pill);
+  background: var(--c3-conecta);
+  font-family: var(--c3-font-titulo);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.c3-cabecera__cuenta-texto {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.c3-cabecera__cuenta-nombre {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 600;
+}
+
+.c3-cabecera__cuenta-ayuda {
+  font-size: var(--c3-leyenda-size);
+  color: var(--c3-texto-cabecera);
+}
+
+/* Tablet y móvil grande: columna de lectura de 760 px y acción de la tarjeta al costado. */
+@media (min-width: 640px) {
+  .c3-movil--panel {
+    --c3-panel-ancho: 760px;
+  }
+
+  .c3-movil--panel .c3-movil__barra {
+    padding-inline: max(var(--c3-panel-margen), calc((100% - var(--c3-panel-ancho)) / 2));
+  }
+
+  .c3-mi-c3__tarjeta--con-acciones {
+    grid-template-columns: minmax(0, 1fr) 200px;
+    align-items: center;
+  }
+
+  .c3-mi-c3__vacio .c3-btn,
+  .c3-mi-c3__acceso-requerido .c3-btn {
+    width: auto;
+  }
+}
+
+/* Escritorio: cabecera superior, sin barra inferior, dos columnas. */
+@media (min-width: 1024px) {
+  .c3-movil--panel {
+    --c3-panel-ancho: 1232px;
+  }
+
+  .c3-movil--panel .c3-cabecera--panel {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .c3-movil--panel .c3-movil__barra,
+  .c3-movil--panel .c3-movil__nav {
+    display: none;
+  }
+
+  .c3-cabecera--panel .c3-cabecera__interior {
+    max-width: var(--c3-panel-ancho);
+    flex-wrap: nowrap;
+  }
+
+  .c3-cabecera--panel .c3-cabecera__principal {
+    flex-wrap: nowrap;
+  }
+
+  .c3-mi-c3__resumen {
+    padding-block: 28px;
+  }
+
+  .c3-mi-c3__resumen-interior {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+  }
+
+  .c3-mi-c3__resumen h1 {
+    font-size: 32px;
+  }
+
+  .c3-mi-c3__resumen-texto p {
+    font-size: var(--c3-cuerpo-size);
+  }
+
+  .c3-mi-c3__conteo {
+    flex-shrink: 0;
+    grid-template-columns: repeat(4, 112px);
+    gap: 12px;
+  }
+
+  .c3-mi-c3__conteo-item {
+    padding: 12px 8px;
+  }
+
+  .c3-mi-c3__conteo-valor {
+    font-size: 28px;
+  }
+
+  .c3-mi-c3__cuerpo {
+    padding-block: 32px 48px;
+  }
+
+  .c3-mi-c3__grilla {
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+    gap: 32px;
+  }
+
+  .c3-mi-c3__grilla--simple {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .c3-mi-c3__grilla:not(.c3-mi-c3__grilla--simple) .c3-mi-c3__lateral {
+    position: sticky;
+    top: 96px;
+  }
+
+  .c3-mi-c3__tarjeta {
+    padding: 20px;
+  }
+}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { C3BrandMark } from "@/components/BrandMark";
+import { PanelHeader } from "@/components/PanelHeader";
 import { useSession } from "@/lib/auth/AuthProvider";
 
 /** Iniciales para el avatar: primera letra del nombre y del apellido (o de la única palabra). */
@@ -17,21 +18,30 @@ export function initialsOf(name: string | null | undefined, email: string | null
 /**
  * Marco de las vistas móviles (V05–V07). Ocupa el ancho del teléfono y se centra en escritorio,
  * conservando la cabecera navy, el avatar y la barra inferior de la guía de estilo.
+ *
+ * Con `layout="panel"` (Mi C3) el marco es adaptable: móvil y tablet usan la barra superior y la navegación
+ * inferior; desde 1024 px las reemplaza la cabecera de escritorio y el contenido ocupa todo el ancho. Es la
+ * misma estructura en todos los anchos (el CSS decide qué se ve), así que los datos se piden una sola vez.
+ * Las demás vistas no lo usan y conservan el marco móvil de siempre.
  */
 export function MovilShell({
   children,
   backHref,
   backLabel = "Mi C3",
   nav = "inicio",
+  layout = "movil",
 }: {
   children: ReactNode;
   backHref?: string;
   backLabel?: string;
   nav?: "inicio" | "explorar" | "trayectoria" | null;
+  layout?: "movil" | "panel";
 }) {
   const { session, signOut } = useSession();
   const router = useRouter();
   const user = session.status === "signed-in" ? session.user : null;
+  const panel = layout === "panel";
+  const Contenido = panel ? "main" : "div";
 
   async function handleSignOut() {
     await signOut();
@@ -39,7 +49,15 @@ export function MovilShell({
   }
 
   return (
-    <div className="c3-movil">
+    <div className={`c3-movil${panel ? " c3-movil--panel" : ""}`}>
+      {panel ? (
+        <PanelHeader
+          activo={nav}
+          loading={session.status === "loading"}
+          user={user ? { name: user.displayName ?? user.email ?? "Tu cuenta", initials: initialsOf(user.displayName, user.email), isAdmin: user.isAdmin } : null}
+          onSignOut={() => void handleSignOut()}
+        />
+      ) : null}
       <div className="c3-movil__barra">
         {backHref ? (
           <Link href={backHref} style={{ fontSize: 14, fontWeight: 500, color: "var(--c3-texto-cabecera)", textDecoration: "none" }}>
@@ -70,7 +88,7 @@ export function MovilShell({
         </div>
       </div>
 
-      <div className="c3-movil__contenido">{children}</div>
+      <Contenido className="c3-movil__contenido">{children}</Contenido>
 
       {nav ? (
         <nav aria-label="Navegación móvil" className="c3-movil__nav">

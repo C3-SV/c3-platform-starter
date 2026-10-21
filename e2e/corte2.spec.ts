@@ -85,7 +85,9 @@ test.describe.serial("Corte 2: participación individual", () => {
 
     await page.goto("/mi-c3");
     await expect(page.getByRole("heading", { level: 1, name: `Hola, ${joven.name.split(" ")[0]}` })).toBeVisible();
-    await expect(page.getByText("En espera")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "En espera" })).toBeVisible();
+    await expect(page.getByText("Esperando respuesta de C3.")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Requiere tu atención" })).toHaveCount(0);
     await expect(page.getByText(challengeTitle)).toBeVisible();
   });
 
@@ -108,7 +110,7 @@ test.describe.serial("Corte 2: participación individual", () => {
 
   test("el joven ve su reto habilitado, valida la entrega, guarda borrador y envía", async ({ page }) => {
     await loginAt(page, joven.email, joven.password, "/mi-c3");
-    await expect(page.getByText("Te toca ahora")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Requiere tu atención" })).toBeVisible();
     await page.getByRole("link", { name: "Abrir mi reto" }).first().click();
     await expect(page.getByRole("heading", { level: 2, name: "Tu entrega" })).toBeVisible();
 
@@ -134,7 +136,8 @@ test.describe.serial("Corte 2: participación individual", () => {
     await expect(page.getByText("Entregada", { exact: true }).first()).toBeVisible();
 
     await page.goto("/mi-c3");
-    await expect(page.getByText("Entregado")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "En curso" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Requiere tu atención" })).toHaveCount(0);
   });
 
   test("una inscripción aprobada no se duplica y la página lo muestra", async ({ page }) => {

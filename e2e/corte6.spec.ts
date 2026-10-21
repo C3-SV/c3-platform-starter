@@ -55,14 +55,15 @@ test.describe.serial("Corte 6: perfil y trayectoria", () => {
     await expect(page.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/lucia-prueba");
   });
 
-  test("la barra inferior de las vistas móviles lleva a la trayectoria", async ({ page }) => {
+  test("la navegación de Mi C3 lleva a la trayectoria (barra inferior en móvil, cabecera en escritorio)", async ({ page, isMobile }) => {
     await page.goto("/acceso?next=/mi-c3");
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
     await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
     await page.goto("/mi-c3");
-    await page.getByRole("link", { name: "Trayectoria", exact: true }).click();
+    const navigation = page.getByRole("navigation", { name: isMobile ? "Navegación móvil" : "Principal" });
+    await navigation.getByRole("link", { name: "Trayectoria", exact: true }).click();
     await expect(page).toHaveURL(/\/trayectoria$/);
   });
 

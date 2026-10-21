@@ -100,11 +100,12 @@ test.describe.serial("Corte 5: jurados y resultados", () => {
 
   test("el jurado ve el reto en Mi C3 y que debe esperar el cierre de entregas", async ({ page }) => {
     await loginAt(page, jurado.email, jurado.password, "/mi-c3");
-    await expect(page.getByText("Como jurado")).toBeVisible();
+    await expect(page.getByText("Como jurado", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "En espera" })).toBeVisible();
     await expect(page.getByText(challengeTitle)).toBeVisible();
-    await expect(page.getByText("Esperando el cierre")).toBeVisible();
+    await expect(page.getByText("Esperando el cierre", { exact: true })).toBeVisible();
 
-    await page.getByRole("link", { name: "Evaluar", exact: true }).click();
+    await page.getByRole("link", { name: "Ver detalle", exact: true }).click();
     await expect(page.getByText("Esperá el cierre de entregas")).toBeVisible();
     await expect(page.getByText("Todavía no hay soluciones enviadas para este reto.")).toBeVisible();
   });
@@ -124,6 +125,6 @@ test.describe.serial("Corte 5: jurados y resultados", () => {
     });
 
     await loginAt(page, jurado.email, jurado.password, "/mi-c3");
-    await expect(page.getByText("Como jurado")).toHaveCount(0);
+    await expect(page.getByText("Como jurado", { exact: true })).toHaveCount(0);
   });
 });
