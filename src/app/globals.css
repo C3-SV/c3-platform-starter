@@ -1382,3 +1382,329 @@ textarea.c3-campo {
     padding: 20px;
   }
 }
+
+/*
+ * Trayectoria (V08) con el marco adaptable de Mi C3. Reutiliza el contenedor, la franja navy, los contadores y las
+ * secciones de Mi C3 (`c3-mi-c3__*`); aquí solo vive lo propio: identidad, enlaces, medallas y la grilla de dos columnas.
+ * Móvil y tablet: una columna, «lo que escribió» primero (como en el diseño). Desde 1024 px: el registro de C3 a la
+ * izquierda y lo que escribió la persona a la derecha.
+ */
+.c3-tray__hero-interior {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.c3-tray__identidad {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.c3-tray__avatar {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--c3-radius-pill);
+  background: var(--c3-conecta);
+  color: #ffffff;
+  font-family: var(--c3-font-titulo);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.c3-tray__datos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.c3-tray__hero .c3-tray__datos h1 {
+  overflow-wrap: anywhere;
+}
+
+.c3-tray__centro {
+  font-size: var(--c3-cuerpo-sm-size);
+  line-height: var(--c3-cuerpo-sm-lh);
+  color: var(--c3-texto-cabecera);
+}
+
+.c3-tray__acciones {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.c3-tray__chip {
+  min-height: 44px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--c3-radius-pill);
+  background: var(--c3-navy-claro);
+  color: #ffffff;
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.c3-tray__chip:hover {
+  background: #3a5080;
+  color: #ffffff;
+}
+
+.c3-tray__chip:focus-visible {
+  outline-color: #ffffff;
+}
+
+.c3-tray__chip--editar {
+  background: transparent;
+  border-color: var(--c3-texto-cabecera);
+}
+
+.c3-tray__chip--editar:hover {
+  background: var(--c3-navy-claro);
+}
+
+/* Los contadores resumen el registro; en móvil sobran porque cada sección ya muestra su cantidad. */
+.c3-tray__conteo {
+  display: none;
+}
+
+.c3-tray__grilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "escribio"
+    "registro";
+  align-items: start;
+  gap: 24px;
+}
+
+.c3-tray__escribio {
+  grid-area: escribio;
+  min-width: 0;
+}
+
+.c3-tray__registro {
+  grid-area: registro;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.c3-tray__bio {
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.c3-tray__bio--vacia,
+.c3-tray__aviso {
+  color: var(--c3-texto-suave);
+}
+
+.c3-tray__aviso {
+  font-size: var(--c3-leyenda-size);
+  line-height: var(--c3-leyenda-lh);
+}
+
+.c3-tray__proximamente {
+  padding-top: 12px;
+  border-top: 1px solid var(--c3-borde);
+  font-size: var(--c3-leyenda-size);
+  color: var(--c3-texto-suave);
+  cursor: not-allowed;
+}
+
+.c3-tray__registro-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.c3-tray__registro-cabecera h2 {
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.c3-tray__registro-cabecera p {
+  flex-basis: 100%;
+  font-size: var(--c3-cuerpo-sm-size);
+  color: var(--c3-texto-suave);
+}
+
+.c3-tray__seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.c3-tray__seccion .c3-mi-c3__seccion-cabecera h3 {
+  font-size: var(--c3-cuerpo-lg-size);
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.c3-tray__seccion--en_revision .c3-mi-c3__seccion-cabecera h3 {
+  color: var(--c3-advertencia);
+}
+
+.c3-tray__seccion--en_revision .c3-mi-c3__seccion-conteo {
+  background: var(--c3-advertencia-fondo);
+  color: var(--c3-advertencia);
+}
+
+/* Tarjetas del registro: la franja izquierda dice de qué clase de registro se trata, nunca el color solo. */
+.c3-tray__tarjeta {
+  --c3-acento: var(--c3-accion);
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-left-width: 4px;
+  border-left-color: var(--c3-acento);
+}
+
+.c3-tray__tarjeta--resultado {
+  --c3-acento: var(--c3-exito);
+}
+
+.c3-tray__tarjeta--en_revision {
+  --c3-acento: var(--c3-advertencia);
+}
+
+/* Inscripción sin participación: bloque gris, sin franja, como en la guía (EX-01, EX-06). */
+.c3-tray__tarjeta--sin_participacion {
+  background: var(--c3-superficie-sutil);
+  border-color: transparent;
+}
+
+/* El reset global de márgenes llega hasta h3; el título de la tarjeta es un h4. */
+.c3-tray__tarjeta h4 {
+  margin: 0;
+}
+
+.c3-tray__tarjeta-cuerpo {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.c3-tray__tarjeta-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.c3-tray__enlace {
+  align-self: flex-start;
+  padding-block: 8px;
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 500;
+}
+
+.c3-tray__medalla {
+  --c3-medalla: var(--c3-oro);
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid var(--c3-medalla);
+  border-radius: var(--c3-radius-pill);
+  background: color-mix(in srgb, var(--c3-medalla) 18%, var(--c3-superficie));
+  color: var(--c3-texto);
+  font-family: var(--c3-font-titulo);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.c3-tray__medalla--plata {
+  --c3-medalla: var(--c3-plata);
+}
+
+.c3-tray__medalla--bronce {
+  --c3-medalla: var(--c3-bronce);
+}
+
+/* Tablet y móvil grande: el contador aparece sobre la columna de lectura. */
+@media (min-width: 640px) {
+  .c3-tray__conteo {
+    display: grid;
+  }
+
+  .c3-tray__avatar {
+    width: 72px;
+    height: 72px;
+    font-size: 26px;
+  }
+
+  .c3-tray__tarjeta {
+    padding: 18px;
+  }
+
+  .c3-tray__medalla {
+    width: 60px;
+    height: 60px;
+    font-size: 14px;
+  }
+}
+
+/* Escritorio: identidad a la izquierda, contadores a la derecha y dos columnas en el cuerpo. */
+@media (min-width: 1024px) {
+  .c3-tray__hero-interior {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+  }
+
+  .c3-tray__avatar {
+    width: 88px;
+    height: 88px;
+    font-size: 30px;
+  }
+
+  .c3-tray__identidad {
+    align-items: center;
+    gap: 20px;
+  }
+
+  .c3-tray__conteo {
+    flex-shrink: 0;
+    grid-template-columns: repeat(4, 120px);
+  }
+
+  .c3-tray__grilla {
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+    grid-template-areas: "registro escribio";
+    gap: 32px;
+  }
+
+  .c3-tray__escribio {
+    position: sticky;
+    top: 96px;
+  }
+
+  .c3-tray__tarjeta {
+    padding: 20px;
+  }
+}

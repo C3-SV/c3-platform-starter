@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
 
@@ -366,6 +367,167 @@ test.describe.serial("Mi C3 responsive", () => {
       await expect(card.getByText("2 de 3 soluciones sin finalizar")).toBeVisible();
       await expect(card.getByRole("link", { name: "Evaluar", exact: true })).toHaveAttribute("href", `/mi-c3/evaluar/${alfaId}`);
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+/**
+ * Trayectoria responsive (V08). Mismo marco que Mi C3: panel de escritorio con dos columnas (el registro de C3 a la
+ * izquierda, lo que escribió la persona a la derecha) y app móvil en una sola columna. Reutiliza a las personas del
+ * recorrido anterior: sin experiencias, con entrega enviada y con una inscripción cancelada.
+ */
+async function openTrayectoria(page: Page, viewport: { width: number; height: number }): Promise<string[]> {
+  const errors: string[] = [];
+  const onError = (error: Error) => errors.push(`pageerror: ${error.message}`);
+  const onConsole = (message: { type: () => string; text: () => string }) => {
+    if (message.type() === "error") errors.push(`console: ${message.text()}`);
+  };
+  page.on("pageerror", onError);
+  page.on("console", onConsole);
+  await page.setViewportSize(viewport);
+  await page.goto("/trayectoria");
+  await expect(page.locator(".c3-tray__grilla")).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  page.off("pageerror", onError);
+  page.off("console", onConsole);
+  return errors;
+}
+
+test.describe.serial("Trayectoria responsive", () => {
+  test("sin participaciones: el registro está vacío, lo que escribió va primero en móvil y a la derecha en escritorio", async ({ page }) => {
+    await loginAt(page, sinNada.email, password, "/trayectoria");
+    for (const viewport of VIEWPORTS) {
+      const errors = await openTrayectoria(page, viewport);
+      expect(errors, `errores de consola o de página en ${viewport.name}`).toEqual([]);
+      expect(await horizontalOverflow(page), `desbordamiento en ${viewport.name}`).toBeLessThanOrEqual(1);
+      await expect(page.getByRole("heading", { level: 1, name: sinNada.name })).toBeVisible();
+      await expect(page.getByText("Registrada por C3")).toHaveCount(1);
+      await expect(page.getByText("Todavía no tenés trayectoria registrada.")).toBeVisible();
+      await expect(page.getByText("Todavía no escribiste nada.")).toBeVisible();
+      for (const heading of ["Participaciones", "En revisión por C3", "Sin participación"]) {
+        await expect(page.getByRole("heading", { level: 3, name: heading })).toHaveCount(0);
+      }
+
+      const escribio = await page.locator(".c3-tray__escribio").boundingBox();
+      const registro = await page.locator(".c3-tray__registro").boundingBox();
+      expect(escribio && registro, `columnas visibles en ${viewport.name}`).toBeTruthy();
+      if (viewport.desktop) {
+        expect(escribio!.x, `lo que escribió a la derecha en ${viewport.name}`).toBeGreaterThan(registro!.x + registro!.width - 1);
+        await expect(page.getByRole("navigation", { name: "Principal" }), viewport.name).toBeVisible();
+        await expect(page.locator('nav[aria-label="Navegación móvil"]'), viewport.name).toBeHidden();
+      } else {
+        expect(escribio!.y + escribio!.height, `lo que escribió antes del registro en ${viewport.name}`).toBeLessThanOrEqual(registro!.y + 1);
+        await expect(page.locator('nav[aria-label="Navegación móvil"]'), viewport.name).toBeVisible();
+        await expect(page.getByRole("navigation", { name: "Principal" }), viewport.name).toBeHidden();
+      }
+    }
+    await page.getByRole("link", { name: "Explorar retos", exact: true }).click();
+    await expect(page).toHaveURL(/\/explorar$/);
+  });
+
+  test("participación con entrega enviada: tarjeta con estado, fecha y acceso a la entrega; contadores solo desde 640 px", async ({ page }) => {
+    await loginAt(page, pendiente.email, password, "/trayectoria");
+    for (const viewport of VIEWPORTS) {
+      const errors = await openTrayectoria(page, viewport);
+      expect(errors, `errores de consola o de página en ${viewport.name}`).toEqual([]);
+      expect(await horizontalOverflow(page), `desbordamiento en ${viewport.name}`).toBeLessThanOrEqual(1);
+      await expect(page.getByRole("heading", { level: 3, name: "Participaciones" })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 3, name: "Sin participación" })).toHaveCount(0);
+      const card = page.getByRole("article").filter({ hasText: alfa.challenge });
+      await expect(card.getByRole("heading", { level: 4, name: alfa.challenge })).toBeVisible();
+      await expect(card.getByText("Entregada", { exact: true })).toBeVisible();
+      await expect(card.getByText(/^Entrega enviada el /)).toBeVisible();
+      await expect(card.getByRole("link", { name: "Ver mi entrega" })).toHaveAttribute("href", `/mi-c3/retos/${alfaId}`);
+
+      const counters = page.getByRole("list", { name: "Resumen de tu trayectoria" });
+      if (viewport.width >= 640) {
+        await expect(counters, viewport.name).toBeVisible();
+        await expect(counters.getByRole("listitem").filter({ hasText: "Participaciones" })).toContainText("1");
+      } else {
+        await expect(counters, viewport.name).toBeHidden();
+      }
+      if (viewport.desktop) {
+        const registro = await page.locator(".c3-tray__registro").boundingBox();
+        const escribio = await page.locator(".c3-tray__escribio").boundingBox();
+        const ratio = registro!.width / (registro!.width + escribio!.width);
+        expect(ratio, `registro ≈ 65–70% en ${viewport.name}`).toBeGreaterThan(0.6);
+        expect(ratio).toBeLessThan(0.75);
+      } else {
+        // La barra inferior no tapa el final de la página.
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        const last = await page.locator(".c3-tray__registro").boundingBox();
+        const bar = await page.locator('nav[aria-label="Navegación móvil"]').boundingBox();
+        expect(last!.y + last!.height, `contenido final visible en ${viewport.name}`).toBeLessThanOrEqual(bar!.y + 1);
+      }
+    }
+  });
+
+  test("inscripción cancelada: va a «Sin participación», en gris, y aclara que no acredita nada", async ({ page }) => {
+    await loginAt(page, cancelador.email, password, "/trayectoria");
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 360, height: 800 }]) {
+      await openTrayectoria(page, viewport);
+      expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
+      await expect(page.getByRole("heading", { level: 3, name: "Sin participación" })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 3, name: "Participaciones" })).toHaveCount(0);
+      const card = page.getByRole("article").filter({ hasText: beta.challenge });
+      await expect(card.getByText("Cancelada", { exact: true })).toBeVisible();
+      await expect(card.getByText("Inscripción cancelada.")).toBeVisible();
+      await expect(card.getByText("No acredita participación ni resultado.")).toBeVisible();
+      await expect(card.getByRole("link")).toHaveCount(0);
+    }
+  });
+
+  test("lo que escribió la persona se muestra aparte, con datos largos y sin desbordar", async ({ page }) => {
+    await loginAt(page, pendiente.email, password, "/trayectoria");
+    await page.goto("/cuenta");
+    const school = "Universidad Centroamericana José Simeón Cañas · Ingeniería Informática, cuarto año";
+    const bio = `Me interesan la optimización, el backend y la analítica de datos. ${"supercalifragilisticoespialidoso".repeat(3)} y mucho más para probar un texto muy largo.`;
+    await page.locator("#cuenta-school").fill(school);
+    await page.locator("#cuenta-bio").fill(bio);
+    await page.locator("#cuenta-github").fill("https://github.com/paola-pendiente-de-prueba");
+    await page.locator("#cuenta-linkedin").fill("https://www.linkedin.com/in/paola-pendiente-de-prueba-con-un-nombre-largo");
+    await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Cambios guardados" })).toBeVisible();
+
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 1024 }, { width: 360, height: 800 }]) {
+      await openTrayectoria(page, viewport);
+      expect(await horizontalOverflow(page), `desbordamiento en ${viewport.width}`).toBeLessThanOrEqual(1);
+      await expect(page.getByText(school)).toBeVisible();
+      const written = page.getByRole("complementary", { name: "Lo que escribió" });
+      await expect(written.getByText(bio)).toBeVisible();
+      await expect(written.getByText("Lo escribís vos y C3 no lo verifica.")).toBeVisible();
+      await expect(page.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/paola-pendiente-de-prueba");
+      await expect(page.getByRole("link", { name: "LinkedIn", exact: true })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Editar en Cuenta" })).toHaveAttribute("href", "/cuenta");
+    }
+  });
+
+  test("resultado publicado: medalla de oro, plata y bronce con texto, sin violaciones de accesibilidad (respuesta simulada)", async ({ page }) => {
+    // Publicar resultados exige cerrar las entregas, que no se puede adelantar en el navegador: se simula solo la respuesta.
+    const base = {
+      status: "approved", mode: "individual", experienceId: "e", challengeId: "c", organizationName: "Organización de prueba",
+      submissionClosesAt: null, startsAt: null, location: null, createdAt: "2026-09-10T12:00:00Z", team: null,
+      delivery: { state: "entregada", canEdit: false, text: "", links: [], updatedAt: null, submittedAt: "2026-09-20T12:00:00Z" },
+    };
+    const medal = (id: string, title: string, place: number) => ({ ...base, id, challengeTitle: title, experienceTitle: `Experiencia ${id}`, result: { recognition: place === 1 ? "Primer lugar" : null, average: 9 - place / 10, place, of: 14 } });
+    await page.route("**/api/trayectoria", async (route) => {
+      const response = await route.fetch();
+      const data = await response.json();
+      await route.fulfill({ response, json: { ...data, enrollments: [medal("a", "Reto de oro", 1), medal("b", "Reto de plata", 2), medal("c", "Reto de bronce", 3), medal("d", "Reto sin medalla", 9)] } });
+    });
+    await loginAt(page, pendiente.email, password, "/trayectoria");
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 360, height: 800 }]) {
+      await openTrayectoria(page, viewport);
+      expect(await horizontalOverflow(page), `desbordamiento en ${viewport.width}`).toBeLessThanOrEqual(1);
+      await expect(page.getByRole("img", { name: "Medalla de oro, puesto 1 de 14" })).toHaveText("ORO");
+      await expect(page.getByRole("img", { name: "Medalla de plata, puesto 2 de 14" })).toHaveText("2.º");
+      await expect(page.getByRole("img", { name: "Medalla de bronce, puesto 3 de 14" })).toHaveText("3.º");
+      await expect(page.locator(".c3-tray__medalla")).toHaveCount(3);
+      const sinMedalla = page.getByRole("article").filter({ hasText: "Reto sin medalla" });
+      await expect(sinMedalla.getByText("Puesto 9 de 14", { exact: false })).toBeVisible();
+      await expect(page.getByRole("article").filter({ hasText: "Reto de oro" }).getByText("Primer lugar.")).toBeVisible();
+      const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+      expect(results.violations.map((violation) => `${violation.id}: ${violation.help}`), `accesibilidad en ${viewport.width}`).toEqual([]);
     }
   });
 });
