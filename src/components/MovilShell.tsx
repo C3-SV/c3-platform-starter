@@ -53,6 +53,7 @@ export function MovilShell({
       {panel ? (
         <PanelHeader
           activo={nav}
+          loading={session.status === "loading"}
           user={user ? { name: user.displayName ?? user.email ?? "Tu cuenta", initials: initialsOf(user.displayName, user.email), isAdmin: user.isAdmin } : null}
           onSignOut={() => void handleSignOut()}
         />

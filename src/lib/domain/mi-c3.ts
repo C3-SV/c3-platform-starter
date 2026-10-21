@@ -17,7 +17,7 @@ export const GROUP_ORDER: readonly ParticipationGroup[] = ["atencion", "espera",
 
 export const GROUP_COPY: Record<ParticipationGroup, { title: string; short: string; description: string }> = {
   atencion: { title: "Requiere tu atención", short: "Atención", description: "Lo que te toca hacer a vos." },
-  espera: { title: "En espera", short: "En espera", description: "Depende de una respuesta de C3 o del cierre de un proceso." },
+  espera: { title: "En espera", short: "En espera", description: "Esperan una respuesta de C3 o el cierre de las entregas." },
   en_curso: { title: "En curso", short: "En curso", description: "Participaciones activas, sin nada urgente por ahora." },
   finalizada: { title: "Finalizadas", short: "Finalizadas", description: "Participaciones e inscripciones que ya terminaron." },
 };

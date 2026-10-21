@@ -63,7 +63,7 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 ### Cómo se transformaron los diseños
 
 - Cada vista HTML se convirtió en componentes React/TypeScript conservando su estructura, textos y jerarquía. Los estilos repetidos (botones, etiquetas, tarjetas, campos, pastillas de estado) son clases en `globals.css`; el resto del layout queda en estilos en línea, como en el original.
-- Las vistas móviles (V05–V07) se diseñaron en un marco fijo de 390 × 844 px. En la aplicación usan el ancho del teléfono y se centran en escritorio (`MovilShell`), con la misma cabecera navy, el avatar y la barra inferior.
+- Las vistas móviles (V05–V07) se diseñaron en un marco fijo de 390 × 844 px. En la aplicación usan el ancho del teléfono y se centran en escritorio (`MovilShell`), con la misma cabecera navy, el avatar y la barra inferior. **Mi C3 (V05) es la excepción:** usa `MovilShell layout="panel"`, que en móvil y tablet conserva la barra superior e inferior (una columna) y desde 1024 px pasa a un panel de escritorio con cabecera superior y dos columnas, con los mismos datos. Sus estados son «Requiere tu atención», «En espera», «En curso» y «Finalizadas» (`src/lib/domain/mi-c3.ts`).
 - Los elementos que solo simulaban interactividad se conectaron a acciones reales o se marcaron como pendientes.
 - Se quitaron los rótulos «Datos de demostración» y los datos de ejemplo: la aplicación muestra solo datos reales de Firestore.
 - Materiales del reto (datasets, contexto, formato) y el enlace «Comunidad» de V03 no se implementaron: no existen en el modelo ni en el alcance del MVP.

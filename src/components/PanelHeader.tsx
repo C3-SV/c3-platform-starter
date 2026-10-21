@@ -14,7 +14,7 @@ export interface PanelUser {
  * (`c3-cabecera`) con los accesos de la barra inferior móvil más la identidad, Cuenta y Salir.
  * Se muestra desde 1024 px; por debajo, el marco móvil usa su barra superior y su navegación inferior.
  */
-export function PanelHeader({ activo, user, onSignOut }: { activo: PanelSection; user: PanelUser | null; onSignOut: () => void }) {
+export function PanelHeader({ activo, user, loading = false, onSignOut }: { activo: PanelSection; user: PanelUser | null; loading?: boolean; onSignOut: () => void }) {
   const current = (section: Exclude<PanelSection, null>) => (activo === section ? "page" : undefined);
   return (
     <header className="c3-cabecera c3-cabecera--panel">
@@ -23,7 +23,7 @@ export function PanelHeader({ activo, user, onSignOut }: { activo: PanelSection;
           <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
             <C3BrandMark className="c3-brand-mark--header" />
           </Link>
-          {user ? (
+          {loading ? null : user ? (
             <nav aria-label="Principal" className="c3-nav-principal">
               <Link href="/mi-c3" className="c3-cabecera__enlace" aria-current={current("inicio")}>Mi C3</Link>
               <Link href="/explorar" className="c3-cabecera__enlace" aria-current={current("explorar")}>Explorar</Link>
@@ -36,7 +36,7 @@ export function PanelHeader({ activo, user, onSignOut }: { activo: PanelSection;
           )}
         </div>
         <div className="c3-cabecera__acciones">
-          {user ? (
+          {loading ? null : user ? (
             <>
               {user.isAdmin ? <Link href="/admin" className="c3-etiqueta c3-cabecera__texto-etiqueta">Admin</Link> : null}
               <Link href="/cuenta" className="c3-cabecera__cuenta">
