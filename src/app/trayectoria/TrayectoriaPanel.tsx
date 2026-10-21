@@ -3,20 +3,23 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { initialsOf, MovilShell } from "@/components/MovilShell";
-import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
-import { formatDate } from "@/lib/domain/format";
-import { deliveryPresentation, enrollmentState } from "@/lib/domain/presentation";
+import { countWithResult, groupTrajectory, TRAJECTORY_COPY, TRAJECTORY_ORDER } from "@/lib/domain/trayectoria";
 import type { Profile } from "@/lib/server/profile";
 import type { MyEnrollmentView } from "@/lib/server/participation";
+import { TrajectorySectionBlock } from "./TrayectoriaCards";
 
 interface Trajectory {
   profile: Profile;
   enrollments: MyEnrollmentView[];
 }
 
-/** V08 · Perfil y trayectoria. Lo que la persona escribe y lo que C3 registra se muestran por separado. */
+/**
+ * V08 · Perfil y trayectoria. Lo que la persona escribe y lo que C3 registra se muestran por separado.
+ * Usa el marco adaptable de Mi C3: en móvil y tablet, una columna con la barra inferior; desde 1024 px, cabecera
+ * superior y dos columnas (el registro de C3 a la izquierda y lo que escribió la persona a la derecha).
+ */
 export function TrayectoriaPanel() {
   const { session } = useSession();
   const signedIn = session.status === "signed-in";
@@ -43,100 +46,109 @@ export function TrayectoriaPanel() {
     };
   }, [signedIn]);
 
+  if (session.status === "loading") return <MovilShell layout="panel" nav="trayectoria"><div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo"><p>Cargando…</p></div></MovilShell>;
+  if (session.status === "unavailable") return <MovilShell layout="panel" nav="trayectoria"><div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo"><p role="alert">{session.message}</p></div></MovilShell>;
+  if (session.status === "signed-out") {
+    return (
+      <MovilShell layout="panel" nav={null}>
+        <div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo">
+          <div className="c3-card c3-mi-c3__acceso-requerido">
+            <h1 className="c3-titulo">Entrá para ver tu trayectoria</h1>
+            <p>Acá vas a ver tu perfil y lo que C3 registró de tu participación.</p>
+            <Link href="/acceso?next=/trayectoria" className="c3-btn c3-btn--primario">Entrar</Link>
+          </div>
+        </div>
+      </MovilShell>
+    );
+  }
+
   const profile = data?.profile;
-  const name = profile?.displayName || (session.status === "signed-in" ? (session.user.displayName ?? "") : "");
+  const name = profile?.displayName || session.user.displayName || "";
+  const groups = data ? groupTrajectory(data.enrollments) : null;
+  const total = data?.enrollments.length ?? 0;
+  const counts = groups && data
+    ? [
+        { key: "participaciones", value: groups.participaciones.length, label: TRAJECTORY_COPY.participaciones.short },
+        { key: "resultado", value: countWithResult(data.enrollments), label: "Con resultado" },
+        { key: "en_revision", value: groups.en_revision.length, label: TRAJECTORY_COPY.en_revision.short },
+        { key: "sin_participacion", value: groups.sin_participacion.length, label: TRAJECTORY_COPY.sin_participacion.short },
+      ]
+    : [];
 
   return (
-    <MovilShell nav="trayectoria">
-      {session.status === "signed-out" ? (
-        <div className="c3-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-          <h1 className="c3-titulo" style={{ fontSize: 22, fontWeight: 700 }}>Entrá para ver tu trayectoria</h1>
-          <Link href="/acceso?next=/trayectoria" className="c3-btn c3-btn--primario">Entrar</Link>
+    <MovilShell layout="panel" nav="trayectoria">
+      <section className="c3-mi-c3__resumen c3-tray__hero" aria-label="Tu perfil">
+        <div className="c3-mi-c3__contenedor c3-tray__hero-interior">
+          <div className="c3-tray__identidad">
+            <span aria-hidden="true" className="c3-tray__avatar">{initialsOf(profile?.displayName ?? session.user.displayName, profile?.email ?? session.user.email)}</span>
+            <div className="c3-tray__datos">
+              <h1 className="c3-titulo">{name || "Tu perfil"}</h1>
+              {profile?.school ? <p className="c3-tray__centro">{profile.school}</p> : null}
+              {profile ? (
+                <div className="c3-tray__acciones">
+                  {profile.github ? <a href={profile.github} target="_blank" rel="noopener noreferrer" className="c3-tray__chip">GitHub</a> : null}
+                  {profile.linkedin ? <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="c3-tray__chip">LinkedIn</a> : null}
+                  <Link href="/cuenta" className="c3-tray__chip c3-tray__chip--editar">Editar en Cuenta</Link>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          {total > 0 ? (
+            <ul className="c3-mi-c3__conteo c3-tray__conteo" aria-label="Resumen de tu trayectoria">
+              {counts.map((count) => (
+                <li key={count.key} className="c3-mi-c3__conteo-item">
+                  <span className="c3-mi-c3__conteo-valor">{count.value}</span>
+                  <span className="c3-mi-c3__conteo-etiqueta">{count.label}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
-      ) : null}
+      </section>
 
-      {loadError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{loadError}</strong></div> : null}
-      {signedIn && !data && !loadError ? <p style={{ color: "var(--c3-texto-suave)" }}>Cargando tu perfil…</p> : null}
+      <div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo">
+        {loadError ? (
+          <div className="c3-alerta c3-alerta--error" role="alert">
+            <strong>No pudimos cargar tu perfil</strong>
+            <span style={{ fontSize: 14 }}>{loadError}</span>
+          </div>
+        ) : null}
+        {!data && !loadError ? <p className="c3-mi-c3__cargando">Cargando tu perfil…</p> : null}
 
-      {profile ? (
-        <>
-          <section style={{ background: "var(--c3-navy)", margin: "-20px -20px 0", padding: "8px 20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div aria-hidden="true" style={{ width: 64, height: 64, borderRadius: 999, background: "var(--c3-conecta)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--c3-font-titulo)", fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
-                {initialsOf(profile.displayName, profile.email)}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-                <h1 className="c3-titulo" style={{ fontSize: 22, fontWeight: 700, color: "#ffffff" }}>{name || "Tu perfil"}</h1>
-                {profile.school ? <span style={{ fontSize: 14, color: "var(--c3-texto-cabecera)" }}>{profile.school}</span> : null}
-              </div>
-              <Link href="/cuenta" style={{ marginLeft: "auto", color: "var(--c3-texto-cabecera)", fontSize: 14, fontWeight: 500 }}>Editar en Cuenta</Link>
-            </div>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-              {profile.github ? <a href={profile.github} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 500, color: "var(--c3-conecta-claro)" }}>GitHub</a> : null}
-              {profile.linkedin ? <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 500, color: "var(--c3-conecta-claro)" }}>LinkedIn</a> : null}
-              <span aria-disabled="true" title="Próximamente" style={{ marginLeft: "auto", fontSize: 14, color: "var(--c3-texto-cabecera)", opacity: 0.6 }}>Compartir perfil (próximamente)</span>
-            </div>
-          </section>
+        {profile && groups ? (
+          <div className="c3-tray__grilla">
+            <aside className="c3-tray__escribio" aria-labelledby="escribio">
+              <section className="c3-card c3-mi-c3__panel">
+                <h2 id="escribio" className="c3-titulo c3-mi-c3__panel-titulo">Lo que escribió</h2>
+                <p className={`c3-tray__bio${profile.bio ? "" : " c3-tray__bio--vacia"}`}>
+                  {profile.bio || "Todavía no escribiste nada. Editá tu perfil para contar en unas líneas qué te interesa."}
+                </p>
+                <p className="c3-tray__aviso">Lo escribís vos y C3 no lo verifica.</p>
+                <span aria-disabled="true" className="c3-tray__proximamente">Compartir perfil: próximamente</span>
+              </section>
+            </aside>
 
-          <section className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }} aria-labelledby="escribio">
-            <span id="escribio" className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Lo que escribió</span>
-            <p style={{ fontSize: 14, lineHeight: 1.5, color: profile.bio ? "var(--c3-texto)" : "var(--c3-texto-suave)" }}>
-              {profile.bio || "Todavía no escribiste nada. Editá tu perfil para contar en unas líneas qué te interesa."}
-            </p>
-          </section>
+            <section className="c3-tray__registro" aria-labelledby="trayectoria">
+              <header className="c3-tray__registro-cabecera">
+                <h2 id="trayectoria" className="c3-titulo">Trayectoria</h2>
+                <span className="c3-pill c3-pill--exito">Registrada por C3</span>
+                <p>Todo lo de abajo viene de registros oficiales de C3. No se puede editar.</p>
+              </header>
 
-          <section style={{ display: "flex", flexDirection: "column", gap: 10 }} aria-labelledby="trayectoria">
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <h2 id="trayectoria" className="c3-titulo" style={{ fontSize: 22, fontWeight: 600 }}>Trayectoria</h2>
-              <span className="c3-pill c3-pill--exito">Registrada por C3</span>
-            </div>
-            <p style={{ fontSize: 12, lineHeight: 1.4, color: "var(--c3-texto-suave)" }}>
-              Todo lo de abajo viene de registros oficiales de C3. No se puede editar.
-            </p>
+              {total === 0 ? (
+                <div className="c3-card c3-mi-c3__vacio">
+                  <p>Todavía no tenés trayectoria registrada. Cuando participes en un reto, aparece aquí.</p>
+                  <Link href="/explorar" className="c3-btn c3-btn--primario">Explorar retos</Link>
+                </div>
+              ) : null}
 
-            {data && data.enrollments.length === 0 ? (
-              <div className="c3-card" style={{ padding: 16 }}>
-                <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no tenés trayectoria registrada. Cuando participes en un reto, aparece aquí.</p>
-              </div>
-            ) : null}
-
-            {data?.enrollments.map((item) => {
-              if (item.status === "cancelled") {
-                return (
-                  <div key={item.id} style={{ background: "var(--c3-superficie-sutil)", borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>Inscripción sin participación</span>
-                    <span style={{ fontSize: 13, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>{item.experienceTitle}: inscripción cancelada. No acredita participación ni resultado.</span>
-                  </div>
-                );
-              }
-              const delivered = item.delivery?.state === "entregada" || item.delivery?.state === "fuera_de_plazo";
-              return (
-                <article key={item.id} className="c3-card" style={{ overflow: "hidden" }}>
-                  <div style={{ height: 6, background: item.mode === "team" ? "var(--c3-crea)" : "var(--c3-compite)" }} />
-                  <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
-                      <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle ?? item.experienceTitle}</span>
-                      {item.delivery ? <StatePill state={deliveryPresentation(item.delivery.state)} /> : <StatePill state={enrollmentState(item.status)} />}
-                    </div>
-                    <span style={{ fontSize: 13, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-                      {item.challengeTitle ? `${item.experienceTitle} · ` : ""}{item.mode === "team" ? (item.team ? `Equipo ${item.team.name}` : "Por equipo") : "Individual"}
-                      {item.delivery?.submittedAt ? ` · Enviada ${formatDate(item.delivery.submittedAt)}` : ""}
-                    </span>
-                    {item.result ? (
-                      <span style={{ fontSize: 14, fontWeight: 600 }}>
-                        Resultado publicado: {item.result.recognition ?? "sin reconocimiento"}
-                        {item.result.average !== null ? ` · promedio ${item.result.average.toFixed(1)}` : ""}
-                        {item.result.place ? ` · puesto ${item.result.place} de ${item.result.of}` : ""}
-                      </span>
-                    ) : null}
-                    {!delivered && item.challengeId ? <Link href={`/mi-c3/retos/${item.challengeId}`} style={{ fontSize: 14, fontWeight: 500 }}>Ir a mi reto</Link> : null}
-                  </div>
-                </article>
-              );
-            })}
-          </section>
-        </>
-      ) : null}
+              {TRAJECTORY_ORDER.map((section) => (
+                <TrajectorySectionBlock key={section} section={section} items={groups[section]} />
+              ))}
+            </section>
+          </div>
+        ) : null}
+      </div>
     </MovilShell>
   );
 }
