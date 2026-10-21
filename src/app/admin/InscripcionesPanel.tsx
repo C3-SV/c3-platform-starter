@@ -150,6 +150,8 @@ export function InscripcionesPanel({
         className="c3-campo"
         value={current}
         onChange={(event) => {
+          // Elegir lo que ya estaba elegido no recarga: no hay cambio de dirección y la lista quedaría «cargando».
+          if (event.target.value === current) return;
           setSelected(event.target.value);
           setRows(null);
           setSummary(null);

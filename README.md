@@ -48,9 +48,10 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 | --- | --- |
 | `npm run typecheck` | Sin errores |
 | `npm run lint` | Sin errores ni avisos |
-| `npm test` (dominio) | 51 de 51 |
-| `npm run test:rules` (reglas, catálogo, inscripciones, equipos, entregas, empresas, Admin, seed y evaluación con emulador) | 52 de 52 |
+| `npm test` (dominio) | 77 de 77 |
+| `npm run test:rules` (reglas, catálogo, inscripciones, equipos, entregas, empresas, Admin, seed, evaluación y experiencias con emulador) | 87 de 87 |
 | `npm run build` | Compila; páginas dinámicas y API de servidor |
+| `npm run test:e2e` (escritorio y móvil, incluye el build de producción) | 107 superadas, 1 omitida (ya existente) |
 | `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción; incluye la auditoría axe) | 76 de 76 |
 
 ### Verificación visual
@@ -180,6 +181,7 @@ En producción, ejecuta el mismo script con credenciales de servicio autorizadas
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo |
 | `npm run build` | Build de producción |
+| `npm run test:e2e` (escritorio y móvil, incluye el build de producción) | 107 superadas, 1 omitida (ya existente) |
 | `npm run check:vercel-env` | Valida las variables requeridas para un deploy de Vercel |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint (configuración de Next.js) |

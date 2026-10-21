@@ -11,6 +11,7 @@ const stamp = Date.now().toString(36);
 const workshopTitle = `Taller de programación competitiva ${stamp}`;
 const editedTitle = `${workshopTitle} (editado)`;
 const incompleteTitle = `Charla sin fecha ${stamp}`;
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const joven = { name: "Marta Quintanilla de Prueba", email: `marta.${stamp}@correo.test`, password: "clave-marta-123" };
 let experienceHref = "";
 let experienceId = "";
@@ -125,10 +126,10 @@ test.describe.serial("Experiencias sin reto: del borrador al cierre", () => {
 
   test("el público ve el taller en Home y en Explorar y abre su detalle", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("link", { name: new RegExp(editedTitle) })).toBeVisible();
+    await expect(page.getByRole("link", { name: new RegExp(escape(editedTitle)) })).toBeVisible();
 
     await page.goto("/explorar");
-    const card = page.getByRole("link", { name: new RegExp(editedTitle) });
+    const card = page.getByRole("link", { name: new RegExp(escape(editedTitle)) });
     await expect(card).toBeVisible();
     await expect(card).toContainText("Compite · Taller");
     await expect(card).toContainText("Presencial");
@@ -145,7 +146,7 @@ test.describe.serial("Experiencias sin reto: del borrador al cierre", () => {
 
     // Una charla en borrador no se ve ni por enlace directo.
     await page.goto("/explorar");
-    await expect(page.getByRole("link", { name: new RegExp(incompleteTitle) })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: new RegExp(escape(incompleteTitle)) })).toHaveCount(0);
   });
 
   test("una persona nueva crea cuenta, se inscribe al taller y su inscripción queda en revisión", async ({ page }) => {
