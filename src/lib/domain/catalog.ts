@@ -7,6 +7,9 @@ const KIND_LINE: Record<ExperienceKind, ExperienceLine> = {
   competencia: "compite",
   hackathon: "crea",
   challenge_empresarial: "conecta",
+  taller: "crea",
+  charla: "conecta",
+  encuentro: "conecta",
 };
 
 const LINES: readonly ExperienceLine[] = ["compite", "crea", "conecta"];

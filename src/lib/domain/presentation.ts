@@ -2,7 +2,7 @@
  * Estados visibles de experiencias y retos, según el vocabulario de la guía de estilo
  * (diseno-claude/README.md, sección 5). Las etiquetas y los tonos son las únicas fuentes de UI.
  */
-import type { EnrollmentStatus, ExperienceKind, ExperienceStatus } from "./types.ts";
+import type { EnrollmentStatus, ExperienceKind, ExperienceLine, ExperienceModality, ExperienceStatus } from "./types.ts";
 import type { DeliveryState } from "./delivery.ts";
 
 export type StateTone = "neutro" | "info" | "exito" | "advertencia" | "error";
@@ -34,13 +34,51 @@ export const KIND_LABEL: Record<ExperienceKind, string> = {
   competencia: "Compite · Competencia",
   hackathon: "Crea · Hackathon",
   challenge_empresarial: "Conecta · Challenge",
+  taller: "Crea · Taller",
+  charla: "Conecta · Charla",
+  encuentro: "Conecta · Encuentro",
 };
 
-export const KIND_LINE: Record<ExperienceKind, "compite" | "crea" | "conecta"> = {
+export const KIND_LINE: Record<ExperienceKind, ExperienceLine> = {
   competencia: "compite",
   hackathon: "crea",
   challenge_empresarial: "conecta",
+  taller: "crea",
+  charla: "conecta",
+  encuentro: "conecta",
 };
+
+export const LINE_NAME: Record<ExperienceLine, string> = { compite: "Compite", crea: "Crea", conecta: "Conecta" };
+
+/** Nombre del tipo de experiencia sin la línea, para combinarlo con la línea principal elegida. */
+export const KIND_NAME: Record<ExperienceKind, string> = {
+  competencia: "Competencia",
+  hackathon: "Hackathon",
+  challenge_empresarial: "Challenge",
+  taller: "Taller",
+  charla: "Charla",
+  encuentro: "Encuentro",
+};
+
+export const MODALITY_LABEL: Record<ExperienceModality, string> = {
+  presencial: "Presencial",
+  virtual: "Virtual",
+  hibrida: "Híbrida",
+};
+
+/**
+ * Etiqueta «Línea · Tipo» de una experiencia. Respeta la línea principal elegida por C3 y, sin ella,
+ * usa la línea del tipo (idéntico a KIND_LABEL para las experiencias anteriores).
+ */
+export function experienceLabel(experience: { kind: ExperienceKind; primaryLine?: ExperienceLine }): string {
+  const line = experience.primaryLine && experience.primaryLine in LINE_NAME ? experience.primaryLine : KIND_LINE[experience.kind];
+  return `${LINE_NAME[line]} · ${KIND_NAME[experience.kind]}`;
+}
+
+/** Línea principal visible de una experiencia, con la del tipo como respaldo. */
+export function primaryLineOf(experience: { kind: ExperienceKind; primaryLine?: ExperienceLine }): ExperienceLine {
+  return experience.primaryLine && experience.primaryLine in LINE_NAME ? experience.primaryLine : KIND_LINE[experience.kind];
+}
 
 /** Valor CSS del color de línea. Usa las variables --c3-compite, --c3-crea y --c3-conecta de tokens.css. */
 export function lineColor(kind: ExperienceKind): string {
@@ -49,9 +87,16 @@ export function lineColor(kind: ExperienceKind): string {
 
 /** Texto legible para la línea Crea (turquesa no se usa como texto sobre fondo claro). */
 export function lineTextColor(kind: ExperienceKind): string {
-  if (kind === "hackathon") return "var(--c3-crea-texto)";
-  if (kind === "competencia") return "var(--c3-compite)";
-  return "var(--c3-conecta)";
+  return lineTextColorOf(KIND_LINE[kind]);
+}
+
+/** Color de la línea indicada; úsese con la línea principal de la experiencia. */
+export function lineColorOf(line: ExperienceLine): string {
+  return `var(--c3-${line})`;
+}
+
+export function lineTextColorOf(line: ExperienceLine): string {
+  return line === "crea" ? "var(--c3-crea-texto)" : `var(--c3-${line})`;
 }
 
 /** Estados de inscripción (vocabulario de la guía, sección 5). */

@@ -4,8 +4,9 @@
  * propuestas) sigue siendo conceptual y se ajustará al implementar cada corte.
  */
 export type ExperienceStatus = "draft" | "published" | "closed" | "cancelled";
-export type ExperienceKind = "competencia" | "hackathon" | "challenge_empresarial";
+export type ExperienceKind = "competencia" | "hackathon" | "challenge_empresarial" | "taller" | "charla" | "encuentro";
 export type ExperienceLine = "compite" | "crea" | "conecta";
+export type ExperienceModality = "presencial" | "virtual" | "hibrida";
 export type EnrollmentStatus = "pending" | "approved" | "rejected" | "cancelled";
 export type SubmissionStatus = "draft" | "submitted";
 export type ParticipationMode = "individual" | "team";
@@ -23,6 +24,14 @@ export interface Experience {
   demoNote?: string | null;
   sourceUrl?: string | null;
   sourceLabel?: string | null;
+  /** Fecha y horario de la sesión (talleres, charlas, encuentros). Las experiencias anteriores no lo tienen. */
+  startsAt?: string | null;
+  endsAt?: string | null;
+  modality?: ExperienceModality | null;
+  /** Sede o enlace de la sesión; es información pública. */
+  location?: string | null;
+  /** Cupos totales de la experiencia; null o ausente significa sin límite. */
+  capacity?: number | null;
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
   createdAt: string;
@@ -57,6 +66,8 @@ export interface Enrollment {
   id: string;
   userId: string;
   experienceId: string;
+  /** Reto por el que entró la persona; null cuando se inscribió a la experiencia (sin reto). */
+  challengeId?: string | null;
   status: EnrollmentStatus;
 }
 export interface Team {

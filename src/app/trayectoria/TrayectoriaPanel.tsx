@@ -115,11 +115,11 @@ export function TrayectoriaPanel() {
                   <div style={{ height: 6, background: item.mode === "team" ? "var(--c3-crea)" : "var(--c3-compite)" }} />
                   <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
-                      <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle}</span>
+                      <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle ?? item.experienceTitle}</span>
                       {item.delivery ? <StatePill state={deliveryPresentation(item.delivery.state)} /> : <StatePill state={enrollmentState(item.status)} />}
                     </div>
                     <span style={{ fontSize: 13, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-                      {item.experienceTitle} · {item.mode === "team" ? (item.team ? `Equipo ${item.team.name}` : "Por equipo") : "Individual"}
+                      {item.challengeTitle ? `${item.experienceTitle} · ` : ""}{item.mode === "team" ? (item.team ? `Equipo ${item.team.name}` : "Por equipo") : "Individual"}
                       {item.delivery?.submittedAt ? ` · Enviada ${formatDate(item.delivery.submittedAt)}` : ""}
                     </span>
                     {item.result ? (
@@ -129,7 +129,7 @@ export function TrayectoriaPanel() {
                         {item.result.place ? ` · puesto ${item.result.place} de ${item.result.of}` : ""}
                       </span>
                     ) : null}
-                    {!delivered ? <Link href={`/mi-c3/retos/${item.challengeId}`} style={{ fontSize: 14, fontWeight: 500 }}>Ir a mi reto</Link> : null}
+                    {!delivered && item.challengeId ? <Link href={`/mi-c3/retos/${item.challengeId}`} style={{ fontSize: 14, fontWeight: 500 }}>Ir a mi reto</Link> : null}
                   </div>
                 </article>
               );

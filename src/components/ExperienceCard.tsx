@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LineBrandMark } from "@/components/BrandMark";
 import type { ExperienceLine } from "@/lib/domain/types";
 import type { PublicChallengeSummary, PublicExperience } from "@/lib/server/catalog";
-import { formatDate, modalityLabel } from "@/lib/domain/format";
+import { formatDate, modalityLabel, sessionSummary } from "@/lib/domain/format";
 import { StatePill } from "@/components/StatePill";
 
 function lineColor(line: ExperienceLine): string {
@@ -46,7 +46,7 @@ export function ExperienceCard({
         {demoNote ? <p style={{ fontSize: 12, lineHeight: 1.45, color: "var(--c3-advertencia)" }}>{demoNote}</p> : null}
         <div style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--c3-borde)", display: "flex", flexDirection: "column", gap: 4 }}>
           <span style={{ fontSize: 14, fontWeight: 500 }}>
-            {challenge ? challenge.organizationName + " · " + modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize) : "Experiencia C3"}
+            {challenge ? challenge.organizationName + " · " + modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize) : (sessionSummary(item.experience) ?? "Experiencia C3")}
           </span>
           {challenge?.submissionClosesAt ? <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>Entregas hasta el {formatDate(challenge.submissionClosesAt)}</span> : null}
           {sourceUrl ? <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>Fuente: {sourceLabel ?? sourceUrl}</span> : null}
@@ -55,9 +55,7 @@ export function ExperienceCard({
     </>
   );
 
-  return challenge ? (
-    <Link href={"/retos/" + challenge.id} className="c3-tarjeta-enlace">{body}</Link>
-  ) : (
-    <article className="c3-tarjeta-enlace" style={{ cursor: "default" }}>{body}</article>
+  return (
+    <Link href={challenge ? "/retos/" + challenge.id : "/experiencias/" + item.experience.id} className="c3-tarjeta-enlace">{body}</Link>
   );
 }

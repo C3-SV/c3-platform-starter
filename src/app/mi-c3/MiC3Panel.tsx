@@ -103,6 +103,8 @@ export function MiC3Panel() {
   const pending = enrollments?.filter((item) => item.status === "pending") ?? [];
   const actionable = enrollments?.filter((item) => (item.status === "approved" && (item.delivery?.state === "sin_entrega" || item.delivery?.state === "borrador")) || (item.status === "approved" && item.mode === "team" && !item.team)) ?? [];
   const delivered = enrollments?.filter((item) => item.status === "approved" && (item.delivery?.state === "entregada" || item.delivery?.state === "fuera_de_plazo")) ?? [];
+  // Inscripciones a una experiencia sin reto: ya aprobadas, no hay entrega que hacer.
+  const confirmed = enrollments?.filter((item) => item.status === "approved" && item.challengeId === null) ?? [];
   const closed = enrollments?.filter((item) => item.status === "rejected" || item.status === "cancelled") ?? [];
 
   return (
@@ -147,7 +149,7 @@ export function MiC3Panel() {
             <div key={item.id} className="c3-card" style={{ borderColor: "var(--c3-advertencia)", overflow: "hidden" }}>
               <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                  <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle}</span>
+                  <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle ?? item.experienceTitle}</span>
                   {item.delivery ? <StatePill state={deliveryPresentation(item.delivery.state)} /> : null}
                 </div>
                 <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
@@ -169,12 +171,31 @@ export function MiC3Panel() {
         </Seccion>
       ) : null}
 
+      {confirmed.length > 0 ? (
+        <Seccion titulo="Confirmadas" color="var(--c3-exito)">
+          {confirmed.map((item) => (
+            <div key={item.id} className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.experienceTitle}</span>
+                <StatePill state={enrollmentState(item.status)} />
+              </div>
+              <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
+                C3 confirmó tu lugar.
+                {item.startsAt ? ` ${formatDateTime(item.startsAt)}.` : ""}
+                {item.location ? ` ${item.location}.` : ""}
+              </span>
+              <Link href={`/experiencias/${item.experienceId}`} style={{ fontSize: 14, fontWeight: 500 }}>Ver la experiencia</Link>
+            </div>
+          ))}
+        </Seccion>
+      ) : null}
+
       {pending.length > 0 ? (
         <Seccion titulo="En espera" color="var(--c3-texto-suave)">
           {pending.map((item) => (
             <div key={item.id} className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle}</span>
+                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle ?? item.experienceTitle}</span>
                 <StatePill state={enrollmentState(item.status)} />
               </div>
               <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
@@ -199,7 +220,7 @@ export function MiC3Panel() {
           {delivered.map((item) => (
             <div key={item.id} className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle}</span>
+                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle ?? item.experienceTitle}</span>
                 {item.delivery ? <StatePill state={deliveryPresentation(item.delivery.state)} /> : null}
               </div>
               <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
@@ -242,7 +263,7 @@ export function MiC3Panel() {
           {closed.map((item) => (
             <div key={item.id} className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8, opacity: 0.85 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle}</span>
+                <span className="c3-titulo" style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{item.challengeTitle ?? item.experienceTitle}</span>
                 <StatePill state={enrollmentState(item.status)} />
               </div>
               <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
