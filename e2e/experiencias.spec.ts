@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
 
 /**
@@ -19,6 +20,14 @@ async function login(page: Page, email: string, password: string, next = "/") {
   await page.locator("#l-correo").fill(email);
   await page.locator("#l-pass").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
+}
+
+async function expectNoSeriousViolations(page: Page, label: string) {
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  const serious = results.violations
+    .filter((violation) => violation.impact === "serious" || violation.impact === "critical")
+    .map((violation) => `${violation.id} (${violation.impact}): ${violation.help} · ${violation.nodes.length} elemento(s)`);
+  expect(serious, `incumplimientos serios en ${label}`).toEqual([]);
 }
 
 async function openAdminExperiences(page: Page) {
@@ -60,6 +69,7 @@ test.describe.serial("Experiencias sin reto: del borrador al cierre", () => {
     await expect(region.getByText("Próximas acciones")).toBeVisible();
     await expect(region.getByText("Auditorio ESEN, San Salvador")).toBeVisible();
     await expect(region.getByText("0 de 1 ocupados")).toBeVisible();
+    await expectNoSeriousViolations(page, "admin: listado y formulario de experiencias");
   });
 
   test("C3 edita la experiencia y la lista se puede buscar y filtrar", async ({ page }) => {
@@ -131,6 +141,7 @@ test.describe.serial("Experiencias sin reto: del borrador al cierre", () => {
     await expect(page.getByText("Auditorio ESEN, San Salvador").first()).toBeVisible();
     await expect(page.getByText("1 disponibles de 1")).toBeVisible();
     await expect(page.getByRole("link", { name: "Inscribirme", exact: true }).first()).toBeVisible();
+    await expectNoSeriousViolations(page, "detalle público de experiencia");
 
     // Una charla en borrador no se ve ni por enlace directo.
     await page.goto("/explorar");

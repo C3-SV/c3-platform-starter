@@ -29,7 +29,7 @@ import {
 import { recordAudit } from "./audit.ts";
 import { requireAdmin, type Actor } from "./auth.ts";
 import { HttpError, notFound } from "./errors.ts";
-import { ENROLLMENTS } from "./ids.ts";
+import { ENROLLMENTS, RESULTS } from "./ids.ts";
 
 export const EXPERIENCES = "experiences";
 export const CHALLENGES = "challenges";
@@ -274,8 +274,11 @@ export async function setExperienceStatus(db: Firestore, actor: Actor, id: strin
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists) throw notFound("La experiencia no existe o fue eliminada.");
     const existing = toExperience(snapshot.id, snapshot.data() as DocumentData);
-    const enrollments = await transaction.get(enrollmentsOf(db, id));
-    const check = checkStatusTransition(existing, status, enrollments.size, now);
+    const [enrollments, challenges] = await Promise.all([transaction.get(enrollmentsOf(db, id)), transaction.get(challengesOf(db, id))]);
+    const resultRefs = challenges.docs.map((doc) => db.collection(RESULTS).doc(doc.id));
+    const results = resultRefs.length ? await transaction.getAll(...resultRefs) : [];
+    const publishedResults = results.some((doc) => Boolean(doc.data()?.publishedAt));
+    const check = checkStatusTransition(existing, status, enrollments.size, now, publishedResults);
     if (!check.ok) throw refusalError(check);
     if (existing.status === status) return;
     transaction.update(ref, { status, updatedAt: now.toISOString() });
@@ -371,7 +374,8 @@ export async function setChallengeStatus(db: Firestore, actor: Actor, id: string
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists) throw notFound("El reto no existe o fue eliminado.");
     const from = snapshot.data()?.status as ExperienceStatus;
-    const check = checkChallengeStatusTransition(from, status);
+    const result = await transaction.get(db.collection(RESULTS).doc(id));
+    const check = checkChallengeStatusTransition(from, status, Boolean(result.data()?.publishedAt));
     if (!check.ok) throw refusalError(check);
     if (from === status) return;
     transaction.update(ref, { status, updatedAt: now.toISOString() });

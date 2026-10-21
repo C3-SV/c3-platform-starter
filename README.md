@@ -9,12 +9,15 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 **Implementado y verificado en esta máquina** (emuladores de Firebase, sin proyecto de producción):
 
 - **Acceso** (V04): entrar, crear cuenta con nombre, recuperar contraseña y sesión persistente al recargar.
-- **Experiencias y retos** (V12, sección «Experiencias y retos»): crear en borrador, publicar y volver a borrador. Lo no publicado no aparece en el sitio público.
+- **Experiencias y retos** (V12, sección «Experiencias y retos»): crear, editar y gestionar el ciclo de vida de cada experiencia sin tocar Firebase. Se guarda en borrador y solo aparece en el sitio público al publicarla. El listado busca por nombre, filtra por estado y línea, muestra las próximas acciones, los retos, las inscripciones y los cupos de cada experiencia, y abre cada una para editarla.
+- **Experiencias sin reto** (talleres, charlas, encuentros): una experiencia tiene cero o más retos. Sin retos publicados, las personas se inscriben a la experiencia misma (`/experiencias/[id]/inscripcion`), de forma individual y con revisión de C3. Con retos publicados, la inscripción sigue entrando por el reto. Es la misma inscripción por persona y experiencia: nunca se duplica entre experiencia y reto.
+- **Ciclo de vida** (V12): borrador → publicada → inscripciones abiertas → inscripciones cerradas → en desarrollo → concluida, o cancelada. Las inscripciones se abren y cierran desde la tarjeta (ajustan la ventana de fechas); reabrir tras un cierre exige una nueva fecha de cierre. Una experiencia concluida es histórica: no se reabre ni vuelve a publicarse y no recibe retos ni revisiones. Una publicada con inscripciones no vuelve a borrador. Publicar un taller, charla o encuentro exige inicio, modalidad y sede o enlace; publicar con la ventana de inscripción vencida se rechaza (una experiencia histórica se registra directamente como concluida).
+- **Edición segura**: solo se escriben los campos que cambian; el estado, la autoría, la marca de demostración y los datos de seed se conservan. Con retos o inscripciones el tipo queda bloqueado; los cupos no pueden bajar de las inscripciones activas; una concluida o cancelada conserva su calendario y cupos. Cada operación sensible (crear, editar, cambiar de estado, abrir o cerrar inscripciones, revisar una inscripción, crear o cambiar el estado de un reto) queda en la colección `auditLog`, escrita en la misma transacción que el cambio y sin datos personales.
 - **Visitante**: home (V01), catálogo (V02) y detalle de reto (V03) leídos de Firestore.
-- **Inscripción individual** (V06): una inscripción por experiencia, en estado pendiente hasta que C3 la apruebe o rechace. Cancelable antes del cierre y sin entrega enviada.
-- **Revisión de C3** (V12, «Inscripciones y equipos»): aprobar habilita la participación; rechazar cierra la inscripción.
+- **Inscripción individual** (V06): una inscripción por experiencia, en estado pendiente hasta que C3 la apruebe o rechace. Cancelable antes del cierre y sin entrega enviada. Si la experiencia define cupos, solo ocupan lugar las inscripciones pendientes y aprobadas; rechazar o cancelar lo libera, y el servidor lo verifica dentro de la transacción.
+- **Revisión de C3** (V12, «Inscripciones y equipos»): por reto, o por experiencia cuando no tiene retos, con el resumen de cupos. Aprobar habilita la participación (y, en un reto, la entrega); rechazar cierra la inscripción.
 - **Equipos** (V06, Corte 3): la inscripción puede ser individual o por equipo. Una líder crea el equipo con un código `C3-XXXX`; las demás se unen con ese código y una inscripción por equipo aprobada. El equipo queda habilitado al llegar al mínimo. Cada persona tiene un solo equipo por experiencia; la líder quita, transfiere el liderazgo o disuelve el equipo, y cualquier integrante puede salir. Todo cambio se cierra al cierre de inscripciones o cuando el equipo envía la entrega.
-- **Mi C3** (V05): lo que toca ahora, las inscripciones en espera, las entregadas y las cerradas.
+- **Mi C3** (V05): lo que toca ahora, las inscripciones en espera, las confirmadas a experiencias sin reto, las entregadas y las cerradas.
 - **Mi reto y entrega** (V07): borrador, envío y enlaces https, con plazo. Una entrega enviada queda estable al cerrar; un borrador sin enviar pasa a «Fuera de plazo».
 - **Permisos en servidor**: cada ruta verifica el token de Firebase, el claim `c3Admin` y la propiedad del recurso. Firestore deniega todo acceso directo desde el cliente.
 - **Errores**: validación con motivos por campo y mensajes claros de sesión y de permisos. Ninguna operación fallida muestra confirmación.
@@ -75,9 +78,11 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 | V01 Home | `/` | Público | Implementada (destacados reales) |
 | V02 Explorar | `/explorar` | Público | Implementada, sin filtros |
 | V03 Detalle de reto | `/retos/[challengeId]` | Público | Implementada; el llamado lleva a V04 o a V06 |
+| Detalle de experiencia | `/experiencias/[experienceId]` | Público | Sesión, modalidad, sede, cupos, retos asociados e inscripción cuando no tiene retos |
 | V04 Acceso | `/acceso` | Público | Implementada |
 | V05 Mi C3 | `/mi-c3` | Joven | Implementada |
 | V06 Inscripción | `/retos/[challengeId]/inscripcion` | Joven | Individual y por equipo implementadas |
+| Inscripción a experiencia | `/experiencias/[experienceId]/inscripcion` | Joven | Individual, para experiencias sin retos publicados |
 | V07 Mi reto y entrega | `/mi-c3/retos/[challengeId]` | Joven | Implementada |
 | V08 Trayectoria | `/trayectoria` | Joven | Implementada |
 | Cuenta | `/cuenta` | Joven | Perfil, correo, seguridad y sesión |
@@ -88,9 +93,9 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 | Compite | `/compite` | Público | Landing institucional conectada al catálogo |
 | Crea | `/crea` | Público | Landing institucional conectada al catálogo |
 | Conecta | `/conecta` | Público | Landing institucional conectada al catálogo |
-| V12 Admin | `/admin` | Administrador | Experiencias, retos, resumen, entregas, inscripciones, propuestas, jurados y resultados |
+| V12 Admin | `/admin` | Administrador | Experiencias (crear, editar, ciclo de vida, cupos), retos, resumen, entregas, inscripciones, propuestas, jurados y resultados |
 
-Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/mi-c3`, `/api/retos/*`, `/api/inscripciones/*`, `/api/admin/*`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
+Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/mi-c3`, `/api/retos/*`, `/api/experiencias/*`, `/api/inscripciones/*`, `/api/admin/*`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
 
 > **Agentes y trabajo en paralelo:** leer `AGENTS.md` (reglas) y `docs/FLUJO-AGENTES.md` (worktrees, handoff, verificación). Comprobar el entorno con `npm run doctor`.
 
@@ -215,11 +220,12 @@ Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas
 
 ## Modelo de datos (Cortes 1–3)
 
-- `experiences/{id}`: título, tipo (`competencia`, `hackathon`, `challenge_empresarial`), resumen, estado (`draft`, `published`, `closed`, `cancelled`), ventana de inscripción.
-- `experiences/{id}` también puede declarar `primaryLine`, `secondaryLines`, `isDemo`, `demoNote`, `sourceUrl` y `sourceLabel`; los registros legacy usan el tipo como fallback.
+- `experiences/{id}`: título, tipo (`competencia`, `hackathon`, `challenge_empresarial`, `taller`, `charla`, `encuentro`), resumen, estado (`draft`, `published`, `closed`, `cancelled`), ventana de inscripción. Que las inscripciones estén abiertas o cerradas no es un estado guardado: sale de la ventana y de la hora.
+- `experiences/{id}` también puede declarar `primaryLine`, `secondaryLines`, `isDemo`, `demoNote`, `sourceUrl` y `sourceLabel`; los registros legacy usan el tipo como fallback. Los datos de sesión son opcionales: `startsAt`, `endsAt`, `modality` (`presencial`, `virtual`, `hibrida`), `location` (pública) y `capacity` (cupos; vacío es sin límite). Las experiencias anteriores sin estos campos se leen y se editan sin migración.
+- `auditLog/{id}`: bitácora de operaciones administrativas (`action`, `actorUid`, `targetType`, `targetId`, `at`, `details`). Solo la escribe el servidor.
 - `challenges/{id}`: `experienceId`, problema, entregables, rúbrica (criterios con puntaje máximo de 1 a 10), organización responsable, modalidades (`individual`, `team` con tamaño mínimo y máximo), cierre de entregas, estado.
 - `users/{uid}`: correo y nombre. Se crea la primera vez que la persona entra.
-- `enrollments/{experienceId}__{uid}`: una inscripción por persona y experiencia. Estados `pending`, `approved`, `rejected`, `cancelled`.
+- `enrollments/{experienceId}__{uid}`: una inscripción por persona y experiencia. Estados `pending`, `approved`, `rejected`, `cancelled`. `challengeId` es el reto por el que entró la persona, o `null` si se inscribió a la experiencia sin reto.
 - `participations/{challengeId}__{uid}`: se crea al aprobar la inscripción. Estado `active` o `cancelled`.
 - `companyProposals/{id}`: propuesta pública (empresa, contacto, problema, resultado buscado, límites), estado (`received`, `needs_changes`, `accepted`, `not_prioritized`), nota de C3 y organización vinculada. Su referencia son los 6 primeros caracteres del id.
 - `rateLimits/{hash}`: contador por conexión (sal + hash, nunca la IP en claro). Ventana de una hora.
@@ -229,7 +235,7 @@ Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas
 - `teamCodes/{code}`: índice que garantiza que cada código sea único.
 - `teamMemberships/{experienceId}__{uid}`: un equipo por persona y experiencia.
 
-Un reto publicado solo es público si su experiencia también está publicada. Una inscripción solo se crea mientras la ventana de inscripción está abierta, y la entrega solo se acepta con la inscripción aprobada y antes del cierre de entregas.
+Un reto publicado solo es público si su experiencia también está publicada. Una inscripción solo se crea mientras la ventana de inscripción está abierta y queden cupos, y la entrega solo se acepta con la inscripción aprobada y antes del cierre de entregas. Una inscripción a la experiencia (sin reto) es individual y no habilita retos que se juegan solo por equipo.
 
 ## Pendientes para el siguiente corte
 

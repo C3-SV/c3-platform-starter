@@ -150,12 +150,18 @@ export function publishIssues(
   return issues;
 }
 
-/** Valida un cambio de estado. `totalEnrollments` incluye pendientes, aprobadas, rechazadas y canceladas. */
+const PUBLISHED_RESULTS = refuse("resultados_publicados", "Ya hay resultados oficiales publicados: no puede volver a borrador ni cancelarse. Solo se puede marcar como concluida.");
+
+/**
+ * Valida un cambio de estado. `totalEnrollments` incluye pendientes, aprobadas, rechazadas y canceladas;
+ * `publishedResults` indica si algún reto de la experiencia ya tiene resultados oficiales publicados.
+ */
 export function checkStatusTransition(
   experience: Pick<Experience, "status" | "kind" | "modality" | "startsAt" | "endsAt" | "location" | "registrationClosesAt">,
   to: ExperienceStatus,
   totalEnrollments: number,
   now: Date,
+  publishedResults = false,
 ): Check {
   const from = experience.status;
   if (from === to) return ok;
@@ -169,6 +175,7 @@ export function checkStatusTransition(
     const issues = publishIssues(experience, now, { checkRegistrationWindow: true });
     if (issues.length) return refuse("no_publicable", "Todavía faltan datos para publicar la experiencia.", issues);
   }
+  if (publishedResults && (to === "draft" || to === "cancelled")) return PUBLISHED_RESULTS;
   if (to === "draft" && from === "published" && totalEnrollments > 0) {
     return refuse("tiene_inscripciones", "Ya tiene inscripciones: no puede volver a borrador. Cancelala o concluila si corresponde.");
   }
@@ -176,10 +183,11 @@ export function checkStatusTransition(
 }
 
 /** Los retos usan las mismas transiciones, sin requisitos de publicación propios. */
-export function checkChallengeStatusTransition(from: ExperienceStatus, to: ExperienceStatus): Check {
+export function checkChallengeStatusTransition(from: ExperienceStatus, to: ExperienceStatus, publishedResults = false): Check {
   if (from === to) return ok;
   if (from === "closed") return refuse("reto_historico", "Un reto concluido es histórico: no se reabre ni vuelve a publicarse.");
   if (!STATUS_TRANSITIONS[from].includes(to)) return refuse("transicion_invalida", "Ese cambio de estado no está permitido desde el estado actual.");
+  if (publishedResults && (to === "draft" || to === "cancelled")) return PUBLISHED_RESULTS;
   return ok;
 }
 

@@ -623,3 +623,23 @@ test("las operaciones sensibles quedan en la bitácora con quién y qué cambió
   const serialized = JSON.stringify(entries);
   assert.equal(serialized.includes("@"), false, "la bitácora no guarda correos");
 });
+
+// ------------------------------------------------------------------ resultados publicados
+
+test("con resultados publicados, la experiencia y el reto no vuelven a borrador ni se cancelan; sí se concluyen", async () => {
+  const db = testDb();
+  const experience = await createExperience(db, admin, { ...workshop, kind: "hackathon", capacity: "" }, now);
+  const challenge = await createChallenge(db, admin, challengeInput(experience.id), now);
+  await setExperienceStatus(db, admin, experience.id, { status: "published" }, now);
+  await setChallengeStatus(db, admin, challenge.id, { status: "published" }, now);
+  await db.collection("results").doc(challenge.id).set({ challengeId: challenge.id, publishedAt: now.toISOString(), visibility: "public" });
+
+  for (const status of ["draft", "cancelled"]) {
+    await assert.rejects(setExperienceStatus(db, admin, experience.id, { status }, now), expectHttp(409, "resultados_publicados"));
+    await assert.rejects(setChallengeStatus(db, admin, challenge.id, { status }, now), expectHttp(409, "resultados_publicados"));
+  }
+  assert.equal((await db.collection("experiences").doc(experience.id).get()).data()?.status, "published");
+  await setChallengeStatus(db, admin, challenge.id, { status: "closed" }, now);
+  await setExperienceStatus(db, admin, experience.id, { status: "closed" }, now);
+  assert.equal((await db.collection("experiences").doc(experience.id).get()).data()?.status, "closed");
+});
