@@ -1,6 +1,8 @@
 # Auditoría de producto, UX y navegación — C3 Platform (26-10-2026)
 
-**Estado: diagnóstico y propuesta para revisión. Nada de lo propuesto está implementado ni aprobado.** No se modificó código, rutas ni diseños. Este documento cumple el «próximo entregable» de [PRODUCTO-Y-NAVEGACION §6](PRODUCTO-Y-NAVEGACION.md) y no repite lo que ya describen [README](../README.md) (rutas, modelo), [AGENTS](../AGENTS.md) (reglas) ni [PENDIENTES-REALES](PENDIENTES-REALES.md) (bloqueos); los enlaza.
+> **Actualización (26-10-2026):** las decisiones D1–D10 de §8 fueron **aprobadas** y se implementaron por fases (Fase 0, marcos, capacidades, Admin por secciones, perfil público); la arquitectura vigente y su verificación están en [PRODUCTO-Y-NAVEGACION](PRODUCTO-Y-NAVEGACION.md). Este documento se conserva como el diagnóstico original: sus hallazgos describen el estado **anterior** a esas fases y no se reescriben.
+
+**Estado original: diagnóstico y propuesta para revisión. Nada de lo propuesto estaba implementado ni aprobado.** No se modificó código, rutas ni diseños. Este documento cumple el «próximo entregable» de [PRODUCTO-Y-NAVEGACION §6](PRODUCTO-Y-NAVEGACION.md) y no repite lo que ya describen [README](../README.md) (rutas, modelo), [AGENTS](../AGENTS.md) (reglas) ni [PENDIENTES-REALES](PENDIENTES-REALES.md) (bloqueos); los enlaza.
 
 Etiquetas de evidencia: **[N]** observado en navegador · **[C]** leído en código · **[H]** hipótesis sin probar · **[P]** propuesta.
 

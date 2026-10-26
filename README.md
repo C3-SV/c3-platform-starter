@@ -8,7 +8,9 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 
 El inventario siguiente describe funciones presentes en el repositorio recibido. **No significa que todas estén validadas en el último CI o que la navegación esté aprobada.** La validación vigente requiere pruebas reproducibles, revisión por rol y recorrido real de la demo:
 
-- **Acceso** (V04): entrar, crear cuenta con nombre, recuperar contraseña y sesión persistente al recargar.
+- **Acceso** (V04): entrar, crear cuenta con nombre, recuperar contraseña y sesión persistente al recargar. Sin destino previo se llega a **Mi C3**; con `?next=` (solo rutas internas) se vuelve a donde estaba la persona.
+- **Navegación unificada**: tres zonas con una cabecera cada una (sitio, app y consola de administración), menú de la cuenta común y accesos según las **capacidades** de la cuenta (`GET /api/me`: administración, organizaciones vinculadas, challenges que evalúa; solo datos propios). Detalle en [docs/PRODUCTO-Y-NAVEGACION.md](docs/PRODUCTO-Y-NAVEGACION.md).
+- **Perfil público compartible** (opt-in, desactivado por defecto): la persona lo activa en Cuenta, elige qué muestra (nombre siempre; centro de estudio, presentación, enlaces y trayectoria a elección) y comparte `/personas/[slug]`. Nunca expone correo, entregas, notas ni inscripciones sin aprobar; se puede cambiar el enlace o desactivarlo. Tratamiento de menores y permisos de imagen y nombre: pendiente legal.
 - **Experiencias y challenges** (V12, sección «Experiencias y challenges»): crear, editar y gestionar el ciclo de vida de cada experiencia sin tocar Firebase. Se guarda en borrador y solo aparece en el sitio público al publicarla. El listado busca por nombre, filtra por estado y línea, muestra las próximas acciones, los challenges, las inscripciones y los cupos de cada experiencia, y abre cada una para editarla.
 - **Experiencias sin challenge** (talleres, charlas, encuentros): una experiencia tiene cero o más challenges. Sin challenges publicados, las personas se inscriben a la experiencia misma (`/experiencias/[id]/inscripcion`), de forma individual y con revisión de C3. Con challenges publicados, la inscripción sigue entrando por el challenge. Es la misma inscripción por persona y experiencia: nunca se duplica entre experiencia y challenge.
 - **Ciclo de vida** (V12): borrador → publicada → inscripciones abiertas → inscripciones cerradas → en desarrollo → concluida, o cancelada. Las inscripciones se abren y cierran desde la tarjeta (ajustan la ventana de fechas); reabrir tras un cierre exige una nueva fecha de cierre. Una experiencia concluida es histórica: no se reabre ni vuelve a publicarse y no recibe challenges ni revisiones. Una publicada con inscripciones no vuelve a borrador. Publicar un taller, charla o encuentro exige inicio, modalidad y sede o enlace; publicar con la ventana de inscripción vencida se rechaza (una experiencia histórica se registra directamente como concluida).
@@ -26,7 +28,7 @@ El inventario siguiente describe funciones presentes en el repositorio recibido.
 - **Espacio de empresa** (V09): la representante ve solo los challenges publicados de sus organizaciones, las soluciones ya enviadas (nunca borradores) y las propuestas vinculadas con su siguiente paso. Sin vínculo, la vista no muestra datos de nadie.
 - Challenges con organización vinculada: al crear un challenge en V12 se elige la organización que tendrá su espacio de empresa.
 - **Perfil y trayectoria** (V08): la persona declara su nombre, centro de estudio, una presentación y enlaces https (GitHub, LinkedIn). La trayectoria —inscripciones, entregas, reconocimientos y puesto— la registra C3 y no se edita; la pantalla separa ambas cosas con la etiqueta «Registrada por C3».
-- **Cuenta**: consulta correo y verificación, edita los datos personales del perfil, solicita verificación del correo, cambia la contraseña con reautenticación de Firebase y cierra sesión. Los resultados oficiales no se modifican desde Cuenta; la eliminación queda pendiente de una política de retención.
+- **Cuenta**: consulta correo y verificación, edita los datos personales del perfil, gestiona el perfil público, solicita verificación del correo, cambia la contraseña con reautenticación de Firebase y cierra sesión. Los resultados oficiales no se modifican desde Cuenta; la eliminación queda pendiente de una política de retención.
 - **Accesibilidad:** existe auditoría automática con axe-core (WCAG 2.x A y AA) para vistas públicas, acceso y usuario registrado. Su resultado debe comprobarse en la ejecución actual antes de aprobar cambios.
 
 - **Jurados** (V12, «Jurados y rúbricas»): C3 asigna jurados por correo —externos o representantes de la empresa—, revoca accesos sin borrar evaluaciones finalizadas, y ve la rúbrica de cada challenge.
@@ -44,7 +46,7 @@ El inventario siguiente describe funciones presentes en el repositorio recibido.
 
 ### Validación y CI
 
-Los comandos `npm run check`, `npm run test:rules` y `npm run test:e2e` verifican compilación/tipos, calidad, permisos y recorridos. **No se declara una suite completa en verde solo por conteos de ejecuciones anteriores.** Según la auditoría del 26-10-2026, el CI de `main` fallaba en el recorrido E2E de Cuenta (`e2e/cuenta.spec.ts`); la causa y estado posterior requieren nueva ejecución. Ver [PENDIENTES-REALES](docs/PENDIENTES-REALES.md).
+Los comandos `npm run check`, `npm run test:rules` y `npm run test:e2e` verifican compilación/tipos, calidad, permisos y recorridos. **No se declara una suite completa en verde solo por conteos de ejecuciones anteriores**: leer el resultado del CI del PR o del push concreto (`.github/workflows/ci.yml` corre en cada PR y en cada push a `main` y `dev`). El fallo de `e2e/cuenta.spec.ts` que mostró el CI de `main` el 26-10-2026 era de la prueba (navegaba antes de que terminara «Salir») y se corrigió. `next build` puede detenerse una vez con el aviso de seguridad de Next.js; repetirlo continúa (ver [PENDIENTES-REALES](docs/PENDIENTES-REALES.md)).
 
 La revisión de navegación por rol y UX está definida en [PRODUCTO-Y-NAVEGACION](docs/PRODUCTO-Y-NAVEGACION.md). No confundir validación técnica con facilidad de uso.
 
@@ -80,16 +82,17 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 | Inscripción a experiencia | `/experiencias/[experienceId]/inscripcion` | Joven | Individual, para experiencias sin challenges publicados |
 | V07 Mi challenge y entrega | `/mi-c3/retos/[challengeId]` | Joven | Implementada |
 | V08 Trayectoria | `/trayectoria` | Joven | Implementada |
-| Cuenta | `/cuenta` | Joven | Perfil, correo, seguridad y sesión |
+| Cuenta | `/cuenta` | Joven | Perfil, perfil público, correo, seguridad y sesión |
+| Perfil público | `/personas/[slug]` | Público | Solo existe si la persona lo activó; `noindex`; 404 si no existe, se cambió o se desactivó |
 | V09 Espacio de empresa | `/empresa` | Empresa | Implementada (challenges, soluciones, resultados y propuestas) |
 | V10 Proponer challenge | `/empresa/proponer` | Público | Implementada, sin cuenta |
 | V11 Evaluación | `/mi-c3/evaluar/[challengeId]` | Jurado asignado (externo o representante de la empresa) | Implementada. Es la **única dirección canónica** de la evaluación; `/evaluar/[challengeId]` y `/empresa/retos/[challengeId]/evaluacion` redirigen aquí (`next.config.ts`) |
 | Compite | `/compite` | Público | Landing institucional conectada al catálogo |
 | Crea | `/crea` | Público | Landing institucional conectada al catálogo |
 | Conecta | `/conecta` | Público | Landing institucional conectada al catálogo |
-| V12 Admin | `/admin` | Administrador | Experiencias (crear, editar, ciclo de vida, cupos), challenges, resumen, entregas, inscripciones, propuestas, jurados y resultados |
+| V12 Admin | `/admin` → `/admin/[seccion]` | Administrador | Una URL por sección: `resumen` (entrada, con pendientes enlazados), `propuestas`, `experiencias` (crear, editar, ciclo de vida, cupos, challenges), `inscripciones` (`?reto=` / `?experiencia=`), `entregas`, `jurados` y `resultados`. Una sección desconocida es un 404 |
 
-Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/mi-c3`, `/api/retos/*`, `/api/experiencias/*`, `/api/inscripciones/*`, `/api/admin/*`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
+Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/perfil/*`, `/api/mi-c3`, `/api/retos/*`, `/api/experiencias/*`, `/api/inscripciones/*`, `/api/admin/*`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
 
 > **Desarrollo:** un solo checkout local. `dev` integra y prueba; `main` es producción. Leer `AGENTS.md`, `docs/FLUJO-AGENTES.md` y `docs/PRODUCTO-Y-NAVEGACION.md`. Verificar el entorno con `npm run doctor`.
 
@@ -219,7 +222,8 @@ Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas
 - `experiences/{id}` también puede declarar `primaryLine`, `secondaryLines`, `isDemo`, `demoNote`, `sourceUrl` y `sourceLabel`; los registros legacy usan el tipo como fallback. Los datos de sesión son opcionales: `startsAt`, `endsAt`, `modality` (`presencial`, `virtual`, `hibrida`), `location` (pública) y `capacity` (cupos; vacío es sin límite). Las experiencias anteriores sin estos campos se leen y se editan sin migración.
 - `auditLog/{id}`: bitácora de operaciones administrativas (`action`, `actorUid`, `targetType`, `targetId`, `at`, `details`). Solo la escribe el servidor.
 - `challenges/{id}`: `experienceId`, problema, entregables, rúbrica (criterios con puntaje máximo de 1 a 10), organización responsable, modalidades (`individual`, `team` con tamaño mínimo y máximo), cierre de entregas, estado.
-- `users/{uid}`: correo y nombre. Se crea la primera vez que la persona entra.
+- `users/{uid}`: correo, nombre, datos autodeclarados y, si la persona lo configuró, `publicProfile` (`enabled`, `slug`, qué se muestra). Se crea la primera vez que la persona entra (transacción).
+- `publicProfiles/{slug}`: dirección pública de un perfil (`userId`). Solo la escribe el servidor; cambiar el enlace borra la anterior.
 - `enrollments/{experienceId}__{uid}`: una inscripción por persona y experiencia. Estados `pending`, `approved`, `rejected`, `cancelled`. `challengeId` es el challenge por el que entró la persona, o `null` si se inscribió a la experiencia sin challenge.
 - `participations/{challengeId}__{uid}`: se crea al aprobar la inscripción. Estado `active` o `cancelled`.
 - `companyProposals/{id}`: propuesta pública (empresa, contacto, problema, resultado buscado, límites), estado (`received`, `needs_changes`, `accepted`, `not_prioritized`), nota de C3 y organización vinculada. Su referencia son los 6 primeros caracteres del id.
@@ -236,7 +240,7 @@ Un challenge publicado solo es público si su experiencia también está publica
 
 - **`dev`** es el espacio de integración y pruebas; `main` representa producción. Las ramas de tarea parten de `dev` y se integran por PR a `dev`; la promoción validada va por PR de `dev` hacia `main`. Se trabaja en una sola carpeta, cambiando de rama con `git switch`.
 - El repositorio canónico se identificó como `C3-SV/c3-platform-starter` y actualmente es público. **La intención es hacerlo privado**, sujeta a resolver la relación con el despliegue de Vercel y sus condiciones. No cambiar visibilidad ni desplegar sin autorización.
-- Prioridades verificables: corregir E2E de Cuenta, auditar navegación completa y retornos protegidos, revisar diseño de escritorio y móvil, y preparar reglas, privacidad e infraestructura para piloto autorizado. Ver [PLAN-CONSTRUCCION](docs/PLAN-CONSTRUCCION.md) y [PENDIENTES-REALES](docs/PENDIENTES-REALES.md).
+- Prioridades verificables: probar con personas de cada rol los recorridos de [PRODUCTO-Y-NAVEGACION](docs/PRODUCTO-Y-NAVEGACION.md) §6, validar el tratamiento legal del perfil público y de los menores, decidir la actualización de Next.js y preparar reglas, privacidad e infraestructura para un piloto autorizado. Ver [PLAN-CONSTRUCCION](docs/PLAN-CONSTRUCCION.md) y [PENDIENTES-REALES](docs/PENDIENTES-REALES.md).
 
 ## Notas
 
