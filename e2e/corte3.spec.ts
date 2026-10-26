@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
+import { expectSignedIn } from "./helpers";
 
 /**
  * Corte 3 de punta a punta: dos personas se inscriben por equipo, C3 aprueba, la líder crea el equipo,
@@ -21,7 +22,7 @@ async function loginAt(page: Page, email: string, password: string, next: string
   await page.locator("#l-correo").fill(email);
   await page.locator("#l-pass").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+  await expectSignedIn(page);
 }
 
 async function registerAt(page: Page, person: { name: string; email: string; password: string }) {
@@ -32,7 +33,7 @@ async function registerAt(page: Page, person: { name: string; email: string; pas
   await page.locator("#r-pass").fill(person.password);
   await form.locator('input[type="checkbox"]').check();
   await form.getByRole("button", { name: "Crear cuenta", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+  await expectSignedIn(page);
 }
 
 async function openInscripcion(page: Page) {
@@ -40,10 +41,10 @@ async function openInscripcion(page: Page) {
   await expect(page.getByRole("heading", { level: 1, name: challengeTitle })).toBeVisible();
 }
 
-/** El reto de esta prueba acepta solo equipos: no aparece la elección de modalidad y la inscripción es por equipo. */
+/** El challenge de esta prueba acepta solo equipos: no aparece la elección de modalidad y la inscripción es por equipo. */
 async function enrollAsTeam(page: Page) {
   await openInscripcion(page);
-  await expect(page.getByText("Este reto se inscribe por equipo.")).toBeVisible();
+  await expect(page.getByText("Este challenge se inscribe por equipo.")).toBeVisible();
   await page.getByRole("button", { name: "Inscribirme", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Inscripción enviada" })).toBeVisible();
 }
@@ -60,12 +61,12 @@ async function withAdmin(browser: Browser, work: (page: Page) => Promise<void>) 
 }
 
 test.describe.serial("Corte 3: equipos", () => {
-  test("el administrador publica un reto que se inscribe solo por equipo", async ({ browser }) => {
+  test("el administrador publica un challenge que se inscribe solo por equipo", async ({ browser }) => {
     await withAdmin(browser, async (page) => {
       const experienceForm = page.locator("form").filter({ has: page.locator("#exp-titulo") });
       await page.locator("#exp-titulo").fill(experienceTitle);
       await page.locator("#exp-tipo").selectOption("hackathon");
-      await page.locator("#exp-resumen").fill("Retos por equipo para validar la conformación y la entrega grupal.");
+      await page.locator("#exp-resumen").fill("Challenges por equipo para validar la conformación y la entrega grupal.");
       await page.locator("#exp-abre").fill("2026-10-01T00:00");
       await page.locator("#exp-cierra").fill("2027-06-01T23:59");
       await experienceForm.getByRole("button", { name: "Guardar borrador" }).click();
@@ -88,7 +89,7 @@ test.describe.serial("Corte 3: equipos", () => {
       await page.locator("#ret-max").fill("3");
       await page.locator("#ret-cierre").fill("2027-06-30T23:59");
       await challengeForm.getByRole("button", { name: "Guardar borrador" }).click();
-      await expect(page.getByRole("status").filter({ hasText: "Reto guardado como borrador" })).toBeVisible();
+      await expect(page.getByRole("status").filter({ hasText: "Challenge guardado como borrador" })).toBeVisible();
       await region.getByRole("button", { name: "Publicar", exact: true }).click();
       await expect(page.getByRole("status").filter({ hasText: "Publicado" })).toBeVisible();
     });
@@ -151,7 +152,8 @@ test.describe.serial("Corte 3: equipos", () => {
     await page.getByRole("button", { name: "Unirme con código", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Te uniste al equipo" })).toBeVisible();
     await expect(page.getByText("Habilitado", { exact: true })).toBeVisible();
-    await expect(page.getByText(integrante.name)).toBeVisible();
+    // El nombre también aparece en el menú de la cuenta (escritorio): se busca dentro de la tarjeta del equipo.
+    await expect(page.getByLabel("Tu equipo").getByText(integrante.name)).toBeVisible();
   });
 
   test("solo la líder envía la entrega del equipo; la integrante la ve en solo lectura", async ({ page, browser }) => {

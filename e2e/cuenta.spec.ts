@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
+import { signOutUi } from "./helpers";
 
 async function register(page: Page, name: string, email: string, password: string) {
   await page.goto("/acceso?modo=registro");
@@ -13,17 +14,10 @@ async function register(page: Page, name: string, email: string, password: strin
   await expect(page).toHaveURL(/\/mi-c3$/);
 }
 
-/** «Salir» es asíncrono: hasta que la sesión se cierra y se vuelve a la Home no se debe navegar a otra página. */
-async function signOut(page: Page) {
-  await page.getByRole("button", { name: "Salir", exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
-}
-
 test.describe("Cuenta", () => {
   test("una visitante puede iniciar sesión desde Cuenta sin ver datos privados", async ({ page }) => {
     await page.goto("/cuenta");
-    await expect(page.getByRole("heading", { name: "Tu cuenta", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Entrá para administrar tu cuenta", exact: true })).toBeVisible();
     await expect(page.getByText("Iniciá sesión para administrar tu cuenta.")).toBeVisible();
     await expect(page.getByRole("main").getByRole("link", { name: "Entrar", exact: true })).toHaveAttribute("href", /\/acceso\?next=/);
     await expect(page.getByRole("heading", { name: "Información personal" })).toHaveCount(0);
@@ -37,7 +31,8 @@ test.describe("Cuenta", () => {
     await register(page, originalName, email, "clave-lucia-123");
     await page.goto("/");
 
-    await page.getByRole("link", { name: "Cuenta", exact: true }).click();
+    await page.getByRole("button", { name: /^Menú de la cuenta/ }).click();
+    await page.getByRole("link", { name: /^Cuenta/ }).click();
     await expect(page).toHaveURL(/\/cuenta$/);
     await expect(page.getByRole("heading", { name: "Tu cuenta", exact: true })).toBeVisible();
     await expect(page.getByLabel("Correo")).toHaveValue(email);
@@ -54,7 +49,7 @@ test.describe("Cuenta", () => {
     await page.getByLabel("Nombre visible").fill(newName);
     await expect(page.getByLabel("Nombre visible")).toHaveValue(newName);
     await page.getByLabel("Centro de estudio o trabajo").fill("UCA");
-    await page.getByLabel("Presentación").fill("Me interesan los retos de backend.");
+    await page.getByLabel("Presentación").fill("Me interesan los challenges de backend.");
     await page.getByLabel("GitHub").fill("https://github.com/lucia-prueba");
     await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Cambios guardados" })).toBeVisible();
@@ -92,7 +87,7 @@ test.describe("Cuenta", () => {
     await page.getByLabel("Confirmar contraseña").fill(newPassword);
     await page.getByRole("button", { name: "Cambiar contraseña", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Contraseña actualizada" })).toBeVisible();
-    await signOut(page);
+    await signOutUi(page);
     await page.goto("/acceso");
     await page.locator("#l-correo").fill(email);
     await page.locator("#l-pass").fill(newPassword);
@@ -105,8 +100,10 @@ test.describe("Cuenta", () => {
     const id = randomUUID();
     await register(page, "Noelia Móvil de Prueba", `movil.${id}@correo.test`, "clave-movil-123");
     await page.goto("/cuenta");
-    await expect(page.getByRole("link", { name: "Mi C3", exact: true })).toBeVisible();
-    await expect(page.getByRole("banner").getByRole("link", { name: "Trayectoria", exact: true })).toBeVisible();
+    const tabs = page.getByRole("navigation", { name: "Navegación móvil" });
+    await expect(tabs.getByRole("link", { name: "Mi C3", exact: true })).toBeVisible();
+    await expect(tabs.getByRole("link", { name: "Trayectoria", exact: true })).toBeVisible();
+    await expect(tabs.getByRole("link", { name: "Cuenta", exact: true })).toHaveAttribute("aria-current", "page");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   });

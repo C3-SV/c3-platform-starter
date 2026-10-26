@@ -20,7 +20,7 @@ test("las entregas administrativas exigen permisos y muestran contexto autorizad
   });
   await db.collection("challenges").doc("challenge-admin").set({
     experienceId: "exp-admin",
-    title: "Reto Admin",
+    title: "Challenge Admin",
     status: "published",
     organizationName: "C3",
     createdAt: "2026-10-01T00:00:00.000Z",
@@ -48,7 +48,7 @@ test("las entregas administrativas exigen permisos y muestran contexto autorizad
 
   const rows = await listAdminDeliveries(db, admin);
   assert.equal(rows.length, 1);
-  assert.equal(rows[0].challengeTitle, "Reto Admin");
+  assert.equal(rows[0].challengeTitle, "Challenge Admin");
   assert.deepEqual(rows[0].participantIds, ["joven-1"]);
   assert.equal(rows[0].authorized, true);
   assert.equal(rows[0].status, "submitted");
@@ -57,6 +57,10 @@ test("las entregas administrativas exigen permisos y muestran contexto autorizad
 test("el dashboard administrativo resume colecciones sin exponerlo a jóvenes", async () => {
   const db = testDb();
   await db.collection("experiences").doc("exp-1").set({ status: "draft" });
+  // Solo las propuestas recibidas cuentan como pendientes de revisión.
+  await db.collection("companyProposals").doc("prop-1").set({ status: "received" });
+  await db.collection("companyProposals").doc("prop-2").set({ status: "received" });
+  await db.collection("companyProposals").doc("prop-3").set({ status: "accepted" });
   await db.collection("enrollments").doc("enrollment-1").set({ status: "pending" });
   await db.collection("submissions").doc("submission-1").set({ status: "submitted" });
   await db.collection("evaluations").doc("evaluation-1").set({ status: "finalized" });
@@ -64,7 +68,8 @@ test("el dashboard administrativo resume colecciones sin exponerlo a jóvenes", 
   const dashboard = await getAdminDashboard(db, admin);
   assert.deepEqual(dashboard, {
     experiences: 1,
-    proposals: 0,
+    proposals: 3,
+    pendingProposals: 2,
     pendingEnrollments: 1,
     submissions: 1,
     evaluations: 1,

@@ -32,7 +32,7 @@ const proposal = {
 const experienceInput = {
   title: "Experiencia de empresas",
   kind: "challenge_empresarial",
-  summary: "Retos que plantean empresas reales para equipos jóvenes.",
+  summary: "Challenges que plantean empresas reales para equipos jóvenes.",
   registrationOpensAt: "2026-10-01T00:00:00-06:00",
   registrationClosesAt: "2026-12-31T23:59:00-06:00",
 };
@@ -127,7 +127,7 @@ test("solo C3 crea organizaciones y vincula representantes por correo de una cue
   assert.equal((await db.collection("organizationMembers").get()).size, 1);
 });
 
-test("el representante ve sus retos publicados y solo las soluciones enviadas; nunca borradores", async () => {
+test("el representante ve sus challenges publicados y solo las soluciones enviadas; nunca borradores", async () => {
   const db = testDb();
   const auth = testAuth();
   await createAuthUser(representante.email, representante.uid);
@@ -158,7 +158,7 @@ test("el representante ve sus retos publicados y solo las soluciones enviadas; n
   assert.equal(afterSubmit.challenges[0].submissions[0].mode, "individual");
 });
 
-test("una persona de otra organización o sin vínculo no ve retos ajenos", async () => {
+test("una persona de otra organización o sin vínculo no ve challenges ajenos", async () => {
   const db = testDb();
   const auth = testAuth();
   await createAuthUser(representante.email, representante.uid);

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { expectSignedIn } from "./helpers";
 
 /**
  * Corte 6: perfil y trayectoria (V08) con lo autodeclarado separado de lo que registra C3, y comprobación de
@@ -15,7 +16,7 @@ async function register(page: import("@playwright/test").Page) {
   await page.locator("#r-pass").fill(persona.password);
   await form.locator('input[type="checkbox"]').check();
   await form.getByRole("button", { name: "Crear cuenta", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+  await expectSignedIn(page);
 }
 
 test.describe.serial("Corte 6: perfil y trayectoria", () => {
@@ -33,7 +34,7 @@ test.describe.serial("Corte 6: perfil y trayectoria", () => {
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+    await expectSignedIn(page);
     await page.goto("/cuenta");
 
     await page.locator("#cuenta-github").fill("http://sin-seguridad.test");
@@ -60,7 +61,7 @@ test.describe.serial("Corte 6: perfil y trayectoria", () => {
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+    await expectSignedIn(page);
     await page.goto("/mi-c3");
     const navigation = page.getByRole("navigation", { name: isMobile ? "Navegación móvil" : "Principal" });
     await navigation.getByRole("link", { name: "Trayectoria", exact: true }).click();

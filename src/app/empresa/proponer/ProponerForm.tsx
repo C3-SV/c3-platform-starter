@@ -69,9 +69,9 @@ export function ProponerForm() {
           Tu código de referencia es <strong>{confirmation.reference}</strong>. C3 te escribirá a {confirmation.email}.
         </p>
         <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-          Enviar no publica nada. C3 revisa tu propuesta y define el reto contigo antes de que se vea.
+          Enviar no publica nada. C3 revisa tu propuesta y define el challenge contigo antes de que se vea.
         </p>
-        <Link href="/explorar" className="c3-btn c3-btn--contorno" style={{ alignSelf: "flex-start" }}>Explorar retos publicados</Link>
+        <Link href="/explorar" className="c3-btn c3-btn--contorno" style={{ alignSelf: "flex-start" }}>Explorar challenges publicados</Link>
       </section>
     );
   }
@@ -124,7 +124,7 @@ export function ProponerForm() {
           {busy ? "Enviando…" : "Enviar propuesta"}
         </button>
         <span style={{ fontSize: 12, lineHeight: 1.4, color: "var(--c3-texto-suave)", maxWidth: 360 }}>
-          Enviar no publica nada. C3 revisa tu propuesta y define el reto contigo antes de que se vea.
+          Enviar no publica nada. C3 revisa tu propuesta y define el challenge contigo antes de que se vea.
         </span>
       </div>
     </form>

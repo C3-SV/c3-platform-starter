@@ -124,7 +124,7 @@ test("publicar rechaza una ventana ya vencida o una sesión que terminó", () =>
   assert.deepEqual(publishIssues({ ...base, registrationClosesAt: "2026-10-01T00:00:00.000Z" }, now, { checkRegistrationWindow: false }), []);
 });
 
-test("los retos usan las mismas transiciones y un reto concluido no se reabre", () => {
+test("los challenges usan las mismas transiciones y un challenge concluido no se reabre", () => {
   assert.equal(checkChallengeStatusTransition("draft", "published").ok, true);
   assert.equal(checkChallengeStatusTransition("draft", "closed").ok, true);
   assert.equal(checkChallengeStatusTransition("published", "closed").ok, true);
@@ -187,7 +187,7 @@ test("cerrar inscripciones fija el cierre en este momento y solo vale si están 
   assert.equal(upcoming.ok === false && upcoming.code, "no_abiertas");
 });
 
-test("una experiencia concluida o cancelada bloquea calendario y cupos; con retos o inscripciones, el tipo", () => {
+test("una experiencia concluida o cancelada bloquea calendario y cupos; con challenges o inscripciones, el tipo", () => {
   const closedLocks = lockedFields({ status: "closed" }, noStats);
   assert.deepEqual(Object.keys(closedLocks).sort(), ["capacity", "endsAt", "kind", "modality", "registrationClosesAt", "registrationOpensAt", "startsAt"]);
   assert.deepEqual(Object.keys(lockedFields({ status: "published" }, noStats)), []);
@@ -264,7 +264,7 @@ test("las próximas acciones salen del estado, las pendientes y los cupos", () =
   assert.match(ended[0].text, /concluida/);
 
   const hackathonWithoutChallenges = nextActionsOf({ ...published, kind: "hackathon" }, noStats, now);
-  assert.ok(hackathonWithoutChallenges.some((action) => /al menos un reto/.test(action.text)));
+  assert.ok(hackathonWithoutChallenges.some((action) => /al menos un challenge/.test(action.text)));
 
   assert.deepEqual(nextActionsOf({ ...base, status: "closed" }, noStats, now), []);
   assert.deepEqual(nextActionsOf(published, noStats, now), []);

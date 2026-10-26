@@ -1,5 +1,5 @@
 /**
- * Bitácora de operaciones administrativas sensibles (experiencias, retos y revisión de inscripciones).
+ * Bitácora de operaciones administrativas sensibles (experiencias, challenges y revisión de inscripciones).
  * Cada entrada se escribe en la misma transacción o lote que el cambio, así nunca queda un cambio sin registro
  * ni un registro de un cambio que no ocurrió. Guarda identificadores y valores de calendario, nunca datos
  * personales (correo, nombre).

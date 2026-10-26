@@ -36,7 +36,7 @@ const delivery = {
 const experienceInput = {
   title: "Experiencia de evaluación",
   kind: "challenge_empresarial",
-  summary: "Retos para validar la evaluación y la publicación.",
+  summary: "Challenges para validar la evaluación y la publicación.",
   registrationOpensAt: "2026-10-01T00:00:00-06:00",
   registrationClosesAt: "2026-12-31T23:59:00-06:00",
 };
@@ -62,7 +62,7 @@ function expectHttp(status: number, code?: string) {
   return (error: unknown) => error instanceof HttpError && error.status === status && (code === undefined || error.code === code);
 }
 
-/** Dos soluciones enviadas en un reto publicado, listo para evaluar. */
+/** Dos soluciones enviadas en un challenge publicado, listo para evaluar. */
 async function scenario() {
   const db = testDb();
   const experience = await createExperience(db, admin, experienceInput, now);

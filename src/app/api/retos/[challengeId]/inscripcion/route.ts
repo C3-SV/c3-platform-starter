@@ -4,7 +4,7 @@ import { enrollInChallenge } from "@/lib/server/participation";
 
 export const dynamic = "force-dynamic";
 
-/** Inscripción al reto en la modalidad elegida (individual o equipo). El servidor decide la elegibilidad. */
+/** Inscripción al challenge en la modalidad elegida (individual o equipo). El servidor decide la elegibilidad. */
 export function POST(request: Request, context: { params: Promise<{ challengeId: string }> }) {
   return respond(async () => {
     const actor = await requestActor(request);

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { MovilShell } from "@/components/MovilShell";
+import { AppShell } from "@/components/AppShell";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/domain/format";
@@ -17,9 +17,17 @@ type Entry = ParticipationEntry<MyEnrollmentView, Assignment>;
  * V05 · Mi C3 (inicio). Separa lo que le toca a la persona («Requiere tu atención»), lo que espera a C3 u otro
  * proceso («En espera»), lo activo («En curso») y lo terminado («Finalizadas»). Cada tarjeta lleva a una
  * acción real o muestra su estado. Una sola composición responsiva: el CSS la presenta como app móvil o como
- * panel de dos columnas (ver `.c3-movil--panel` y `.c3-mi-c3__*` en globals.css).
+ * panel de dos columnas (ver `.c3-app` y `.c3-mi-c3__*` en globals.css).
  */
 export function MiC3Panel() {
+  return (
+    <AppShell active="mi-c3" signedOut={{ title: "Entrá para ver tu espacio", text: "Acá vas a ver tus inscripciones, tus entregas y lo que toca ahora." }}>
+      <MiC3Contenido />
+    </AppShell>
+  );
+}
+
+function MiC3Contenido() {
   const { session } = useSession();
   const [enrollments, setEnrollments] = useState<MyEnrollmentView[] | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -62,7 +70,7 @@ export function MiC3Panel() {
     };
   }, [signedIn]);
 
-  // Retos que me asignaron como jurado. Si la consulta falla, la sección simplemente no aparece.
+  // Challenges que me asignaron como jurado. Si la consulta falla, la sección simplemente no aparece.
   useEffect(() => {
     if (!signedIn) return;
     let active = true;
@@ -92,21 +100,7 @@ export function MiC3Panel() {
     }
   }
 
-  if (session.status === "loading") return <MovilShell layout="panel"><div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo"><p>Cargando…</p></div></MovilShell>;
-  if (session.status === "unavailable") return <MovilShell layout="panel"><div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo"><p role="alert">{session.message}</p></div></MovilShell>;
-  if (session.status === "signed-out") {
-    return (
-      <MovilShell layout="panel" nav={null}>
-        <div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo">
-          <div className="c3-card c3-mi-c3__acceso-requerido">
-            <h1 className="c3-titulo">Entrá para ver tu espacio</h1>
-            <p>Acá vas a ver tus inscripciones, tus entregas y lo que toca ahora.</p>
-            <Link href="/acceso?next=/mi-c3" className="c3-btn c3-btn--primario">Entrar</Link>
-          </div>
-        </div>
-      </MovilShell>
-    );
-  }
+  if (session.status !== "signed-in") return null;
 
   const user = session.user;
   const firstName = user.displayName?.split(" ")[0] ?? "";
@@ -116,7 +110,7 @@ export function MiC3Panel() {
   const nextDate = formatDateTime(overview?.nextDeadline?.item.submissionClosesAt);
 
   return (
-    <MovilShell layout="panel">
+    <>
       <section className="c3-mi-c3__resumen" aria-labelledby="mi-c3-titulo">
         <div className="c3-mi-c3__contenedor c3-mi-c3__resumen-interior">
           <div className="c3-mi-c3__resumen-texto">
@@ -156,9 +150,9 @@ export function MiC3Panel() {
             <div className="c3-mi-c3__principal">
               {empty ? (
                 <section className="c3-card c3-mi-c3__vacio" aria-labelledby="mi-c3-vacio">
-                  <h2 id="mi-c3-vacio" className="c3-titulo">Elegí tu primer reto</h2>
-                  <p>Explorá los retos abiertos y sumate a uno. Cuando te inscribas, acá vas a ver qué te toca hacer y qué espera la respuesta de C3.</p>
-                  <Link href="/explorar" className="c3-btn c3-btn--primario">Explorar retos</Link>
+                  <h2 id="mi-c3-vacio" className="c3-titulo">Elegí tu primer challenge</h2>
+                  <p>Explorá los challenges abiertos y sumate a uno. Cuando te inscribas, acá vas a ver qué te toca hacer y qué espera la respuesta de C3.</p>
+                  <Link href="/explorar" className="c3-btn c3-btn--primario">Explorar challenges</Link>
                 </section>
               ) : null}
               {GROUP_ORDER.map((group) => (
@@ -169,7 +163,7 @@ export function MiC3Panel() {
           </div>
         ) : null}
       </div>
-    </MovilShell>
+    </>
   );
 }
 

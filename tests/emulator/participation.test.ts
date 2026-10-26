@@ -26,7 +26,7 @@ const enrollIndividual = (db: Parameters<typeof enrollInChallenge>[0], actor: Pa
 const experienceInput = {
   title: "Hackathon de prueba",
   kind: "hackathon",
-  summary: "Retos de prueba para validar inscripciones y entregas.",
+  summary: "Challenges de prueba para validar inscripciones y entregas.",
   registrationOpensAt: "2026-10-01T00:00:00-06:00",
   registrationClosesAt: "2026-12-31T23:59:00-06:00",
 };
@@ -78,7 +78,7 @@ test("una persona se inscribe una sola vez por experiencia y queda pendiente", a
   assert.equal((await db.collection("enrollments").get()).size, 1);
 });
 
-test("no se inscribe en retos solo por equipo, ni fuera de la ventana de inscripción", async () => {
+test("no se inscribe en challenges solo por equipo, ni fuera de la ventana de inscripción", async () => {
   const { db, challengeId } = await publishedChallenge(["team"]);
   await assert.rejects(enrollIndividual(db, joven, challengeId, now), expectHttp(409, "solo_equipos"));
   const open = await publishedChallenge();

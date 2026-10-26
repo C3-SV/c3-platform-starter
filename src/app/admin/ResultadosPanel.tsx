@@ -59,7 +59,7 @@ export function ResultadosPanel({ challenges }: { challenges: ChallengeOption[] 
     setLoadError(null);
   }
 
-  // Carga el tablero del reto elegido; la respuesta actualiza el estado.
+  // Carga el tablero del challenge elegido; la respuesta actualiza el estado.
   useEffect(() => {
     if (!challengeId) return;
     let active = true;
@@ -113,7 +113,7 @@ export function ResultadosPanel({ challenges }: { challenges: ChallengeOption[] 
   }
 
   if (challenges.length === 0) {
-    return <div className="c3-card" style={{ padding: 24 }}><p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay retos con resultados.</p></div>;
+    return <div className="c3-card" style={{ padding: 24 }}><p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay challenges con resultados.</p></div>;
   }
 
   const published = board?.status === "published";
@@ -125,7 +125,7 @@ export function ResultadosPanel({ challenges }: { challenges: ChallengeOption[] 
         <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>Cada solución necesita dos evaluaciones finalizadas de jurados distintos antes de publicar.</p>
       </div>
 
-      <label htmlFor="res-reto" className="c3-etiqueta-campo">Reto</label>
+      <label htmlFor="res-reto" className="c3-etiqueta-campo">Challenge</label>
       <select id="res-reto" className="c3-campo" value={challengeId} onChange={(event) => setSelected(event.target.value)} style={{ maxWidth: 520 }}>
         {challenges.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
       </select>
@@ -181,7 +181,7 @@ export function ResultadosPanel({ challenges }: { challenges: ChallengeOption[] 
           <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Qué verá cada destinatario al publicar</span>
           <label style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, minHeight: 28 }}>
             <input type="checkbox" checked={showWinners} onChange={(event) => setShowWinners(event.target.checked)} style={{ width: 20, height: 20, accentColor: "var(--c3-accion)" }} />
-            Ganadores y reconocimientos, en la página pública del reto
+            Ganadores y reconocimientos, en la página pública del challenge
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 14, minHeight: 28 }}>
             <input type="checkbox" checked={showScores} onChange={(event) => setShowScores(event.target.checked)} style={{ width: 20, height: 20, accentColor: "var(--c3-accion)" }} />

@@ -1,5 +1,5 @@
 /**
- * Estados visibles de experiencias y retos, según el vocabulario de la guía de estilo
+ * Estados visibles de experiencias y challenges, según el vocabulario de la guía de estilo
  * (diseno-claude/README.md, sección 5). Las etiquetas y los tonos son las únicas fuentes de UI.
  */
 import type { EnrollmentStatus, ExperienceKind, ExperienceLine, ExperienceModality, ExperienceStatus } from "./types.ts";

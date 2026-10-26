@@ -1,5 +1,5 @@
 /**
- * Mi C3: ordena las inscripciones y los retos asignados como jurado en cuatro estados que la persona
+ * Mi C3: ordena las inscripciones y los challenges asignados como jurado en cuatro estados que la persona
  * entiende de un vistazo. Reglas PURAS: no consultan Firebase ni reemplazan la autorización del servidor.
  *
  * - atencion: algo que le toca hacer a la persona (entregar, armar el equipo, evaluar).
@@ -43,7 +43,7 @@ export type AssignmentReason = "evaluar" | "esperando_cierre" | "completa" | "si
 export interface EnrollmentFacts {
   status: EnrollmentStatus;
   mode: ParticipationMode;
-  /** null cuando la inscripción es a la experiencia misma (sin reto): no hay entrega ni equipo. */
+  /** null cuando la inscripción es a la experiencia misma (sin challenge): no hay entrega ni equipo. */
   challengeId: string | null;
   submissionClosesAt: string | null;
   team: { status: "incompleto" | "habilitado"; role: "lider" | "integrante" } | null;
@@ -51,7 +51,7 @@ export interface EnrollmentFacts {
   result: object | null;
 }
 
-/** Lo mínimo que se necesita saber de un reto asignado como jurado. */
+/** Lo mínimo que se necesita saber de un challenge asignado como jurado. */
 export interface AssignmentFacts {
   canEvaluate: boolean;
   solutions: number;

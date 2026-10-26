@@ -1,9 +1,8 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { LineBrandMark } from "@/components/BrandMark";
-import { Footer } from "@/components/Footer";
 import { ExperienceCard } from "@/components/ExperienceCard";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteShell } from "@/components/SiteShell";
 import { LINE_LANDING } from "@/lib/content/lineLanding";
 import { experienceLinesOf } from "@/lib/domain/catalog";
 import type { ExperienceLine } from "@/lib/domain/types";
@@ -25,8 +24,7 @@ export async function LineLandingPage({ line }: { line: ExperienceLine }) {
   ));
 
   return (
-    <div>
-      <SiteHeader />
+    <SiteShell>
       <main id="contenido">
         <section className="c3-line-hero" style={{ "--c3-line-accent": content.accent } as CSSProperties}>
           <div className="c3-container c3-line-hero__inner">
@@ -63,7 +61,7 @@ export async function LineLandingPage({ line }: { line: ExperienceLine }) {
           <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             <div>
               <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias destacadas</h2>
-              <p style={{ marginTop: 8, color: "var(--c3-texto-suave)" }}>Experiencias y retos de {content.title} que podés explorar desde el catálogo compartido.</p>
+              <p style={{ marginTop: 8, color: "var(--c3-texto-suave)" }}>Experiencias y challenges de {content.title} que podés explorar desde el catálogo compartido.</p>
             </div>
             {active.length > 0 ? <div className="c3-grilla-tarjetas">{cards(active)}</div> : (
               <div className="c3-card" style={{ padding: 24 }}><p style={{ color: "var(--c3-texto-suave)" }}>Todavía no hay convocatorias activas en esta línea.</p></div>
@@ -93,7 +91,6 @@ export async function LineLandingPage({ line }: { line: ExperienceLine }) {
           </div>
         </section>
       </main>
-      <Footer />
-    </div>
+    </SiteShell>
   );
 }

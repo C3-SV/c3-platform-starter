@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { LineBrandMark } from "@/components/BrandMark";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteShell } from "@/components/SiteShell";
 import { StatePill } from "@/components/StatePill";
-import { Footer } from "@/components/Footer";
 import { experienceLabel, lineColorOf, lineTextColorOf, primaryLineOf, type PresentedState } from "@/lib/domain/presentation";
 import { modalityLabel, sessionSummary } from "@/lib/domain/format";
 import type { ExperienceLine } from "@/lib/domain/types";
@@ -24,7 +23,7 @@ interface FeaturedItem {
 /** V01 · Home. Las experiencias destacadas salen del catálogo público real. */
 export default async function HomePage() {
   const catalog = await listPublicCatalog(database(), new Date());
-  // Cada reto publicado y cada experiencia sin retos (talleres, charlas, encuentros) es una tarjeta destacada.
+  // Cada challenge publicado y cada experiencia sin challenges (talleres, charlas, encuentros) es una tarjeta destacada.
   const featured: FeaturedItem[] = catalog
     .flatMap((item): FeaturedItem[] => {
       const line = primaryLineOf(item.experience);
@@ -53,8 +52,7 @@ export default async function HomePage() {
     .slice(0, 3);
 
   return (
-    <div>
-      <SiteHeader />
+    <SiteShell>
 
       <main id="contenido">
       <section style={{ background: "var(--c3-navy)", padding: "56px clamp(16px, 4vw, 48px) 72px" }}>
@@ -65,7 +63,7 @@ export default async function HomePage() {
               Problemas reales. Talento técnico joven.
             </h1>
             <p style={{ fontSize: 18, lineHeight: 1.6, color: "#a9b8d0" }}>
-              Las empresas plantean retos técnicos de verdad. Equipos jóvenes los resuelven. Lo que entregan queda registrado como evidencia oficial de C3.
+              Las empresas plantean challenges técnicos de verdad. Equipos jóvenes los resuelven. Lo que entregan queda registrado como evidencia oficial de C3.
             </p>
           </div>
 
@@ -73,10 +71,10 @@ export default async function HomePage() {
             <div style={{ background: "#17294a", border: "1px solid #2c3f63", borderRadius: 20, padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
               <span className="c3-etiqueta" style={{ color: "var(--c3-compite-claro)" }}>Soy estudiante o joven técnico</span>
               <div className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: "#ffffff" }}>
-                Resolvé retos y construí una trayectoria que C3 respalda
+                Resolvé challenges y construí una trayectoria que C3 respalda
               </div>
               <p style={{ fontSize: 16, lineHeight: 1.6, color: "#a9b8d0" }}>
-                Explorá retos abiertos, inscribite solo o en equipo, entregá tu solución y recibí un resultado oficial.
+                Explorá challenges abiertos, inscribite solo o en equipo, entregá tu solución y recibí un resultado oficial.
               </p>
               <div style={{ marginTop: "auto", paddingTop: 8 }}>
                 <Link href="/explorar" className="c3-btn" style={{ background: "#2c62b0", color: "#ffffff", padding: "16px 28px", display: "inline-flex" }}>
@@ -88,7 +86,7 @@ export default async function HomePage() {
             <div style={{ background: "var(--c3-conecta)", borderRadius: 20, padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
               <span className="c3-etiqueta" style={{ color: "#ffffff" }}>Soy una empresa</span>
               <div className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: "#ffffff" }}>
-                Convertí un problema técnico en un reto resuelto por equipos
+                Convertí un problema técnico en un challenge resuelto por equipos
               </div>
               <p style={{ fontSize: 16, lineHeight: 1.6, color: "#ffffff" }}>
                 Contanos tu necesidad. C3 la define contigo, recibís varias soluciones y las evaluás sobre la misma rúbrica.
@@ -113,9 +111,9 @@ export default async function HomePage() {
           </div>
           <div className="c3-grilla-tres" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 24 }}>
             {[
-              { href: "/compite", line: "var(--c3-compite)", title: "Compite", color: "var(--c3-compite)", text: "Retos y competencia técnica para medirte contra otros y mejorar.", example: "Ejemplo: Copa Salvadoreña de Programación." },
+              { href: "/compite", line: "var(--c3-compite)", title: "Compite", color: "var(--c3-compite)", text: "Challenges y competencia técnica para medirte contra otros y mejorar.", example: "Ejemplo: Copa Salvadoreña de Programación." },
               { href: "/crea", line: "var(--c3-crea)", title: "Crea", color: "var(--c3-crea-texto)", text: "Construcción real: convertí lo que sabés en proyectos y soluciones.", example: "Ejemplo: Hackathon de Turismo Creativo." },
-              { href: "/conecta", line: "var(--c3-conecta)", title: "Conecta", color: "var(--c3-conecta)", text: "El puente entre talento, empresas e instituciones, con retos que plantean las propias empresas.", example: "Ejemplo: C3 Challenges." },
+              { href: "/conecta", line: "var(--c3-conecta)", title: "Conecta", color: "var(--c3-conecta)", text: "El puente entre talento, empresas e instituciones, con challenges que plantean las propias empresas.", example: "Ejemplo: C3 Challenges." },
             ].map((item) => (
               <Link key={item.title} href={item.href} className="c3-card c3-line-choice" style={{ overflow: "hidden", textDecoration: "none", color: "inherit" }}>
                 <div style={{ height: 6, background: item.line }} />
@@ -170,15 +168,13 @@ export default async function HomePage() {
               ¿Tu equipo técnico tiene un problema sin resolver?
             </h2>
             <p style={{ fontSize: 16, lineHeight: 1.6, color: "#ffffff" }}>
-              No necesitás un brief perfecto. Describí la situación con tus palabras y C3 se encarga de convertirla en un reto.
+              No necesitás un brief perfecto. Describí la situación con tus palabras y C3 se encarga de convertirla en un challenge.
             </p>
           </div>
           <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 28px" }}>Proponer un challenge</Link>
         </div>
       </section>
       </main>
-
-      <Footer />
-    </div>
+    </SiteShell>
   );
 }

@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | Descubrimiento | La persona entiende qué ofrece C3, encuentra una experiencia y comprende si puede participar | Visitante; Home, Explorar, Compite/Crea/Conecta, detalle |
 | Participación | Se registra, se inscribe, recibe estado real, participa y entrega según reglas | Joven, equipo; acceso, inscripción, Mi C3, entrega |
-| Empresa | Presenta una necesidad y, si C3 la vincula, ve únicamente retos y resultados autorizados | Propuesta pública, representante, espacio de empresa |
+| Empresa | Presenta una necesidad y, si C3 la vincula, ve únicamente challenges y resultados autorizados | Propuesta pública, representante, espacio de empresa |
 | Operación C3 | Admin crea y publica experiencias/retos, revisa inscripciones, asigna jurados y publica resultados | Admin, permisos, trazabilidad |
 | Evaluación | Jurados autorizados evalúan anónimamente tras cierre y resultados se publican solo con dos evaluaciones | Jurado, representante habilitado, C3 |
 | Evidencia | Trayectoria muestra hechos de participación y resultados publicados, separados del perfil editable | Participante, C3 |
@@ -23,7 +23,7 @@
 
 ## Prueba funcional de aceptación
 
-Una empresa presenta una necesidad; C3 crea y publica el reto; una persona se registra, se inscribe y entrega texto/enlaces dentro del plazo; el jurado autorizado evalúa después del cierre; C3 publica resultados; cada actor visualiza exclusivamente lo permitido. Refrescar o cerrar sesión no debe perder datos ni provocar redirecciones incorrectas. Ningún control simula éxito.
+Una empresa presenta una necesidad; C3 crea y publica el challenge; una persona se registra, se inscribe y entrega texto/enlaces dentro del plazo; el jurado autorizado evalúa después del cierre; C3 publica resultados; cada actor visualiza exclusivamente lo permitido. Refrescar o cerrar sesión no debe perder datos ni provocar redirecciones incorrectas. Ningún control simula éxito.
 
 ## Criterios de experiencia
 

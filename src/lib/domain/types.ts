@@ -66,7 +66,7 @@ export interface Enrollment {
   id: string;
   userId: string;
   experienceId: string;
-  /** Reto por el que entró la persona; null cuando se inscribió a la experiencia (sin reto). */
+  /** Challenge por el que entró la persona; null cuando se inscribió a la experiencia (sin challenge). */
   challengeId?: string | null;
   status: EnrollmentStatus;
 }
