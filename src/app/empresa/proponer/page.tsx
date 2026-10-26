@@ -1,12 +1,15 @@
 import { SiteHeader } from "@/components/SiteHeader";
 import { ProponerForm } from "./ProponerForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Proponer un challenge" };
 
 /** V10 · Proponer challenge. Pública y sin cuenta. */
 export default function ProponerPage() {
   return (
     <div>
       <SiteHeader />
-      <main className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", display: "flex", gap: 40, flexWrap: "wrap", alignItems: "flex-start", padding: "clamp(16px, 4vw, 48px)" }}>
+      <main id="contenido" className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", display: "flex", gap: 40, flexWrap: "wrap", alignItems: "flex-start", padding: "clamp(16px, 4vw, 48px)" }}>
         <div style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: 28 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Para empresas</span>

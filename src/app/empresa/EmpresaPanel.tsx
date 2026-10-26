@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { C3BrandMark } from "@/components/BrandMark";
 import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
+import { useSignOut } from "@/lib/auth/useSignOut";
 import { apiRequest, ApiError } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/domain/format";
 import { proposalNextStep, proposalPresentation } from "@/lib/domain/proposals";
@@ -12,7 +13,8 @@ import type { CompanySpace } from "@/lib/server/companies";
 
 /** V09 · Espacio de empresa. Solo muestra las organizaciones vinculadas a la persona autenticada. */
 export function EmpresaPanel() {
-  const { session, signOut } = useSession();
+  const { session } = useSession();
+  const signOut = useSignOut();
   const [space, setSpace] = useState<CompanySpace | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string>("");
@@ -202,7 +204,7 @@ function Pagina({ children, email, onSignOut }: { children: ReactNode; email?: s
           </div>
         </div>
       </header>
-      <main className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32, padding: "clamp(16px, 4vw, 40px) clamp(16px, 4vw, 48px)" }}>
+      <main id="contenido" className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32, padding: "clamp(16px, 4vw, 40px) clamp(16px, 4vw, 48px)" }}>
         {children}
       </main>
     </div>

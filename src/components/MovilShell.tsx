@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { C3BrandMark } from "@/components/BrandMark";
 import { PanelHeader } from "@/components/PanelHeader";
 import { useSession } from "@/lib/auth/AuthProvider";
+import { useSignOut } from "@/lib/auth/useSignOut";
 
 /** Iniciales para el avatar: primera letra del nombre y del apellido (o de la única palabra). */
 export function initialsOf(name: string | null | undefined, email: string | null | undefined): string {
@@ -37,16 +37,10 @@ export function MovilShell({
   nav?: "inicio" | "explorar" | "trayectoria" | null;
   layout?: "movil" | "panel";
 }) {
-  const { session, signOut } = useSession();
-  const router = useRouter();
+  const { session } = useSession();
+  const signOut = useSignOut();
   const user = session.status === "signed-in" ? session.user : null;
   const panel = layout === "panel";
-  const Contenido = panel ? "main" : "div";
-
-  async function handleSignOut() {
-    await signOut();
-    router.push("/");
-  }
 
   return (
     <div className={`c3-movil${panel ? " c3-movil--panel" : ""}`}>
@@ -55,7 +49,7 @@ export function MovilShell({
           activo={nav}
           loading={session.status === "loading"}
           user={user ? { name: user.displayName ?? user.email ?? "Tu cuenta", initials: initialsOf(user.displayName, user.email), isAdmin: user.isAdmin } : null}
-          onSignOut={() => void handleSignOut()}
+          onSignOut={() => void signOut()}
         />
       ) : null}
       <div className="c3-movil__barra">
@@ -75,7 +69,7 @@ export function MovilShell({
         ) : null}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {user ? (
-            <button type="button" className="c3-etiqueta" onClick={() => void handleSignOut()} style={{ background: "none", border: 0, color: "#ffffff", cursor: "pointer", padding: "8px 4px" }}>
+            <button type="button" className="c3-etiqueta" onClick={() => void signOut()} style={{ background: "none", border: 0, color: "#ffffff", cursor: "pointer", padding: "8px 4px" }}>
               Salir
             </button>
           ) : null}
@@ -88,7 +82,7 @@ export function MovilShell({
         </div>
       </div>
 
-      <Contenido className="c3-movil__contenido">{children}</Contenido>
+      <main id="contenido" className="c3-movil__contenido">{children}</main>
 
       {nav ? (
         <nav aria-label="Navegación móvil" className="c3-movil__nav">

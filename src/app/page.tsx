@@ -56,6 +56,7 @@ export default async function HomePage() {
     <div>
       <SiteHeader />
 
+      <main id="contenido">
       <section style={{ background: "var(--c3-navy)", padding: "56px clamp(16px, 4vw, 48px) 72px" }}>
         <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 40 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 860 }}>
@@ -175,6 +176,7 @@ export default async function HomePage() {
           <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 28px" }}>Proponer un challenge</Link>
         </div>
       </section>
+      </main>
 
       <Footer />
     </div>

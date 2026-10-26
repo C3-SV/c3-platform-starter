@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmail
 import { useSession } from "@/lib/auth/AuthProvider";
 import { getClientAuth } from "@/lib/firebase/client";
 import { apiRequest, ApiError } from "@/lib/client/api";
+import { safeNext } from "@/lib/domain/navigation";
 
 const LOGIN_ERRORS: Record<string, string> = {
   "auth/invalid-credential": "El correo o la contraseña no coinciden. Revisalos e intentá de nuevo.",
@@ -28,12 +29,6 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function errorCode(error: unknown): string {
   return typeof error === "object" && error !== null && "code" in error ? String((error as { code: unknown }).code) : "";
-}
-
-/** Solo rutas internas: evita redirecciones a otros sitios desde el parámetro next. */
-export function safeNext(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
-  return value;
 }
 
 export function AccesoPanel() {

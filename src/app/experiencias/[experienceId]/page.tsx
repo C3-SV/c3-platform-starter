@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EnrollmentCta } from "@/components/EnrollmentCta";
@@ -11,12 +13,25 @@ import { HttpError } from "@/lib/server/errors";
 
 export const dynamic = "force-dynamic";
 
+// La misma lectura sirve al título de la pestaña y a la página (una consulta por petición).
+const loadExperience = cache((experienceId: string) => getPublicExperience(database(), experienceId, new Date()));
+
+export async function generateMetadata({ params }: { params: Promise<{ experienceId: string }> }): Promise<Metadata> {
+  const { experienceId } = await params;
+  try {
+    const { experience } = await loadExperience(experienceId);
+    return { title: experience.title, description: experience.summary };
+  } catch {
+    return { title: "Experiencia no encontrada" };
+  }
+}
+
 /** Detalle público de una experiencia. Si no tiene retos publicados, la inscripción es a la experiencia misma. */
 export default async function ExperienciaPage({ params }: { params: Promise<{ experienceId: string }> }) {
   const { experienceId } = await params;
   let detail;
   try {
-    detail = await getPublicExperience(database(), experienceId, new Date());
+    detail = await loadExperience(experienceId);
   } catch (error) {
     if (error instanceof HttpError && error.status === 404) notFound();
     throw error;
@@ -56,7 +71,7 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
         </div>
       </div>
 
-      <main className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", padding: "clamp(16px, 4vw, 48px)" }}>
+      <main id="contenido" className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", padding: "clamp(16px, 4vw, 48px)" }}>
         <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
           <div style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
             <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>

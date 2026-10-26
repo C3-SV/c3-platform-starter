@@ -4,6 +4,9 @@ import { database } from "@/lib/server/context";
 import { getPublicExperience } from "@/lib/server/catalog";
 import { HttpError } from "@/lib/server/errors";
 import { InscripcionExperienciaPanel, type InscripcionExperiencia } from "./InscripcionExperienciaPanel";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Inscripción" };
 
 export const dynamic = "force-dynamic";
 

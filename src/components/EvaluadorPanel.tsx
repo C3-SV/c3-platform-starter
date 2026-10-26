@@ -7,6 +7,7 @@ import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError, type FieldIssue } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/domain/format";
+import { evaluationHref, loginHref } from "@/lib/domain/navigation";
 import type { PresentedState } from "@/lib/domain/presentation";
 import type { evaluationWorkspace } from "@/lib/server/evaluation";
 
@@ -105,7 +106,8 @@ export function EvaluadorPanel({ challengeId, variant }: { challengeId: string; 
       return (
         <div className="c3-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
           <h1 className="c3-titulo" style={{ fontSize: 22, fontWeight: 700 }}>Entrá para evaluar</h1>
-          <Link href={`/acceso?next=/evaluar/${challengeId}`} className="c3-btn c3-btn--primario">Entrar</Link>
+          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Usás tu cuenta de C3. Al entrar volvés a esta evaluación.</p>
+          <Link href={loginHref({ next: evaluationHref(challengeId) })} className="c3-btn c3-btn--primario" style={{ alignSelf: "flex-start" }}>Entrar</Link>
         </div>
       );
     }
@@ -203,5 +205,5 @@ export function EvaluadorPanel({ challengeId, variant }: { challengeId: string; 
   if (variant === "movil") {
     return <MovilShell backHref="/mi-c3" backLabel="Mi C3" nav="inicio">{body}</MovilShell>;
   }
-  return <main className="c3-page" style={{ maxWidth: 960, margin: "0 auto", padding: "clamp(16px, 4vw, 48px)", display: "flex", flexDirection: "column", gap: 20 }}>{body}</main>;
+  return <main id="contenido" className="c3-page" style={{ maxWidth: 960, margin: "0 auto", padding: "clamp(16px, 4vw, 48px)", display: "flex", flexDirection: "column", gap: 20 }}>{body}</main>;
 }

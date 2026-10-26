@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   EmailAuthProvider,
@@ -47,6 +48,7 @@ function issueFor(issues: FieldIssue[], field: string): string | null {
 
 /** Cuenta personal: Auth administra las credenciales; Firestore conserva solo el perfil editable. */
 export function CuentaPanel() {
+  const router = useRouter();
   const { session, signOut, refreshUser } = useSession();
   const sessionUid = session.status === "signed-in" ? session.user.uid : null;
   const sessionDisplayName = session.status === "signed-in" ? session.user.displayName ?? "" : "";
@@ -213,6 +215,7 @@ export function CuentaPanel() {
     setSignOutError(null);
     try {
       await signOut();
+      router.replace("/");
     } catch (error) {
       setSignOutError(authMessage(error));
     }
@@ -230,7 +233,7 @@ export function CuentaPanel() {
   return (
     <>
       <SiteHeader />
-      <main className="c3-page c3-container c3-cuenta">
+      <main id="contenido" className="c3-page c3-container c3-cuenta">
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
           <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Mi espacio</span>
           <h1 className="c3-titulo" style={{ fontSize: 32, lineHeight: 1.2, fontWeight: 700 }}>Tu cuenta</h1>

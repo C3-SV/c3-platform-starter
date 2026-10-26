@@ -27,7 +27,7 @@ export async function LineLandingPage({ line }: { line: ExperienceLine }) {
   return (
     <div>
       <SiteHeader />
-      <main>
+      <main id="contenido">
         <section className="c3-line-hero" style={{ "--c3-line-accent": content.accent } as CSSProperties}>
           <div className="c3-container c3-line-hero__inner">
             <div className="c3-line-hero__copy">
