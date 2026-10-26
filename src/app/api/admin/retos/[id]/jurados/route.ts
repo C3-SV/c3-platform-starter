@@ -5,7 +5,7 @@ import { assignJudge, listJudges } from "@/lib/server/evaluation";
 
 export const dynamic = "force-dynamic";
 
-/** Jurados asignados a un reto. Solo C3. */
+/** Jurados asignados a un challenge. Solo C3. */
 export function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   return respond(async () => {
     const actor = await requestActor(request);

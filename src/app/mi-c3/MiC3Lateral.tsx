@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { initialsOf } from "@/components/MovilShell";
 import type { SessionUser } from "@/lib/auth/AuthProvider";
+import { NO_CAPABILITIES, spacesOf } from "@/lib/domain/capabilities";
+import { initialsOf } from "@/lib/domain/format";
 
 const LINES = [
   { href: "/compite", label: "Compite", className: "c3-mi-c3__linea--compite" },
@@ -14,6 +15,8 @@ const LINES = [
  */
 export function MiC3Lateral({ user }: { user: SessionUser }) {
   const name = user.displayName?.trim() || user.email || "Tu cuenta";
+  // Los espacios con capacidad (empresa, administración) aparecen como tarjetas: la navegación solo los menciona.
+  const spaces = spacesOf(user.capabilities ?? { ...NO_CAPABILITIES, admin: user.isAdmin });
   return (
     <aside className="c3-mi-c3__lateral" aria-label="Tu cuenta y accesos">
       <section className="c3-card c3-mi-c3__panel" aria-labelledby="mi-c3-perfil">
@@ -27,8 +30,22 @@ export function MiC3Lateral({ user }: { user: SessionUser }) {
         <div className="c3-mi-c3__perfil-estado">
           <span className={`c3-pill c3-pill--${user.emailVerified ? "exito" : "advertencia"}`}>{user.emailVerified ? "Correo verificado" : "Correo sin verificar"}</span>
           {user.isAdmin ? <span className="c3-pill c3-pill--info">Administración C3</span> : null}
+          {user.capabilities && user.capabilities.organizations.length > 0 ? <span className="c3-pill c3-pill--info">Representante de empresa</span> : null}
         </div>
       </section>
+
+      {spaces.length > 0 ? (
+        <nav className="c3-card c3-mi-c3__panel" aria-labelledby="mi-c3-espacios">
+          <h2 id="mi-c3-espacios" className="c3-titulo c3-mi-c3__panel-titulo">Tus espacios</h2>
+          <ul className="c3-mi-c3__accesos">
+            {spaces.map((space) => (
+              <li key={space.id}>
+                <Link href={space.href} className="c3-mi-c3__acceso"><strong>{space.label}</strong><span>{space.description}</span></Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
 
       <nav className="c3-card c3-mi-c3__panel" aria-labelledby="mi-c3-accesos">
         <h2 id="mi-c3-accesos" className="c3-titulo c3-mi-c3__panel-titulo">Accesos</h2>
@@ -40,13 +57,8 @@ export function MiC3Lateral({ user }: { user: SessionUser }) {
             <Link href="/trayectoria" className="c3-mi-c3__acceso"><strong>Trayectoria</strong><span>Lo que C3 registró de tu participación</span></Link>
           </li>
           <li>
-            <Link href="/explorar" className="c3-mi-c3__acceso"><strong>Explorar</strong><span>Experiencias y retos con inscripción abierta</span></Link>
+            <Link href="/explorar" className="c3-mi-c3__acceso"><strong>Explorar</strong><span>Experiencias y challenges con inscripción abierta</span></Link>
           </li>
-          {user.isAdmin ? (
-            <li>
-              <Link href="/admin" className="c3-mi-c3__acceso"><strong>Administración</strong><span>Catálogo, inscripciones, jurados y resultados</span></Link>
-            </li>
-          ) : null}
         </ul>
         <div className="c3-mi-c3__lineas">
           <span className="c3-mi-c3__lineas-titulo">Explorar por línea</span>

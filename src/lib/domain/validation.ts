@@ -226,7 +226,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
   const issues: FieldIssue[] = [];
   const experienceId = text(raw, "experienceId", 1, 128, issues, "Experiencia");
   const organizationId = typeof raw.organizationId === "string" && raw.organizationId.trim() ? raw.organizationId.trim() : null;
-  const title = text(raw, "title", 3, 120, issues, "Nombre del reto");
+  const title = text(raw, "title", 3, 120, issues, "Nombre del challenge");
   const summary = text(raw, "summary", 10, 280, issues, "Resumen");
   const problem = text(raw, "problem", 20, 4000, issues, "Problema");
   const organizationName = text(raw, "organizationName", 2, 120, issues, "Organización responsable");

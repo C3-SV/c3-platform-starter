@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EnrollmentCta } from "@/components/EnrollmentCta";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteShell } from "@/components/SiteShell";
 import { StatePill } from "@/components/StatePill";
 import { formatDate, formatDateTime, formatSession, modalityLabel } from "@/lib/domain/format";
 import { experienceLabel, lineTextColorOf, MODALITY_LABEL, primaryLineOf } from "@/lib/domain/presentation";
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ experienc
   }
 }
 
-/** Detalle público de una experiencia. Si no tiene retos publicados, la inscripción es a la experiencia misma. */
+/** Detalle público de una experiencia. Si no tiene challenges publicados, la inscripción es a la experiencia misma. */
 export default async function ExperienciaPage({ params }: { params: Promise<{ experienceId: string }> }) {
   const { experienceId } = await params;
   let detail;
@@ -44,8 +44,7 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
   const accent = lineTextColorOf(primaryLineOf(experience));
 
   return (
-    <div>
-      <SiteHeader />
+    <SiteShell>
 
       <div style={{ background: "var(--c3-navy)", padding: "8px clamp(16px, 4vw, 48px) 56px" }}>
         <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -71,7 +70,7 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
         </div>
       </div>
 
-      <main id="contenido" className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", padding: "clamp(16px, 4vw, 48px)" }}>
+      <main id="contenido" className="c3-page c3-ancho" style={{ padding: "clamp(16px, 4vw, 48px)" }}>
         <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
           <div style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
             <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -87,7 +86,7 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
 
             {challenges.length > 0 ? (
               <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }} aria-labelledby="titulo-retos">
-                <h2 id="titulo-retos" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Retos de esta experiencia</h2>
+                <h2 id="titulo-retos" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Challenges de esta experiencia</h2>
                 {challenges.map((challenge) => (
                   <Link key={challenge.id} href={`/retos/${challenge.id}`} className="c3-tarjeta-enlace" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -117,7 +116,7 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
                   <EnrollmentCta enrollHref={enrollHref} registrationOpen={registration.open} variant="aside" closedLabel={closedLabel} />
                 </>
               ) : (
-                <p style={{ fontSize: 16, lineHeight: 1.6 }}>Esta experiencia se inscribe desde cada uno de sus retos. Elegí uno de la lista para ver sus requisitos.</p>
+                <p style={{ fontSize: 16, lineHeight: 1.6 }}>Esta experiencia se inscribe desde cada uno de sus challenges. Elegí uno de la lista para ver sus requisitos.</p>
               )}
               <div style={{ height: 1, background: "var(--c3-borde)" }} />
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -139,7 +138,7 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
           </aside>
         </div>
       </main>
-    </div>
+    </SiteShell>
   );
 }
 

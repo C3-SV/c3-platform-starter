@@ -1,5 +1,5 @@
 /**
- * Equipos de un reto (Corte 3). Reglas: un equipo por persona y experiencia; solo con inscripción
+ * Equipos de un challenge (Corte 3). Reglas: un equipo por persona y experiencia; solo con inscripción
  * por equipo aprobada; cupo máximo; habilitado al llegar al mínimo; cambios hasta el cierre de inscripciones
  * y sin entrega enviada. Cada operación verifica identidad y permisos dentro de una transacción.
  */
@@ -118,7 +118,7 @@ export async function createTeam(db: Firestore, actor: Actor, challengeId: strin
   const name = parseTeamName(rawName);
   const { challenge, experience, canManage } = await requireChallengeContext(db, challengeId, now);
   if (!challenge.allows.includes("team")) {
-    throw new HttpError(409, "sin_equipos", "Este reto no acepta equipos.");
+    throw new HttpError(409, "sin_equipos", "Este challenge no acepta equipos.");
   }
   if (!canManage) throw new HttpError(409, "inscripcion_cerrada", "Las inscripciones cerraron: ya no se pueden crear equipos.");
   await requireApprovedTeamEnrollment(db, actor, experience.id);

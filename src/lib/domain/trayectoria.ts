@@ -14,7 +14,7 @@ export type TrajectorySection = "participaciones" | "en_revision" | "sin_partici
 export const TRAJECTORY_ORDER: readonly TrajectorySection[] = ["participaciones", "en_revision", "sin_participacion"];
 
 export const TRAJECTORY_COPY: Record<TrajectorySection, { title: string; short: string; description: string }> = {
-  participaciones: { title: "Participaciones", short: "Participaciones", description: "Retos y experiencias en los que C3 aprobó tu inscripción." },
+  participaciones: { title: "Participaciones", short: "Participaciones", description: "Challenges y experiencias en los que C3 aprobó tu inscripción." },
   en_revision: { title: "En revisión por C3", short: "En revisión", description: "Todavía no acreditan participación: C3 no respondió." },
   sin_participacion: { title: "Sin participación", short: "Sin participación", description: "Inscripciones canceladas o rechazadas. No acreditan participación ni resultado." },
 };

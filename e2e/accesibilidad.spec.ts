@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectSignedIn } from "./helpers";
 
 /**
  * Auditoría automática con axe-core (WCAG 2.x A y AA). Falla con cualquier incumplimiento serio o crítico.
@@ -32,7 +33,7 @@ test("las vistas de una persona registrada no tienen incumplimientos serios de a
   await page.locator("#r-pass").fill(persona.password);
   await form.locator('input[type="checkbox"]').check();
   await form.getByRole("button", { name: "Crear cuenta", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+  await expectSignedIn(page);
 
   for (const path of ["/mi-c3", "/trayectoria"]) {
     await page.goto(path);

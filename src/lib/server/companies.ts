@@ -1,6 +1,6 @@
 /**
  * Organizaciones, representantes y espacio de empresa (Corte 4).
- * Un representante ve solo los retos y las soluciones enviadas de sus organizaciones vinculadas.
+ * Un representante ve solo los challenges y las soluciones enviadas de sus organizaciones vinculadas.
  * La vinculación la hace C3 por correo: nunca la pide la propia persona.
  */
 import type { Auth } from "firebase-admin/auth";
@@ -11,7 +11,7 @@ import { requireAdmin, type Actor } from "./auth.ts";
 import { CHALLENGES, ORGANIZATIONS, loadExperience, windowOf } from "./catalog.ts";
 import { notFound } from "./errors.ts";
 import { PROPOSALS, toProposalView, type ProposalView } from "./proposals.ts";
-import { companyResults } from "./evaluation.ts";
+import { JUDGE_ASSIGNMENTS, companyResults } from "./evaluation.ts";
 import { SUBMISSIONS, TEAMS, USERS } from "./ids.ts";
 
 export const ORGANIZATION_MEMBERS = "organizationMembers";
@@ -40,6 +40,8 @@ export interface CompanyChallenge {
   state: PresentedState;
   submissions: CompanySubmission[];
   results: Awaited<ReturnType<typeof companyResults>>;
+  /** La cuenta es jurado de este challenge (asignada por C3): puede evaluar sus soluciones. */
+  evaluation: { assigned: boolean };
 }
 
 export interface CompanySpace {
@@ -100,7 +102,7 @@ async function myOrganizationIds(db: Firestore, uid: string): Promise<string[]> 
   return snapshot.docs.map((doc) => doc.data().organizationId as string);
 }
 
-/** Espacio de empresa: organizaciones vinculadas, sus retos publicados, soluciones enviadas y propuestas. */
+/** Espacio de empresa: organizaciones vinculadas, sus challenges publicados, soluciones enviadas y propuestas. */
 export async function getCompanySpace(db: Firestore, actor: Actor, now: Date): Promise<CompanySpace> {
   const ids = await myOrganizationIds(db, actor.uid);
   if (ids.length === 0) return { organizations: [], challenges: [], proposals: [] };
@@ -108,6 +110,10 @@ export async function getCompanySpace(db: Firestore, actor: Actor, now: Date): P
   const organizations = (await Promise.all(ids.map((id) => db.collection(ORGANIZATIONS).doc(id).get())))
     .filter((snapshot) => snapshot.exists)
     .map((snapshot) => toOrganization(snapshot.id, snapshot.data() as DocumentData));
+
+  // Evaluar es una asignación aparte, hecha por C3: ver el challenge no concede evaluarlo.
+  const assignments = await db.collection(JUDGE_ASSIGNMENTS).where("userId", "==", actor.uid).get();
+  const assigned = new Set(assignments.docs.filter((doc) => doc.data().status === "active").map((doc) => doc.data().challengeId as string));
 
   const challenges: CompanyChallenge[] = [];
   const proposals: ProposalView[] = [];
@@ -120,7 +126,7 @@ export async function getCompanySpace(db: Firestore, actor: Actor, now: Date): P
       const state = presentState(data.status, experience ? windowOf(experience) : {}, now);
       const submissions = await submittedSolutions(db, doc.id);
       const results = await companyResults(db, doc.id);
-      challenges.push({ id: doc.id, title: data.title, organizationId: organization.id, state, submissions, results });
+      challenges.push({ id: doc.id, title: data.title, organizationId: organization.id, state, submissions, results, evaluation: { assigned: assigned.has(doc.id) } });
     }
     const proposalSnapshot = await db.collection(PROPOSALS).where("organizationId", "==", organization.id).get();
     proposals.push(...proposalSnapshot.docs.map((doc) => toProposalView(doc.id, doc.data())));

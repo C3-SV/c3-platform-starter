@@ -44,14 +44,14 @@ test("experiencia rechaza tipo desconocido, cierre anterior a la apertura y dato
   assert.deepEqual(fields(() => parseExperienceInput({ title: "", kind: "otro", summary: "corto" })), ["kind", "summary", "title"]);
   assert.deepEqual(
     fields(() => parseExperienceInput({
-      title: "Hackathon", kind: "hackathon", summary: "Fin de semana de retos abiertos.",
+      title: "Hackathon", kind: "hackathon", summary: "Fin de semana de challenges abiertos.",
       registrationOpensAt: "2026-10-31T00:00:00-06:00", registrationClosesAt: "2026-10-01T00:00:00-06:00",
     })),
     ["registrationClosesAt"],
   );
 });
 
-test("reto válido con equipos de 2 a 4 se acepta", () => {
+test("challenge válido con equipos de 2 a 4 se acepta", () => {
   const parsed = parseChallengeInput(validChallenge, now);
   assert.deepEqual(parsed.allows, ["individual", "team"]);
   assert.equal(parsed.teamMinSize, 2);
@@ -59,13 +59,13 @@ test("reto válido con equipos de 2 a 4 se acepta", () => {
   assert.equal(parsed.rubric.length, 2);
 });
 
-test("reto individual descarta tamaños de equipo", () => {
+test("challenge individual descarta tamaños de equipo", () => {
   const parsed = parseChallengeInput({ ...validChallenge, allows: ["individual"], teamMinSize: 3, teamMaxSize: 5 }, now);
   assert.equal(parsed.teamMinSize, null);
   assert.equal(parsed.teamMaxSize, null);
 });
 
-test("reto rechaza cierre pasado, rúbrica fuera de rango y equipo con máximo menor al mínimo", () => {
+test("challenge rechaza cierre pasado, rúbrica fuera de rango y equipo con máximo menor al mínimo", () => {
   assert.deepEqual(fields(() => parseChallengeInput({ ...validChallenge, submissionClosesAt: "2026-10-01T00:00:00-06:00" }, now)), ["submissionClosesAt"]);
   assert.deepEqual(
     fields(() => parseChallengeInput({ ...validChallenge, rubric: [{ label: "Calidad", maxScore: 11 }] }, now)),
@@ -82,7 +82,7 @@ test("las filas vacías de rúbrica se descartan y no bloquean la validación", 
   assert.deepEqual(parsed.rubric, [{ label: "Calidad", maxScore: 10 }]);
 });
 
-test("reto sin modalidad o sin entregables se rechaza", () => {
+test("challenge sin modalidad o sin entregables se rechaza", () => {
   assert.deepEqual(
     fields(() => parseChallengeInput({ ...validChallenge, allows: [], deliverables: [] }, now)),
     ["allows", "deliverables"],

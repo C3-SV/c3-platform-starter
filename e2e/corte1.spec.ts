@@ -1,9 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
+import { expectSignedIn } from "./helpers";
 
 /**
- * Corte 1 de punta a punta: administrador crea y publica un reto; visitante lo consulta;
- * una persona nueva crea cuenta y vuelve al reto; permisos y errores se muestran con texto claro.
+ * Corte 1 de punta a punta: administrador crea y publica un challenge; visitante lo consulta;
+ * una persona nueva crea cuenta y vuelve al challenge; permisos y errores se muestran con texto claro.
  * Los títulos llevan una marca de tiempo para que las dos ejecuciones (escritorio y móvil) no se mezclen.
  */
 const stamp = Date.now().toString(36);
@@ -19,15 +20,15 @@ async function login(page: Page, email: string, password: string, next = "/") {
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
 }
 
-test.describe.serial("Corte 1: primer reto", () => {
-  test("el administrador crea una experiencia y un reto, y los publica", async ({ page }) => {
+test.describe.serial("Corte 1: primer challenge", () => {
+  test("el administrador crea una experiencia y un challenge, y los publica", async ({ page }) => {
     await login(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
-    await expect(page.getByRole("heading", { name: "Experiencias y retos", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Experiencias y challenges", level: 1 })).toBeVisible();
 
     const experienceForm = page.locator("form").filter({ has: page.locator("#exp-titulo") });
     await page.locator("#exp-titulo").fill(expTitle);
     await page.locator("#exp-tipo").selectOption("hackathon");
-    await page.locator("#exp-resumen").fill("Fin de semana de retos de prueba para validar el flujo completo.");
+    await page.locator("#exp-resumen").fill("Fin de semana de challenges de prueba para validar el flujo completo.");
     await page.locator("#exp-abre").fill("2026-10-01T00:00");
     await page.locator("#exp-cierra").fill("2027-06-01T23:59");
     await experienceForm.getByRole("button", { name: "Guardar borrador" }).click();
@@ -38,10 +39,10 @@ test.describe.serial("Corte 1: primer reto", () => {
     await experienceRegion.getByRole("button", { name: "Publicar", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Publicado" })).toBeVisible();
 
-    // Validación en servidor: el formulario de reto vacío muestra motivos por campo.
+    // Validación en servidor: el formulario de challenge vacío muestra motivos por campo.
     const challengeForm = page.locator("form").filter({ has: page.locator("#ret-titulo") });
     await challengeForm.getByRole("button", { name: "Guardar borrador" }).click();
-    await expect(page.getByText("Nombre del reto: escribí al menos 3 caracteres.")).toBeVisible();
+    await expect(page.getByText("Nombre del challenge: escribí al menos 3 caracteres.")).toBeVisible();
 
     await page.locator("#ret-exp").selectOption({ label: expTitle });
     await page.locator("#ret-titulo").fill(challengeTitle);
@@ -53,14 +54,14 @@ test.describe.serial("Corte 1: primer reto", () => {
     await page.getByLabel("Equipo", { exact: true }).check();
     await page.locator("#ret-cierre").fill("2027-06-30T23:59");
     await challengeForm.getByRole("button", { name: "Guardar borrador" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Reto guardado como borrador" })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "Challenge guardado como borrador" })).toBeVisible();
 
     await experienceRegion.getByRole("button", { name: "Publicar", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Publicado" })).toBeVisible();
     await expect(experienceRegion.getByText(challengeTitle)).toBeVisible();
   });
 
-  test("un visitante encuentra el reto en Explorar y ve su detalle", async ({ page }) => {
+  test("un visitante encuentra el challenge en Explorar y ve su detalle", async ({ page }) => {
     await page.goto("/explorar");
     const card = page.getByRole("link", { name: new RegExp(challengeTitle) });
     await expect(card).toBeVisible();
@@ -72,12 +73,12 @@ test.describe.serial("Corte 1: primer reto", () => {
     await expect(page.getByText("Transportes Delta de prueba").first()).toBeVisible();
     await expect(page.getByText("Repositorio con instrucciones")).toBeVisible();
     await expect(page.getByText("Calidad del resultado").first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Inscribirme al reto" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Inscribirme al challenge" }).first()).toBeVisible();
   });
 
-  test("una persona nueva crea cuenta, vuelve al reto y la sesión persiste al recargar", async ({ page }) => {
+  test("una persona nueva crea cuenta, vuelve al challenge y la sesión persiste al recargar", async ({ page }) => {
     await page.goto(challengeHref);
-    await page.getByRole("link", { name: "Inscribirme al reto" }).first().click();
+    await page.getByRole("link", { name: "Inscribirme al challenge" }).first().click();
     await expect(page).toHaveURL(/\/acceso\?modo=registro/);
 
     const registerForm = page.locator("form").filter({ has: page.locator("#r-nombre") });
@@ -88,19 +89,19 @@ test.describe.serial("Corte 1: primer reto", () => {
     await registerForm.getByRole("button", { name: "Crear cuenta", exact: true }).click();
 
     await expect(page).toHaveURL(new RegExp(challengeHref.replace(/\//g, "\\/")));
-    await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
-    // Con sesión, el llamado de V03 lleva a la inscripción del reto (V06).
+    await expectSignedIn(page);
+    // Con sesión, el llamado de V03 lleva a la inscripción del challenge (V06).
     await expect(page).toHaveURL(/\/inscripcion$/);
     await expect(page.getByRole("button", { name: "Inscribirme", exact: true })).toBeVisible();
 
     await page.reload();
-    await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+    await expectSignedIn(page);
   });
 
   test("una persona que no es administradora no accede al panel de C3", async ({ page }) => {
     await login(page, joven.email, joven.password, "/admin");
     await expect(page.getByText("Esta sección es solo para el equipo administrador de C3.")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Experiencias y retos", level: 1 })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Experiencias y challenges", level: 1 })).toHaveCount(0);
   });
 
   test("credenciales incorrectas muestran un error comprensible, sin confirmar si la cuenta existe", async ({ page }) => {

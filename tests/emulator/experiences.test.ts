@@ -202,7 +202,7 @@ test("publicar un taller incompleto se rechaza con los datos faltantes; completo
   assert.deepEqual(detail.lines, ["compite"]);
 });
 
-test("una experiencia concluida es histórica: no se reabre, no se publica y no se le agregan retos", async () => {
+test("una experiencia concluida es histórica: no se reabre, no se publica y no se le agregan challenges", async () => {
   const db = testDb();
   const experience = await createExperience(db, admin, workshop, now);
   await setExperienceStatus(db, admin, experience.id, { status: "closed" }, now);
@@ -280,7 +280,7 @@ test("abrir inscripciones de un borrador se rechaza", async () => {
   await assert.rejects(setExperienceRegistration(db, admin, draft.id, { action: "pausar" }, now), (error) => error instanceof ValidationFailure);
 });
 
-test("los retos tampoco se reabren una vez concluidos", async () => {
+test("los challenges tampoco se reabren una vez concluidos", async () => {
   const db = testDb();
   const experience = await createExperience(db, admin, { ...workshop, kind: "hackathon", modality: "", startsAt: "", endsAt: "", location: "" }, now);
   const challenge = await createChallenge(db, admin, challengeInput(experience.id), now);
@@ -330,9 +330,9 @@ test("una publicada no puede quedar sin sede ni fecha", async () => {
   );
 });
 
-// ------------------------------------------------------------------ inscripción sin reto
+// ------------------------------------------------------------------ inscripción sin challenge
 
-test("una persona se inscribe a un taller sin reto, queda pendiente y no puede repetir", async () => {
+test("una persona se inscribe a un taller sin challenge, queda pendiente y no puede repetir", async () => {
   const { db, id } = await publishedWorkshop();
   const enrollment = await enrollInExperience(db, joven, id, now);
   assert.equal(enrollment.status, "pending");
@@ -401,7 +401,7 @@ test("C3 revisa la inscripción de un taller: aprobar no crea participación ni 
   await assert.rejects(reviewEnrollment(db, admin, enrollment.id, "rejected", now), expectHttp(409, "ya_revisada"));
 });
 
-test("Mi C3 muestra la inscripción sin reto y permite cancelarla mientras la experiencia está publicada", async () => {
+test("Mi C3 muestra la inscripción sin challenge y permite cancelarla mientras la experiencia está publicada", async () => {
   const { db, id } = await publishedWorkshop();
   const enrollment = await enrollInExperience(db, joven, id, now);
   const mine = await listMyEnrollments(db, joven, now);
@@ -444,7 +444,7 @@ test("el administrador consulta todas las inscripciones y los cupos de la experi
   await assert.rejects(listEnrollmentsForExperience(db, admin, "no-existe"), expectHttp(404));
 });
 
-test("el catálogo de Admin trae los retos y las inscripciones de cada experiencia", async () => {
+test("el catálogo de Admin trae los challenges y las inscripciones de cada experiencia", async () => {
   const { db, id } = await publishedWorkshop({ capacity: 5 });
   await enrollInExperience(db, joven, id, now);
   const other = await createExperience(db, admin, { ...workshop, title: "Otra charla abierta", kind: "charla" }, now);
@@ -456,15 +456,15 @@ test("el catálogo de Admin trae los retos y las inscripciones de cada experienc
   await assert.rejects(listAdminCatalog(db, joven), expectHttp(403));
 });
 
-// ------------------------------------------------------------------ retos y experiencias conviven
+// ------------------------------------------------------------------ challenges y experiencias conviven
 
-test("una experiencia con retos publicados se inscribe desde el reto, no directamente, y nunca se duplica la inscripción", async () => {
+test("una experiencia con challenges publicados se inscribe desde el challenge, no directamente, y nunca se duplica la inscripción", async () => {
   const db = testDb();
   const experience = await createExperience(db, admin, { ...workshop, kind: "hackathon", capacity: "" }, now);
   const challenge = await createChallenge(db, admin, challengeInput(experience.id), now);
   await setExperienceStatus(db, admin, experience.id, { status: "published" }, now);
 
-  // Con el reto aún en borrador, la experiencia se inscribe directamente.
+  // Con el challenge aún en borrador, la experiencia se inscribe directamente.
   const detailDraftChallenge = await getPublicExperience(db, experience.id, now);
   assert.equal(detailDraftChallenge.registration.direct, true);
 
@@ -486,7 +486,7 @@ test("una experiencia con retos publicados se inscribe desde el reto, no directa
   assert.equal(byChallenge[0].challengeId, challenge.id);
 });
 
-test("el cupo de la experiencia también limita la inscripción por reto", async () => {
+test("el cupo de la experiencia también limita la inscripción por challenge", async () => {
   const db = testDb();
   const experience = await createExperience(db, admin, { ...workshop, kind: "hackathon", capacity: 1 }, now);
   const challenge = await createChallenge(db, admin, challengeInput(experience.id, ["individual"]), now);
@@ -496,7 +496,7 @@ test("el cupo de la experiencia también limita la inscripción por reto", async
   await assert.rejects(enrollInChallenge(db, otra, challenge.id, "individual", now), expectHttp(409, "sin_cupos"));
 });
 
-test("asociar un reto después de inscribir al taller: el flujo del reto sigue funcionando para quien se inscribió a la experiencia", async () => {
+test("asociar un challenge después de inscribir al taller: el flujo del challenge sigue funcionando para quien se inscribió a la experiencia", async () => {
   const { db, id } = await publishedWorkshop({ capacity: "", registrationClosesAt: "2026-11-09T18:00:00-06:00" });
   const enrollment = await enrollInExperience(db, joven, id, now);
   await reviewEnrollment(db, admin, enrollment.id, "approved", now);
@@ -507,17 +507,17 @@ test("asociar un reto después de inscribir al taller: el flujo del reto sigue f
 
   const during = new Date("2026-11-10T18:00:00.000Z");
   const delivery = await getDelivery(db, joven, challenge.id, during);
-  assert.equal(delivery.eligible, true, "la inscripción aprobada a la experiencia habilita el reto individual");
+  assert.equal(delivery.eligible, true, "la inscripción aprobada a la experiencia habilita el challenge individual");
   const saved = await saveDelivery(db, joven, challenge.id, {
     text: "Heurística de inserción con penalización por ventana incumplida y mejora local.",
     links: ["https://github.com/equipo/rutas"],
     submit: false,
   }, during);
   assert.equal(saved.submission?.status, "draft");
-  assert.equal((await listEnrollmentsForChallenge(db, admin, challenge.id)).length, 0, "la inscripción no se duplicó en el reto");
+  assert.equal((await listEnrollmentsForChallenge(db, admin, challenge.id)).length, 0, "la inscripción no se duplicó en el challenge");
 });
 
-test("una inscripción a la experiencia no habilita un reto que se juega solo por equipo", async () => {
+test("una inscripción a la experiencia no habilita un challenge que se juega solo por equipo", async () => {
   const { db, id } = await publishedWorkshop({ capacity: "" });
   const enrollment = await enrollInExperience(db, joven, id, now);
   await reviewEnrollment(db, admin, enrollment.id, "approved", now);
@@ -572,7 +572,7 @@ test("una experiencia anterior, sin los campos nuevos, se lee, se lista y se edi
   assert.equal("primaryLine" in (raw ?? {}), false, "no se escriben campos que no cambiaron");
 });
 
-test("una inscripción anterior por reto sigue apareciendo igual en Mi C3 y en la revisión del reto", async () => {
+test("una inscripción anterior por challenge sigue apareciendo igual en Mi C3 y en la revisión del challenge", async () => {
   const db = testDb();
   const experience = await createExperience(db, admin, { ...workshop, kind: "hackathon", capacity: "" }, now);
   const challenge = await createChallenge(db, admin, challengeInput(experience.id, ["individual"]), now);
@@ -626,7 +626,7 @@ test("las operaciones sensibles quedan en la bitácora con quién y qué cambió
 
 // ------------------------------------------------------------------ resultados publicados
 
-test("con resultados publicados, la experiencia y el reto no vuelven a borrador ni se cancelan; sí se concluyen", async () => {
+test("con resultados publicados, la experiencia y el challenge no vuelven a borrador ni se cancelan; sí se concluyen", async () => {
   const db = testDb();
   const experience = await createExperience(db, admin, { ...workshop, kind: "hackathon", capacity: "" }, now);
   const challenge = await createChallenge(db, admin, challengeInput(experience.id), now);

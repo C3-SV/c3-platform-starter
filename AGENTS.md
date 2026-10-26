@@ -14,7 +14,9 @@ No asumir que un documento o prueba describe la última ejecución sin verificar
 
 ## 1. Producto y alcance
 
-C3 Platform materializa **Compite · Crea · Conecta**. Su experiencia central incluye descubrir experiencias y retos, inscribirse, participar, entregar soluciones, evaluar y publicar resultados, con trayectoria de la persona y espacio para empresas. **C3 Challenges** es la denominación provisional del producto de retos.
+C3 Platform materializa **Compite · Crea · Conecta**. Su experiencia central incluye descubrir experiencias y challenges, inscribirse, participar, entregar soluciones, evaluar y publicar resultados, con trayectoria de la persona y espacio para empresas. **C3 Challenges** es la denominación provisional del producto de challenges.
+
+**Vocabulario:** «challenge» es el término oficial de producto en la interfaz, los mensajes y los documentos (decisión D8, 26-10-2026). Las direcciones y los identificadores técnicos (`/retos/…`, `challengeId`, colecciones) no cambian. Detalle en [docs/PRODUCTO-Y-NAVEGACION.md](docs/PRODUCTO-Y-NAVEGACION.md).
 
 Roles/recorridos: visitante; participante individual o en equipo; jurado; representante de empresa; administrador C3. Las vistas V01–V12 del diseño son **capacidades y referencias visuales**, no equivalen a rutas ni están todas resueltas con el mismo layout. Las rutas efectivas están en README y deben revisarse junto a la navegación real.
 
@@ -22,7 +24,7 @@ No implementar sin decisión explícita: pagos, subida de archivos, autojuez, CR
 
 ## 2. Estado verificable de implementación
 
-- El repositorio incluye acceso, catálogo, experiencias, retos, inscripciones individuales y por equipos, entregas de texto/enlaces, propuestas, Mi C3, Cuenta, trayectoria, espacio de empresa, jurados, evaluaciones, resultados, páginas Compite/Crea/Conecta y administración. **La presencia de una ruta o componente no acredita que su UX sea satisfactoria o que todo funcione en producción.**
+- El repositorio incluye acceso, catálogo, experiencias, challenges, inscripciones individuales y por equipos, entregas de texto/enlaces, propuestas, Mi C3, Cuenta, trayectoria, espacio de empresa, jurados, evaluaciones, resultados, páginas Compite/Crea/Conecta y administración. **La presencia de una ruta o componente no acredita que su UX sea satisfactoria o que todo funcione en producción.**
 - Verificar capacidad y permisos con código, emuladores y pruebas específicas. El README describe los contratos conocidos; las decisiones pendientes están en PENDIENTES-REALES.
 - **Estado de calidad:** consultar el último CI y las incidencias abiertas en [PENDIENTES-REALES](docs/PENDIENTES-REALES.md). No adjudicar causas sin reproducir ni afirmar que una suite pasó sin ejecución.
 - La navegación e interfaz requieren revisión integral por rol: [docs/PRODUCTO-Y-NAVEGACION.md](docs/PRODUCTO-Y-NAVEGACION.md). No rediseñar pantalla por pantalla sin acordar antes la arquitectura de información.
@@ -66,8 +68,8 @@ No usar especificaciones no disponibles como fuente de verdad; las dependencias 
 ## 6. Reglas de negocio y restricciones críticas
 
 - No cambiar reglas de negocio sin revisar su impacto en estados de entrega, equipos, evaluación y publicación.
-- **Experiencias y retos:** un reto es público solo si su experiencia está publicada. Una experiencia concluida es histórica: no se reabre, no recibe retos ni revisiones. Una cancelada conserva su calendario. Con retos o inscripciones, el tipo queda bloqueado.
-- **Inscripciones:** una por persona y experiencia, con estados `pending`, `approved`, `rejected` y `cancelled`. Solo se crean con la ventana abierta y cupo disponible; el servidor lo verifica dentro de la transacción. Si la experiencia no tiene retos, la inscripción es a la experiencia misma y es individual.
+- **Experiencias y challenges:** un challenge es público solo si su experiencia está publicada. Una experiencia concluida es histórica: no se reabre, no recibe challenges ni revisiones. Una cancelada conserva su calendario. Con challenges o inscripciones, el tipo queda bloqueado.
+- **Inscripciones:** una por persona y experiencia, con estados `pending`, `approved`, `rejected` y `cancelled`. Solo se crean con la ventana abierta y cupo disponible; el servidor lo verifica dentro de la transacción. Si la experiencia no tiene challenges, la inscripción es a la experiencia misma y es individual.
 - **Equipos:** cada persona tiene un solo equipo por experiencia. El código `C3-XXXX` es único. Todo cambio de equipo se cierra al cierre de inscripciones o al enviar la entrega.
 - **Entregas:** solo con inscripción aprobada y antes del cierre de entregas. Una entrega enviada queda estable. Un borrador vencido pasa a «Fuera de plazo». En equipo, solo la líder guarda o envía.
 - **Evaluación:** solo después del cierre de entregas. Las soluciones se muestran anónimas («Solución 1», «Solución 2»…). Cada criterio recibe un entero dentro de su máximo. Un jurado finaliza una evaluación una sola vez.

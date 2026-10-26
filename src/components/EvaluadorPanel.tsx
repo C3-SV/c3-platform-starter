@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { MovilShell } from "@/components/MovilShell";
+import { AppShell } from "@/components/AppShell";
+import { Migas } from "@/components/Migas";
 import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError, type FieldIssue } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/domain/format";
-import { evaluationHref, loginHref } from "@/lib/domain/navigation";
 import type { PresentedState } from "@/lib/domain/presentation";
 import type { evaluationWorkspace } from "@/lib/server/evaluation";
 
@@ -24,8 +23,19 @@ function issueFor(issues: FieldIssue[], field: string): string | null {
   return issues.find((issue) => issue.field === field)?.message ?? null;
 }
 
-/** Espacio de evaluación para jurados asignados: rúbrica, borrador y finalización. Antes del cierre, solo lectura. */
-export function EvaluadorPanel({ challengeId, variant }: { challengeId: string; variant: "movil" | "escritorio" }) {
+/**
+ * Espacio de evaluación para jurados asignados: rúbrica, borrador y finalización. Antes del cierre, solo lectura.
+ * Es la única pantalla de evaluación (jurado externo o representante de la empresa): `/mi-c3/evaluar/[id]`.
+ */
+export function EvaluadorPanel({ challengeId }: { challengeId: string }) {
+  return (
+    <AppShell active="mi-c3" signedOut={{ title: "Entrá para evaluar", text: "Usás tu cuenta de C3. Al entrar volvés a esta evaluación." }}>
+      <EvaluadorContenido challengeId={challengeId} />
+    </AppShell>
+  );
+}
+
+function EvaluadorContenido({ challengeId }: { challengeId: string }) {
   const { session } = useSession();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -48,7 +58,7 @@ export function EvaluadorPanel({ challengeId, variant }: { challengeId: string; 
       },
       (error: unknown) => {
         if (!active) return;
-        setLoadError(error instanceof ApiError ? error.message : "No pudimos cargar el reto. Intentá de nuevo.");
+        setLoadError(error instanceof ApiError ? error.message : "No pudimos cargar el challenge. Intentá de nuevo.");
       },
     );
     return () => {
@@ -62,7 +72,7 @@ export function EvaluadorPanel({ challengeId, variant }: { challengeId: string; 
       setWorkspace(data.workspace);
       setLoadError(null);
     } catch (error) {
-      setLoadError(error instanceof ApiError ? error.message : "No pudimos cargar el reto. Intentá de nuevo.");
+      setLoadError(error instanceof ApiError ? error.message : "No pudimos cargar el challenge. Intentá de nuevo.");
     }
   }
 
@@ -100,64 +110,83 @@ export function EvaluadorPanel({ challengeId, variant }: { challengeId: string; 
     }
   }
 
-  const body = (() => {
-    if (session.status === "loading") return <p>Cargando…</p>;
-    if (session.status !== "signed-in") {
-      return (
-        <div className="c3-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-          <h1 className="c3-titulo" style={{ fontSize: 22, fontWeight: 700 }}>Entrá para evaluar</h1>
-          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Usás tu cuenta de C3. Al entrar volvés a esta evaluación.</p>
-          <Link href={loginHref({ next: evaluationHref(challengeId) })} className="c3-btn c3-btn--primario" style={{ alignSelf: "flex-start" }}>Entrar</Link>
-        </div>
-      );
-    }
-    if (loadError) return <div className="c3-alerta c3-alerta--error" role="alert"><strong>{loadError}</strong></div>;
-    if (!workspace) return <p style={{ color: "var(--c3-texto-suave)" }}>Cargando el reto…</p>;
+  const crumbs = (title?: string) => [{ label: "Mi C3", href: "/mi-c3" }, ...(title ? [{ label: title, href: undefined }] : []), { label: "Evaluar" }];
 
-    const pending = !workspace.canEvaluate;
+  if (loadError) {
     return (
-      <>
-        <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Evaluación · {workspace.kind === "empresa" ? "representante de la empresa" : "jurado externo"}</span>
-          <h1 className="c3-titulo" style={{ fontSize: variant === "movil" ? 24 : 32, lineHeight: 1.2, fontWeight: 700 }}>{workspace.challenge.title}</h1>
-          <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
-            Cada solución se evalúa con la rúbrica, sin ver quién la entregó. Máximo total: {workspace.maxTotal} puntos.
-          </p>
-        </section>
+      <div className="c3-tarea">
+        <Migas items={crumbs()} />
+        <div className="c3-alerta c3-alerta--error" role="alert"><strong>{loadError}</strong></div>
+      </div>
+    );
+  }
+  if (!workspace) {
+    return (
+      <div className="c3-tarea">
+        <Migas items={crumbs()} />
+        <p role="status" style={{ color: "var(--c3-texto-suave)" }}>Cargando el challenge…</p>
+      </div>
+    );
+  }
 
-        {pending ? (
-          <div className="c3-alerta c3-alerta--advertencia" role="status">
-            <strong>Esperá el cierre de entregas</strong>
-            <span style={{ fontSize: 14, lineHeight: 1.5 }}>
-              Las soluciones se pueden evaluar cuando cierran las entregas{workspace.challenge.submissionClosesAt ? `, el ${formatDateTime(workspace.challenge.submissionClosesAt)}` : ""}. Hasta entonces todavía pueden cambiar.
-            </span>
-          </div>
-        ) : null}
-        {notice ? <div className="c3-alerta c3-alerta--exito" role="status"><strong>{notice}</strong></div> : null}
-        {formError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{formError}</strong></div> : null}
+  const pending = !workspace.canEvaluate;
+  const finalized = workspace.solutions.filter((solution) => solution.mine?.status === "finalized").length;
+  return (
+    <div className="c3-tarea">
+      <Migas items={crumbs(workspace.challenge.title)} />
 
-        {workspace.solutions.length === 0 ? (
-          <div className="c3-card" style={{ padding: 20 }}><p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay soluciones enviadas para este reto.</p></div>
-        ) : null}
+      <section className="c3-tarea__encabezado">
+        <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Evaluación · {workspace.kind === "empresa" ? "representante de la empresa" : "jurado externo"}</span>
+        <h1 className="c3-titulo">{workspace.challenge.title}</h1>
+        <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
+          Cada solución se evalúa con la rúbrica, sin ver quién la entregó. Máximo total: {workspace.maxTotal} puntos.
+          {workspace.solutions.length > 0 ? ` Finalizadas: ${finalized} de ${workspace.solutions.length}.` : ""}
+        </p>
+      </section>
 
-        {workspace.solutions.map((solution) => {
-          const status = solution.mine ? (solution.mine.status === "finalized" ? "finalized" : "draft") : "none";
-          const locked = pending || status === "finalized";
-          const values = scoresFor(solution);
-          return (
-            <form key={solution.id} onSubmit={(event) => {
+      {pending ? (
+        <div className="c3-alerta c3-alerta--advertencia" role="status">
+          <strong>Esperá el cierre de entregas</strong>
+          <span style={{ fontSize: 14, lineHeight: 1.5 }}>
+            Las soluciones se pueden evaluar cuando cierran las entregas{workspace.challenge.submissionClosesAt ? `, el ${formatDateTime(workspace.challenge.submissionClosesAt)}` : ""}. Hasta entonces todavía pueden cambiar.
+          </span>
+        </div>
+      ) : null}
+      {notice ? <div className="c3-alerta c3-alerta--exito" role="status"><strong>{notice}</strong></div> : null}
+      {formError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{formError}</strong></div> : null}
+
+      {workspace.solutions.length === 0 ? (
+        <div className="c3-card" style={{ padding: 20 }}><p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay soluciones enviadas para este challenge.</p></div>
+      ) : null}
+
+      {workspace.solutions.map((solution) => {
+        const status = solution.mine ? (solution.mine.status === "finalized" ? "finalized" : "draft") : "none";
+        const locked = pending || status === "finalized";
+        const values = scoresFor(solution);
+        return (
+          <form
+            key={solution.id}
+            onSubmit={(event) => {
               event.preventDefault();
               void save(solution, false);
-            }} noValidate className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 14 }} aria-label={solution.label}>
+            }}
+            noValidate
+            className="c3-card c3-evaluacion__solucion"
+            aria-label={solution.label}
+          >
+            <div className="c3-evaluacion__contenido">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span className="c3-titulo" style={{ fontSize: 18, fontWeight: 600 }}>{solution.label}</span>
                 <StatePill state={SOLUTION_STATE[status]} />
               </div>
-              <p style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{solution.text}</p>
+              <p style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{solution.text}</p>
               {solution.links.map((link) => (
                 <a key={link} href={link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 500, wordBreak: "break-all" }}>{link}</a>
               ))}
+            </div>
 
+            <fieldset className="c3-evaluacion__rubrica">
+              <legend className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Rúbrica</legend>
               {workspace.challenge.rubric.map((criterion) => {
                 const field = `scores.${criterion.id}`;
                 return (
@@ -195,15 +224,10 @@ export function EvaluadorPanel({ challengeId, variant }: { challengeId: string; 
                   </button>
                 </div>
               )}
-            </form>
-          );
-        })}
-      </>
-    );
-  })();
-
-  if (variant === "movil") {
-    return <MovilShell backHref="/mi-c3" backLabel="Mi C3" nav="inicio">{body}</MovilShell>;
-  }
-  return <main id="contenido" className="c3-page" style={{ maxWidth: 960, margin: "0 auto", padding: "clamp(16px, 4vw, 48px)", display: "flex", flexDirection: "column", gap: 20 }}>{body}</main>;
+            </fieldset>
+          </form>
+        );
+      })}
+    </div>
+  );
 }

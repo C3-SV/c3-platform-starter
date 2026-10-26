@@ -18,7 +18,7 @@ const marco = { uid: "marco-1", email: "marco@correo.test", isAdmin: false };
 const experienceInput = {
   title: "Hackathon de equipos",
   kind: "hackathon",
-  summary: "Retos por equipo para validar la conformación y la entrega grupal.",
+  summary: "Challenges por equipo para validar la conformación y la entrega grupal.",
   registrationOpensAt: "2026-10-01T00:00:00-06:00",
   registrationClosesAt: "2026-12-31T23:59:00-06:00",
 };

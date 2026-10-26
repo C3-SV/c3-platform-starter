@@ -175,3 +175,14 @@ export async function signOutUi(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
 }
+
+/** En pantallas pequeñas la navegación del sitio público está plegada: se abre con «Menú». En escritorio no hace nada. */
+export async function openSiteMenu(page: Page): Promise<void> {
+  const menu = page.getByRole("button", { name: "Menú", exact: true });
+  if (await menu.isVisible()) await menu.click();
+}
+
+/** La sesión está confirmada cuando la cabecera ofrece el menú de la cuenta (o, en vistas aún sin él, «Salir»). */
+export async function expectSignedIn(page: Page): Promise<void> {
+  await expect(page.getByRole("button", { name: /^(Menú de la cuenta|Salir)/ }).first()).toBeVisible();
+}

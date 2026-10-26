@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useSession } from "@/lib/auth/AuthProvider";
 
 /**
- * Llamado a la inscripción de V03 (reto) y de la página de experiencia. Un visitante pasa por V04 y vuelve a la
+ * Llamado a la inscripción de V03 (challenge) y de la página de experiencia. Un visitante pasa por V04 y vuelve a la
  * inscripción. Una persona con sesión va directamente a V06. `closedLabel` explica por qué no se puede entrar.
  */
 export function EnrollmentCta({
   enrollHref,
   registrationOpen,
   variant,
-  label = "Inscribirme al reto",
+  label = "Inscribirme al challenge",
   closedLabel = "Inscripciones cerradas",
 }: {
   enrollHref: string;

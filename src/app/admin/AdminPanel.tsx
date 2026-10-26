@@ -19,14 +19,14 @@ type Section = "resumen" | "experiencias" | "propuestas" | "inscripciones" | "en
 const NAV: { id: Section; label: string; pending?: string }[] = [
   { id: "resumen", label: "Resumen" },
   { id: "propuestas", label: "Propuestas" },
-  { id: "experiencias", label: "Experiencias y retos" },
+  { id: "experiencias", label: "Experiencias y challenges" },
   { id: "inscripciones", label: "Inscripciones y equipos" },
   { id: "entregas", label: "Entregas" },
   { id: "jurados", label: "Jurados y rúbricas" },
   { id: "resultados", label: "Resultados oficiales" },
 ];
 
-/** V12 · C3 Admin. Esta versión implementa «Experiencias y retos»; las demás secciones quedan marcadas como pendientes. */
+/** V12 · C3 Admin. Esta versión implementa «Experiencias y challenges»; las demás secciones quedan marcadas como pendientes. */
 export function AdminPanel() {
   const { session } = useSession();
   const signOut = useSignOut();
@@ -166,7 +166,7 @@ export function AdminPanel() {
                 onChanged={() => void load()}
               />
             ) : (
-              <p style={{ color: "var(--c3-texto-suave)" }}>Cargando retos…</p>
+              <p style={{ color: "var(--c3-texto-suave)" }}>Cargando challenges…</p>
             )
           ) : null}
 
@@ -174,7 +174,7 @@ export function AdminPanel() {
             catalog ? (
               <JuradosPanel challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title, rubric: item.rubric }))} />
             ) : (
-              <p style={{ color: "var(--c3-texto-suave)" }}>Cargando retos…</p>
+              <p style={{ color: "var(--c3-texto-suave)" }}>Cargando challenges…</p>
             )
           ) : null}
 
@@ -182,12 +182,12 @@ export function AdminPanel() {
             catalog ? (
               <ResultadosPanel challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title }))} />
             ) : (
-              <p style={{ color: "var(--c3-texto-suave)" }}>Cargando retos…</p>
+              <p style={{ color: "var(--c3-texto-suave)" }}>Cargando challenges…</p>
             )
           ) : null}
 
           {section === "entregas" ? (
-            catalog ? <EntregasPanel challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title }))} /> : <p style={{ color: "var(--c3-texto-suave)" }}>Cargando retos…</p>
+            catalog ? <EntregasPanel challenges={catalog.challenges.map((item) => ({ id: item.id, title: item.title }))} /> : <p style={{ color: "var(--c3-texto-suave)" }}>Cargando challenges…</p>
           ) : null}
 
           {section !== "resumen" && section !== "experiencias" && section !== "inscripciones" && section !== "propuestas" && section !== "entregas" && section !== "jurados" && section !== "resultados" ? <PendingSection label={NAV.find((item) => item.id === section)?.label ?? ""} /> : null}
@@ -203,7 +203,7 @@ export function AdminPanel() {
               ) : null}
               {!catalog && !loadError ? (
                 <>
-                  <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias y retos</h1>
+                  <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias y challenges</h1>
                   <p style={{ color: "var(--c3-texto-suave)" }}>Cargando catálogo…</p>
                 </>
               ) : null}

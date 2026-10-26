@@ -4,7 +4,7 @@ import { getDelivery, saveDelivery } from "@/lib/server/participation";
 
 export const dynamic = "force-dynamic";
 
-/** Estado de mi entrega en el reto. Solo muestra datos de la persona autenticada. */
+/** Estado de mi entrega en el challenge. Solo muestra datos de la persona autenticada. */
 export function GET(request: Request, context: { params: Promise<{ challengeId: string }> }) {
   return respond(async () => {
     const actor = await requestActor(request);

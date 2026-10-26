@@ -4,7 +4,7 @@ import { createTeam, getMyTeamState } from "@/lib/server/teams";
 
 export const dynamic = "force-dynamic";
 
-/** Mi equipo en este reto y lo que puedo hacer con él. */
+/** Mi equipo en este challenge y lo que puedo hacer con él. */
 export function GET(request: Request, context: { params: Promise<{ challengeId: string }> }) {
   return respond(async () => {
     const actor = await requestActor(request);

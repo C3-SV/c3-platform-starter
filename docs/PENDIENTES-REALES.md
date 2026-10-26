@@ -32,7 +32,7 @@ Este archivo mantiene **solo decisiones y trabajos no cerrados**. Actualizar la 
 
 ## Piloto y funcionalidades deliberadamente fuera de alcance
 
-- Definir empresa, reto, responsables, audiencia, fechas, métricas, soporte y criterios de éxito del piloto.
+- Definir empresa, challenge, responsables, audiencia, fechas, métricas, soporte y criterios de éxito del piloto.
 - La respuesta de empresa a propuestas que requieren ajustes se gestiona por correo; un flujo interno no está implementado.
 - Comentarios de jurados, perfil público compartible opt-in, filtros avanzados, automatizaciones y eliminación de cuenta requieren decisiones independientes.
 - La «Bitácora de producto y especificaciones del MVP v2.2» citada por el paquete de diseño no figura en este repositorio. Localizarla o formalizar reglas de producto verificadas; nunca suponer contenido.

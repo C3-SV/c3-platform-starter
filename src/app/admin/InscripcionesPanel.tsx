@@ -24,7 +24,7 @@ interface Summary {
   counts: EnrollmentCounts;
 }
 
-/** Qué se revisa: las inscripciones de un reto, o todas las de una experiencia (sin reto). */
+/** Qué se revisa: las inscripciones de un challenge, o todas las de una experiencia (sin challenge). */
 export interface EnrollmentTarget {
   kind: "experience" | "challenge";
   id: string;
@@ -39,8 +39,8 @@ function parseValue(value: string): EnrollmentTarget | null {
 }
 
 /**
- * Revisión de inscripciones. Aprobar habilita (y, en un reto, abre la entrega); rechazar cierra la inscripción y libera
- * el cupo. Las experiencias sin reto se revisan por experiencia, con su ocupación de cupos.
+ * Revisión de inscripciones. Aprobar habilita (y, en un challenge, abre la entrega); rechazar cierra la inscripción y libera
+ * el cupo. Las experiencias sin challenge se revisan por experiencia, con su ocupación de cupos.
  */
 export function InscripcionesPanel({
   challenges,
@@ -49,7 +49,7 @@ export function InscripcionesPanel({
   onChanged,
 }: {
   challenges: { id: string; title: string }[];
-  /** Experiencias sin retos: se inscriben directamente a la experiencia. */
+  /** Experiencias sin challenges: se inscriben directamente a la experiencia. */
   experiences: { id: string; title: string }[];
   initialTarget?: EnrollmentTarget | null;
   onChanged?: () => void;
@@ -63,8 +63,8 @@ export function InscripcionesPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const options = [
-    ...challenges.map((item) => ({ value: valueOf({ kind: "challenge", id: item.id }), label: item.title, group: "Retos" })),
-    ...experiences.map((item) => ({ value: valueOf({ kind: "experience", id: item.id }), label: item.title, group: "Experiencias sin reto" })),
+    ...challenges.map((item) => ({ value: valueOf({ kind: "challenge", id: item.id }), label: item.title, group: "Challenges" })),
+    ...experiences.map((item) => ({ value: valueOf({ kind: "experience", id: item.id }), label: item.title, group: "Experiencias sin challenge" })),
   ];
   const current = options.some((option) => option.value === selected) ? selected : (options[0]?.value ?? "");
   const target = parseValue(current);
@@ -128,7 +128,7 @@ export function InscripcionesPanel({
   if (options.length === 0) {
     return (
       <div className="c3-card" style={{ padding: 24 }}>
-        <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay retos ni experiencias para revisar. Creá uno en «Experiencias y retos».</p>
+        <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay challenges ni experiencias para revisar. Creá uno en «Experiencias y challenges».</p>
       </div>
     );
   }
@@ -140,11 +140,11 @@ export function InscripcionesPanel({
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Inscripciones y equipos</h1>
         <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>
-          Revisá las inscripciones pendientes de cada reto, o de cada experiencia que no tiene retos. Aprobar confirma el lugar; rechazar lo libera.
+          Revisá las inscripciones pendientes de cada challenge, o de cada experiencia que no tiene challenges. Aprobar confirma el lugar; rechazar lo libera.
         </p>
       </div>
 
-      <label htmlFor="ins-reto" className="c3-etiqueta-campo">Reto o experiencia</label>
+      <label htmlFor="ins-reto" className="c3-etiqueta-campo">Challenge o experiencia</label>
       <select
         id="ins-reto"
         className="c3-campo"
@@ -191,7 +191,7 @@ export function InscripcionesPanel({
       {rows && rows.length === 0 ? (
         <div className="c3-card" style={{ padding: 24 }}>
           <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
-            {target?.kind === "experience" ? "Todavía nadie se inscribió a esta experiencia." : "Todavía nadie se inscribió a este reto."}
+            {target?.kind === "experience" ? "Todavía nadie se inscribió a esta experiencia." : "Todavía nadie se inscribió a este challenge."}
           </p>
         </div>
       ) : null}

@@ -269,7 +269,7 @@ export function ExperienceForm({
           </Field>
         </div>
         <p style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>
-          La inscripción a la experiencia es individual y la revisa C3. Los equipos se definen en cada reto.
+          La inscripción a la experiencia es individual y la revisa C3. Los equipos se definen en cada challenge.
         </p>
       </fieldset>
 
@@ -308,7 +308,7 @@ export interface ExperienceOption {
   title: string;
 }
 
-/** Formulario de reto. Se crea dentro de una experiencia existente, en borrador. */
+/** Formulario de challenge. Se crea dentro de una experiencia existente, en borrador. */
 export function ChallengeForm({
   experiences,
   organizations,
@@ -377,13 +377,13 @@ export function ChallengeForm({
       setDeliverables("");
       setRubric("");
       setCloses("");
-      onCreated("Reto guardado como borrador. Publicalo para que aparezca en el catálogo.");
+      onCreated("Challenge guardado como borrador. Publicalo para que aparezca en el catálogo.");
     } catch (error) {
       if (error instanceof ApiError) {
         setIssues(error.issues);
         setFormError(error.message);
       } else {
-        setFormError("No pudimos guardar el reto. Intentá de nuevo.");
+        setFormError("No pudimos guardar el challenge. Intentá de nuevo.");
       }
     } finally {
       setBusy(false);
@@ -393,15 +393,15 @@ export function ChallengeForm({
   if (experiences.length === 0) {
     return (
       <div className="c3-card" style={{ padding: 24 }}>
-        <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Nuevo reto</span>
-        <p style={{ marginTop: 12, fontSize: 14, color: "var(--c3-texto-suave)" }}>Primero creá una experiencia. Los retos se crean dentro de una experiencia.</p>
+        <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Nuevo challenge</span>
+        <p style={{ marginTop: 12, fontSize: 14, color: "var(--c3-texto-suave)" }}>Primero creá una experiencia. Los challenges se crean dentro de una experiencia.</p>
       </div>
     );
   }
 
   return (
     <form onSubmit={submit} noValidate className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-      <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Nuevo reto</span>
+      <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Nuevo challenge</span>
       {formError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{formError}</strong></div> : null}
 
       <Field id="ret-exp" label="Experiencia" error={issueFor(issues, "experienceId")}>
@@ -409,13 +409,13 @@ export function ChallengeForm({
           {experiences.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
         </select>
       </Field>
-      <Field id="ret-titulo" label="Nombre del reto" error={issueFor(issues, "title")}>
+      <Field id="ret-titulo" label="Nombre del challenge" error={issueFor(issues, "title")}>
         <input id="ret-titulo" className="c3-campo" value={title} onChange={(e) => setTitle(e.target.value)} />
       </Field>
       <Field id="ret-org" label="Organización responsable" error={issueFor(issues, "organizationName")}>
         <input id="ret-org" className="c3-campo" value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} />
       </Field>
-      <Field id="ret-org-vinculada" label="Organización vinculada" help="Quien la represente verá este reto en su espacio de empresa." error={null}>
+      <Field id="ret-org-vinculada" label="Organización vinculada" help="Quien la represente verá este challenge en su espacio de empresa." error={null}>
         <select id="ret-org-vinculada" className="c3-campo" value={organizationId} onChange={(e) => setOrganizationId(e.target.value)}>
           <option value="">Sin vincular</option>
           {organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}

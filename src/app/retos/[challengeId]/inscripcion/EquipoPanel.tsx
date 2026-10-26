@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
-import { initialsOf } from "@/components/MovilShell";
+import { initialsOf } from "@/lib/domain/format";
 import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError, type FieldIssue } from "@/lib/client/api";
@@ -231,7 +231,7 @@ export function EquipoPanel({ challengeId, enrollmentStatus }: { challengeId: st
             Copiar
           </button>
         </div>
-        <span className="c3-ayuda">La persona debe tener inscripción por equipo aprobada en este reto. Podés cambiar integrantes hasta el cierre de inscripciones.</span>
+        <span className="c3-ayuda">La persona debe tener inscripción por equipo aprobada en este challenge. Podés cambiar integrantes hasta el cierre de inscripciones.</span>
       </div>
 
       {team.canManage ? (
@@ -251,7 +251,7 @@ export function EquipoPanel({ challengeId, enrollmentStatus }: { challengeId: st
         <span className="c3-ayuda">Las inscripciones cerraron: el equipo ya no se puede cambiar.</span>
       )}
 
-      <Link href={`/mi-c3/retos/${challengeId}`} className="c3-btn c3-btn--primario">Continuar al reto</Link>
+      <Link href={`/mi-c3/retos/${challengeId}`} className="c3-btn c3-btn--primario">Continuar al challenge</Link>
     </div>
   );
 }

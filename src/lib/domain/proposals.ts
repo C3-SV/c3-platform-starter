@@ -37,7 +37,7 @@ export function proposalNextStep(status: ProposalStatus): string {
   switch (status) {
     case "received": return "C3 te escribirá al correo de contacto.";
     case "needs_changes": return "C3 pidió ajustes. Respondé al correo de contacto.";
-    case "accepted": return "C3 aceptó la propuesta y define el reto contigo.";
+    case "accepted": return "C3 aceptó la propuesta y define el challenge contigo.";
     case "not_prioritized": return "Por ahora no la priorizamos. Gracias por proponerla.";
   }
 }

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { initialsOf, MovilShell } from "@/components/MovilShell";
+import { AppShell } from "@/components/AppShell";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
+import { initialsOf } from "@/lib/domain/format";
 import { countWithResult, groupTrajectory, TRAJECTORY_COPY, TRAJECTORY_ORDER } from "@/lib/domain/trayectoria";
 import type { Profile } from "@/lib/server/profile";
 import type { MyEnrollmentView } from "@/lib/server/participation";
@@ -17,10 +18,18 @@ interface Trajectory {
 
 /**
  * V08 · Perfil y trayectoria. Lo que la persona escribe y lo que C3 registra se muestran por separado.
- * Usa el marco adaptable de Mi C3: en móvil y tablet, una columna con la barra inferior; desde 1024 px, cabecera
+ * Usa el marco de la app: en móvil y tablet, una columna con la barra inferior; desde 1024 px, cabecera
  * superior y dos columnas (el registro de C3 a la izquierda y lo que escribió la persona a la derecha).
  */
 export function TrayectoriaPanel() {
+  return (
+    <AppShell active="trayectoria" signedOut={{ title: "Entrá para ver tu trayectoria", text: "Acá vas a ver tu perfil y lo que C3 registró de tu participación." }}>
+      <TrayectoriaContenido />
+    </AppShell>
+  );
+}
+
+function TrayectoriaContenido() {
   const { session } = useSession();
   const signedIn = session.status === "signed-in";
   const [data, setData] = useState<Trajectory | null>(null);
@@ -46,21 +55,7 @@ export function TrayectoriaPanel() {
     };
   }, [signedIn]);
 
-  if (session.status === "loading") return <MovilShell layout="panel" nav="trayectoria"><div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo"><p>Cargando…</p></div></MovilShell>;
-  if (session.status === "unavailable") return <MovilShell layout="panel" nav="trayectoria"><div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo"><p role="alert">{session.message}</p></div></MovilShell>;
-  if (session.status === "signed-out") {
-    return (
-      <MovilShell layout="panel" nav={null}>
-        <div className="c3-mi-c3__contenedor c3-mi-c3__cuerpo">
-          <div className="c3-card c3-mi-c3__acceso-requerido">
-            <h1 className="c3-titulo">Entrá para ver tu trayectoria</h1>
-            <p>Acá vas a ver tu perfil y lo que C3 registró de tu participación.</p>
-            <Link href="/acceso?next=/trayectoria" className="c3-btn c3-btn--primario">Entrar</Link>
-          </div>
-        </div>
-      </MovilShell>
-    );
-  }
+  if (session.status !== "signed-in") return null;
 
   const profile = data?.profile;
   const name = profile?.displayName || session.user.displayName || "";
@@ -76,7 +71,7 @@ export function TrayectoriaPanel() {
     : [];
 
   return (
-    <MovilShell layout="panel" nav="trayectoria">
+    <>
       <section className="c3-mi-c3__resumen c3-tray__hero" aria-label="Tu perfil">
         <div className="c3-mi-c3__contenedor c3-tray__hero-interior">
           <div className="c3-tray__identidad">
@@ -137,8 +132,8 @@ export function TrayectoriaPanel() {
 
               {total === 0 ? (
                 <div className="c3-card c3-mi-c3__vacio">
-                  <p>Todavía no tenés trayectoria registrada. Cuando participes en un reto, aparece aquí.</p>
-                  <Link href="/explorar" className="c3-btn c3-btn--primario">Explorar retos</Link>
+                  <p>Todavía no tenés trayectoria registrada. Cuando participes en un challenge, aparece aquí.</p>
+                  <Link href="/explorar" className="c3-btn c3-btn--primario">Explorar challenges</Link>
                 </div>
               ) : null}
 
@@ -149,6 +144,6 @@ export function TrayectoriaPanel() {
           </div>
         ) : null}
       </div>
-    </MovilShell>
+    </>
   );
 }
