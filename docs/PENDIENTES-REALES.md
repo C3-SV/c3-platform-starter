@@ -6,9 +6,9 @@ Este archivo mantiene **solo decisiones y trabajos no cerrados**. Actualizar la 
 
 | Asunto | Situación conocida | Para cerrar |
 | --- | --- | --- |
-| E2E de Cuenta | En revisión del 26-10-2026, GitHub Actions reportaba fallo en `e2e/cuenta.spec.ts` al cerrar sesión / regresar a acceso; **no reproducido localmente** (21 ejecuciones relevantes pasaron sobre `origin/main`). Hipótesis sin probar: carrera entre `page.goto("/acceso")` y la navegación a `/` de «Salir» (ver D-4 de la auditoría) | Reproducir en CI con trazas y corregir flujo o sincronización según evidencia; CI completo verde |
-| UX y navegación integral | Auditoría hecha el 26-10-2026: seis marcos de navegación, Espacio de empresa sin enlace entrante, Admin sin URL por sección ([AUDITORIA-NAVEGACION-2026-10](AUDITORIA-NAVEGACION-2026-10.md)) | Revisión del responsable y decisiones D1–D10 de la auditoría; luego prototipar y validar por fases antes de implementar; [PRODUCTO-Y-NAVEGACION](PRODUCTO-Y-NAVEGACION.md) |
-| Navegación posacceso del jurado | **Confirmado en navegador (26-10-2026):** el jurado entra y cae en un 404 (`/evaluar/[id]` no existe; la ruta es `/mi-c3/evaluar/[id]`) | Corregir (Fase 0.1) con prueba E2E que parta de la URL sin sesión; revisar también el «Entrar» de cabecera y «Salir» |
+| E2E de Cuenta | **Reproducido en CI** (run 40379030628 de la PR #9, solo documentación): `e2e/cuenta.spec.ts` navegaba a `/acceso` antes de que terminara el cierre de sesión; la sesión seguía abierta y el acceso redirigía. Corregido esperando a que «Salir» termine (URL `/` y «Entrar» visible). No era un defecto del producto | CI verde con la corrección (rama `fix/navegacion-fase-0`) |
+| UX y navegación integral | Auditoría del 26-10-2026 ([AUDITORIA-NAVEGACION-2026-10](AUDITORIA-NAVEGACION-2026-10.md)). Decisiones D1–D10 aprobadas el mismo día; implementación por fases sobre `dev`: Fase 0 lista, marcos, Admin y perfil público en curso | Todas las fases validadas en `dev` y promovidas a `main`; [PRODUCTO-Y-NAVEGACION](PRODUCTO-Y-NAVEGACION.md) actualizado |
+| Navegación posacceso del jurado | Corregida en la Fase 0: la evaluación tiene una sola dirección canónica y las anteriores redirigen; prueba `e2e/navegacion.spec.ts` parte de la URL sin sesión | CI verde en `dev` |
 | Aviso de seguridad de Next.js | `next build` (16.4.0) se detuvo con un aviso de versión afectada por una vulnerabilidad conocida; un segundo intento compiló. No se actualizó nada | Decidir y planificar la actualización como tarea aparte, con revisión de compatibilidad |
 | Validación integral | Las pruebas de versiones revisadas no sustituyen una ejecución actual | Ejecutar typecheck, lint, unitarias, reglas, E2E y revisión responsive; registrar resultados reales |
 | Espacio local | Auditoría reportó 4 GB libres en C: | Recuperar espacio para dependencias, builds y Playwright; verificar antes de instalar |
@@ -17,7 +17,7 @@ Este archivo mantiene **solo decisiones y trabajos no cerrados**. Actualizar la 
 
 - **Ramas oficiales (`dev` sincronizada con `main` el 26-10-2026):** `dev` para integración y pruebas, `main` para producción; PR de trabajo a `dev` y promoción de `dev` a `main`. Un solo checkout, sin worktrees.
 - **Visibilidad deseada:** repositorio canónico **privado**. El remoto actualmente identificado es `C3-SV/c3-platform-starter` y se reportó como **público**. Antes de hacerlo privado, comprobar compatibilidad, costos y permisos reales del despliegue Vercel. No cambiar repositorio, plan ni visibilidad sin decisión del responsable.
-- **CI:** `.github/workflows/ci.yml` ejecuta PR y push a `main`, **no push directo a `dev`**. Evaluar cubrir `dev` explícitamente si el equipo lo requiere.
+- **CI:** `.github/workflows/ci.yml` ejecuta PR y push a `main` y a `dev`.
 - **Mantenimiento del flujo Git:** retirar, mediante cambio acotado y revisado, `npm run worktree` y el script `scripts/worktree.mjs` para que las herramientas coincidan con la política de un checkout.
 - **Firebase real:** revisar configuración actual del proyecto `c3-platform-demo`, Web App, Auth, reglas/índices y variables públicas/privadas de Vercel. No hacer cambios remotos sin autorización; entorno de desarrollo usa emuladores `demo-c3-platform`.
 - Confirmar procedimiento de asignación, revocación y auditoría del claim `c3Admin`, así como controles operativos de administradores en el piloto.
