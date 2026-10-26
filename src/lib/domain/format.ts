@@ -56,3 +56,11 @@ export function sessionSummary(experience: { modality?: ExperienceModality | nul
   ].filter((part): part is string => Boolean(part));
   return parts.length ? parts.join(" · ") : null;
 }
+
+/** Iniciales para el avatar: primera letra del nombre y del apellido (o de la única palabra). */
+export function initialsOf(name: string | null | undefined, email: string | null | undefined): string {
+  const source = (name ?? "").trim() || (email ?? "").split("@")[0] || "C3";
+  const parts = source.split(/\s+/).filter(Boolean);
+  const letters = parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : parts[0].slice(0, 2);
+  return letters.toUpperCase();
+}

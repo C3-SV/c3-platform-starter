@@ -16,16 +16,27 @@ export interface Profile {
   isAdmin: boolean;
 }
 
-/** Crea el perfil la primera vez y devuelve el estado actual. La identidad viene solo del token verificado. */
+/**
+ * Crea el perfil la primera vez y devuelve el estado actual. La identidad viene solo del token verificado.
+ * Es una transacción: al crear la cuenta llegan casi a la vez la lectura de `/api/me` (que la interfaz hace al
+ * iniciar sesión) y el guardado del nombre; sin ella, la creación tardía podía pisar el nombre recién guardado.
+ */
 export async function ensureProfile(db: Firestore, actor: Actor, now: Date): Promise<Profile> {
   const ref = db.collection(USERS).doc(actor.uid);
-  const snapshot = await ref.get();
-  if (!snapshot.exists) {
-    await ref.set({ email: actor.email, displayName: null, createdAt: now.toISOString(), updatedAt: now.toISOString() });
-  } else if (snapshot.data()?.email !== actor.email) {
-    await ref.update({ email: actor.email, updatedAt: now.toISOString() });
-  }
-  const data: DocumentData = (await ref.get()).data() ?? {};
+  const data = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists) {
+      const created = { email: actor.email, displayName: null, createdAt: now.toISOString(), updatedAt: now.toISOString() };
+      transaction.set(ref, created);
+      return created as DocumentData;
+    }
+    const current: DocumentData = snapshot.data() ?? {};
+    if (current.email !== actor.email) {
+      transaction.update(ref, { email: actor.email, updatedAt: now.toISOString() });
+      return { ...current, email: actor.email };
+    }
+    return current;
+  });
   return toProfile(actor, data);
 }
 
