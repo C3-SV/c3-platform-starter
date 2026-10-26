@@ -90,7 +90,7 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 
 Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/mi-c3`, `/api/retos/*`, `/api/inscripciones/*`, `/api/admin/*`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
 
-> **Agentes y trabajo en paralelo:** leer `AGENTS.md` (reglas) y `docs/FLUJO-AGENTES.md` (worktrees, handoff, verificación). Comprobar el entorno con `npm run doctor`.
+> **Agentes y trabajo en paralelo:** leer `AGENTS.md` (reglas, política Git de una sola carpeta) y `docs/FLUJO-AGENTES.md` (ramas, handoff, verificación). Comprobar el entorno con `npm run doctor`.
 
 ## Requisitos
 
@@ -185,7 +185,7 @@ En producción, ejecuta el mismo script con credenciales de servicio autorizadas
 | `npm run emulators` | Solo emuladores |
 | `npm run doctor` | Diagnóstico del entorno (Node, Java, dependencias, proyecto Firebase activo, puertos, Git); no modifica nada ni muestra secretos |
 | `npm run test:capturas` | Capturas de las páginas públicas (escritorio y móvil) en `capturas/actual/`; falla ante errores de consola |
-| `npm run worktree -- <nombre>` | Crea un worktree hermano `c3-platform-<nombre>` con su rama y copia `.env.local` |
+| `npm run worktree -- <nombre>` | **Obsoleto** (política de una sola carpeta, ver `AGENTS.md` §10). Crea un worktree hermano `c3-platform-<nombre>`; no usar |
 | `npm run check` | Typecheck, lint y pruebas unitarias |
 
 Para las pruebas de navegador en Windows con Microsoft Edge instalado: `PW_CHANNEL=msedge npm run test:e2e`. Si no defines `PW_CHANNEL`, Playwright usa su Chromium (`npx playwright install chromium`).

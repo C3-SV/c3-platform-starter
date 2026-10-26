@@ -1,5 +1,7 @@
 # Pendientes operativos (no bloquean la creación del repo)
 
+> **Aviso (2026-10-26):** la sección «Estado (corte 2)» está desactualizada. El repositorio remoto `C3-SV/c3-platform-starter` existe, es público y ejecuta CI; el paso E2E de `main` está en rojo. Los pendientes de esta lista siguen vigentes. Ver [CONSOLIDACION-GIT-2026-10.md](CONSOLIDACION-GIT-2026-10.md) y `AGENTS.md` §5.
+
 ## Necesarios antes de almacenar datos de usuarios reales
 
 - Crear proyecto Firebase de desarrollo; habilitar Auth y Firestore en ubicación elegida según usuarios/costo.
