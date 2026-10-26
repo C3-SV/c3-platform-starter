@@ -1,5 +1,7 @@
 # C3 Platform — Primeros cortes funcionales
 
+> **Estado: histórico (2026-10-26).** Este plan es anterior a la implementación. Su sección «No están implementados» ya no es cierta: el estado vigente está en el README y en `AGENTS.md` §2. Se conserva la secuencia por dependencias y la prueba de humo como criterio de aceptación.
+
 **Alcance:** los 12 grupos de vistas V01–V12 están aprobados como base. **No** están implementados. Claude mantiene la fuente del diseño visual; este repositorio implementa lógica, persistencia e integración de esa UI.
 
 ## Secuencia por dependencias, no por numeración de vistas

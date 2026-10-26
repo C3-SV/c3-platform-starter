@@ -15,18 +15,18 @@ Comandos de calidad: `typecheck`, `lint`, `test` (unitarias), `check` (las tres)
 ## Qué proyecto Firebase usa mi entorno
 `npm run doctor` imprime proyecto cliente/servidor y si los emuladores están activos. Local correcto: `demo-c3-platform` + `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true` + hosts de emulador definidos. `c3-platform-demo` es el proyecto real: solo con autorización. `.env.local` nunca se versiona.
 
-## Worktrees
-El repositorio está en `…/c3-platform-starter/c3-platform-starter`. Los worktrees se crean como carpetas hermanas:
+## Una carpeta de trabajo, ramas convencionales
+Se abandona el modelo de worktrees (ver `AGENTS.md` §10 y [CONSOLIDACION-GIT-2026-10.md](CONSOLIDACION-GIT-2026-10.md)). Hay un solo checkout y las ramas se cambian con `git switch`. Mientras dure la transición, no crees worktrees nuevos (`npm run worktree` queda obsoleto).
+
 ```bash
-npm run worktree -- ux --dry-run   # ver qué haría
-npm run worktree -- ux             # ../c3-platform-ux, rama feat/ux (base: HEAD; usar --base dev para otra)
-cd ../c3-platform-ux && npm ci && npm run doctor
+git fetch origin
+git switch main && git merge --ff-only origin/main   # main debe igualar origin/main
+git switch -c feat/<tema>                            # o fix/, chore/, docs/
 ```
-Sugeridos: `ux` (interfaz), `core` (servicios/reglas), `qa` (integración y E2E). Crear uno solo si hay trabajo simultáneo; para cambios pequeños basta la rama actual. El script copia `.env.local` (ignorado por Git), no duplica worktrees ni toca ramas existentes, y no ejecuta merges ni push.
 
-Reglas: un objetivo por rama · commits pequeños y descriptivos · un agente por worktree · nunca editar el mismo worktree en paralelo · antes de integrar: `git fetch`, probar fusión sin confirmar (`git merge --no-commit --no-ff <rama>`; abortar con `git merge --abort`), pasar la verificación de `AGENTS.md` · sin force push · retirar el worktree con `git worktree remove <ruta>` tras integrar.
+Reglas: un objetivo por rama · commits pequeños y descriptivos · antes de integrar: `git fetch`, probar fusión sin confirmar (`git merge --no-commit --no-ff origin/main`; abortar con `git merge --abort`), pasar la verificación de `AGENTS.md` §11 · integrar por pull request con CI en verde · sin force push · borrar la rama con `git branch -d` solo tras integrarla y con confirmación.
 
-**Puertos:** emuladores (9099/8080/4000) y E2E (3100) son fijos, así que `test:rules`, `test:e2e` y `test:capturas` corren en un solo worktree a la vez (el de `qa`). Servidores de desarrollo en paralelo: `npm run dev -- -p 3001`.
+**Puertos:** emuladores (9099/8080/4000) y E2E (3100) son fijos, así que `test:rules`, `test:e2e` y `test:capturas` corren una sola vez a la vez. Servidores de desarrollo en paralelo: `npm run dev -- -p 3001`.
 
 ## Handoff
 En el mensaje del último commit o en la descripción del PR (sin archivos de progreso):
