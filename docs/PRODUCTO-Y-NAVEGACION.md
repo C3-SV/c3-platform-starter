@@ -21,9 +21,13 @@
 - `src/components/MovilShell.tsx`: usa barra inferior «Inicio» (significa `/mi-c3`), Explorar, Trayectoria; algunos recorridos emplean marco `movil`, otros layout `panel` con breakpoint de escritorio.
 - `src/components/Footer.tsx`: enlaces institucionales Compite, Crea, Conecta y Explorar.
 
-**Hallazgo confirmado en código, por verificar en navegador:** `src/components/EvaluadorPanel.tsx` dirige el acceso a `/acceso?next=/evaluar/[challengeId]`, pero el archivo de página de evaluación externa está en `/mi-c3/evaluar/[challengeId]`. Revisar y probar el retorno al iniciar sesión. No aplicar redirecciones sin probar autorización y rol.
+**Hallazgo confirmado en código y en navegador (26-10-2026):** `src/components/EvaluadorPanel.tsx` dirige el acceso a `/acceso?next=/evaluar/[challengeId]`, pero la página de evaluación está en `/mi-c3/evaluar/[challengeId]`: tras iniciar sesión el jurado cae en un 404 (H1 de [AUDITORIA-NAVEGACION-2026-10](AUDITORIA-NAVEGACION-2026-10.md)). No aplicar redirecciones sin probar autorización y rol.
+
+> Las descripciones de esta sección corresponden a `origin/main`, no a la rama `chore/entorno-agentes` (código anterior); ver D-1 de la auditoría.
 
 ## 3. Fricciones potenciales para investigar, no suposiciones cerradas
+
+*Verificadas el 26-10-2026: las seis se confirman (la 6 parcialmente). Resultado, evidencia y hallazgos nuevos en [AUDITORIA-NAVEGACION-2026-10 §4 y §9](AUDITORIA-NAVEGACION-2026-10.md).*
 
 1. **Dos significados de «Inicio»:** en la cabecera pública va a `/`, en navegación móvil de persona a `/mi-c3`.
 2. **Señalización de «Empresas»:** lleva al formulario público, no al espacio de representantes con sesión.
@@ -44,6 +48,6 @@ Para cada flujo, registrar: **rol, objetivo, entrada visible, secuencia de click
 - No modificar código, rutas ni diseños aprobados hasta que el responsable revise una propuesta y determine prioridades.
 - Pruebas de aceptación deben confirmar que una persona sin instrucciones complete la tarea prevista; medir fricción, no solo que la página renderice.
 
-## 6. Próximo entregable de producto
+## 6. Estado del entregable de producto
 
-Auditoría basada en demo navegable y código: mapa de rutas reales, problemas priorizados por impacto, propuesta de arquitectura de información, flujos por rol, comparación con `diseno-claude/` y plan incremental. Validarla antes de implementar.
+La auditoría basada en demo navegable y código (mapa de marcos y entradas, hallazgos priorizados, comparación con `diseno-claude/`, arquitectura de navegación propuesta, recorridos objetivo y roadmap) está en [AUDITORIA-NAVEGACION-2026-10](AUDITORIA-NAVEGACION-2026-10.md), **pendiente de revisión del responsable**. Las decisiones D1–D10 de su §8 deben resolverse antes de la Fase 1; la Fase 0 no depende de ellas. Al aprobar una propuesta, registrar aquí las rutas, menús y criterios de aceptación resultantes (AGENTS §4) y mantener este documento como fuente operativa.
