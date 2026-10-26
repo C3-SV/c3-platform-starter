@@ -50,7 +50,7 @@ La revisión de navegación por rol y UX está definida en [PRODUCTO-Y-NAVEGACIO
 
 ### Verificación visual
 
-Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03 y V04 en escritorio; V10 y V09 en escritorio; V05 (estado vacío en el marco móvil de 390 px), V06 y V07 en el marco móvil. Diferencias conocidas y aceptadas: la entrega no tiene campo de título (solo descripción y enlaces, según el modelo aprobado); las acciones de líder y el botón «Salir» se añadieron por función; las propuestas de V09 son una lista de tarjetas y no una tabla; V09 no muestra el contador «Tenés N por evaluar»; V10 tiene un consentimiento obligatorio y V01 muestra «Próximamente» en el llamado de empresas. **Por validar con la referencia y recorridos reales:** V08, V11 y V12, además de las secciones administrativas no dibujadas en el diseño.
+Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03 y V04 en escritorio; V10 y V09 en escritorio; V05 (estado vacío en el marco móvil de 390 px), V06 y V07 en el marco móvil. Diferencias conocidas y aceptadas: la entrega no tiene campo de título (solo descripción y enlaces, según el modelo aprobado); las acciones de líder y el botón «Salir» se añadieron por función; las propuestas de V09 son una lista de tarjetas y no una tabla; V09 no muestra el contador «Tenés N por evaluar»; V10 tiene un consentimiento obligatorio. El llamado a empresas de V01 y de V03 lleva a V10. **Por validar con la referencia y recorridos reales:** V08, V11 y V12, además de las secciones administrativas no dibujadas en el diseño.
 
 ## Recursos de Claude
 
@@ -83,8 +83,7 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 | Cuenta | `/cuenta` | Joven | Perfil, correo, seguridad y sesión |
 | V09 Espacio de empresa | `/empresa` | Empresa | Implementada (retos, soluciones, resultados y propuestas) |
 | V10 Proponer challenge | `/empresa/proponer` | Público | Implementada, sin cuenta |
-| V11 Evaluación | `/empresa/retos/[challengeId]/evaluacion` | Representante autorizado | Implementada |
-| Evaluación de jurado externo | `/mi-c3/evaluar/[challengeId]` | Jurado asignado | Implementada |
+| V11 Evaluación | `/mi-c3/evaluar/[challengeId]` | Jurado asignado (externo o representante de la empresa) | Implementada. Es la **única dirección canónica** de la evaluación; `/evaluar/[challengeId]` y `/empresa/retos/[challengeId]/evaluacion` redirigen aquí (`next.config.ts`) |
 | Compite | `/compite` | Público | Landing institucional conectada al catálogo |
 | Crea | `/crea` | Público | Landing institucional conectada al catálogo |
 | Conecta | `/conecta` | Público | Landing institucional conectada al catálogo |

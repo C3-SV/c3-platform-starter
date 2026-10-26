@@ -37,7 +37,7 @@ export function MiC3Lateral({ user }: { user: SessionUser }) {
             <Link href="/cuenta" className="c3-mi-c3__acceso"><strong>Cuenta</strong><span>Tu perfil, tu contraseña y tu correo</span></Link>
           </li>
           <li>
-            <Link href="/trayectoria" className="c3-mi-c3__acceso"><strong>Trayectoria</strong><span>Tu perfil público y lo que C3 registró de vos</span></Link>
+            <Link href="/trayectoria" className="c3-mi-c3__acceso"><strong>Trayectoria</strong><span>Lo que C3 registró de tu participación</span></Link>
           </li>
           <li>
             <Link href="/explorar" className="c3-mi-c3__acceso"><strong>Explorar</strong><span>Experiencias y retos con inscripción abierta</span></Link>

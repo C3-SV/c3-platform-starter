@@ -4,6 +4,9 @@ import { database } from "@/lib/server/context";
 import { getPublicChallenge } from "@/lib/server/catalog";
 import { HttpError } from "@/lib/server/errors";
 import { InscripcionPanel, type InscripcionChallenge } from "./InscripcionPanel";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Inscripción" };
 
 export const dynamic = "force-dynamic";
 

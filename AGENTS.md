@@ -111,7 +111,7 @@ No usar especificaciones no disponibles como fuente de verdad; las dependencias 
 - **`feat/*`, `fix/*`, `docs/*`, `chore/*`:** ramas temporales para un objetivo acotado; no mantienen carpetas independientes.
 - Inicio habitual: `git status`; `git fetch origin`; `git switch dev`; `git pull --ff-only origin dev`; `git switch -c feat/tema` (o prefijo adecuado). Hacerlo solo con árbol de trabajo limpio o cambios preservados.
 - Flujo de integración: `feat/*` → PR `dev` → pruebas y revisión → PR `dev` → `main` tras validación de release. Hotfix urgente a `main` requiere plan de sincronización hacia `dev`.
-- El CI actual se ejecuta para PR y pushes a `main`; **no se dispara por push directo a `dev`** según `.github/workflows/ci.yml`. No dar por comprobado `dev` sin PR o ejecución explícita.
+- El CI (`.github/workflows/ci.yml`) se ejecuta en cada PR y en cada push a `main` y a `dev`. Aun así, leer el resultado del run concreto antes de dar por comprobada una rama.
 - Commits descriptivos y pequeños (`feat:`, `fix:`, `docs:`, `test:`). No hacer commit, push, despliegue ni borrar ramas sin la autorización correspondiente a la tarea.
 - No ejecutar `git reset --hard`, `git clean -fd`, `push --force`, `branch -D`, reescritura de historial ni borrados de carpetas/archivos sin autorización expresa y respaldo de lo importante.
 - **No usar `npm run worktree` ni `git worktree add`.** La limpieza de cualquier script fuera de política debe plantearse como mantenimiento explícito, no ejecutarse durante una tarea de producto.

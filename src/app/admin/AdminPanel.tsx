@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useSession } from "@/lib/auth/AuthProvider";
+import { useSignOut } from "@/lib/auth/useSignOut";
 import { apiRequest, ApiError } from "@/lib/client/api";
 import type { AdminCatalog } from "@/lib/server/catalog";
 import { ExperienciasPanel } from "./ExperienciasPanel";
@@ -27,7 +28,8 @@ const NAV: { id: Section; label: string; pending?: string }[] = [
 
 /** V12 · C3 Admin. Esta versión implementa «Experiencias y retos»; las demás secciones quedan marcadas como pendientes. */
 export function AdminPanel() {
-  const { session, signOut } = useSession();
+  const { session } = useSession();
+  const signOut = useSignOut();
   const [section, setSection] = useState<Section>("experiencias");
   const [catalog, setCatalog] = useState<AdminCatalog | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -145,7 +147,7 @@ export function AdminPanel() {
           })}
         </nav>
 
-        <main style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
+        <main id="contenido" style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
           {section === "resumen" ? <ResumenPanel /> : null}
 
           {section === "propuestas" ? (

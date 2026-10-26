@@ -9,7 +9,15 @@ async function register(page: Page, name: string, email: string, password: strin
   await page.locator("#r-pass").fill(password);
   await form.locator('input[type="checkbox"]').check();
   await form.getByRole("button", { name: "Crear cuenta", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Cuenta", exact: true })).toBeVisible();
+  // Sin destino previo, la cuenta nueva llega a Mi C3.
+  await expect(page).toHaveURL(/\/mi-c3$/);
+}
+
+/** «Salir» es asíncrono: hasta que la sesión se cierra y se vuelve a la Home no se debe navegar a otra página. */
+async function signOut(page: Page) {
+  await page.getByRole("button", { name: "Salir", exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
 }
 
 test.describe("Cuenta", () => {
@@ -27,7 +35,6 @@ test.describe("Cuenta", () => {
     const originalName = "Lucía Robles de Prueba";
     const newName = "Lucía Robles Actualizada";
     await register(page, originalName, email, "clave-lucia-123");
-    await expect(page).toHaveURL("/");
     await page.goto("/");
 
     await page.getByRole("link", { name: "Cuenta", exact: true }).click();
@@ -85,12 +92,12 @@ test.describe("Cuenta", () => {
     await page.getByLabel("Confirmar contraseña").fill(newPassword);
     await page.getByRole("button", { name: "Cambiar contraseña", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Contraseña actualizada" })).toBeVisible();
-    await page.getByRole("button", { name: "Salir", exact: true }).click();
+    await signOut(page);
     await page.goto("/acceso");
     await page.locator("#l-correo").fill(email);
     await page.locator("#l-pass").fill(newPassword);
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
-    await expect(page.getByRole("link", { name: "Cuenta", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/mi-c3$/);
   });
 
   test("en móvil permite navegar y no desborda", async ({ page }, testInfo) => {

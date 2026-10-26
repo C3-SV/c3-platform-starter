@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { C3BrandMark } from "@/components/BrandMark";
 import { useSession } from "@/lib/auth/AuthProvider";
+import { useSignOut } from "@/lib/auth/useSignOut";
+import { loginHref } from "@/lib/domain/navigation";
 
 /**
  * Cabecera pública de V01–V03 («completa») y de V04 («mínima»).
  * Las opciones de navegación solo aparecen cuando la ruta destino ya existe.
  */
 export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "minima" }) {
-  const { session, signOut } = useSession();
-  const router = useRouter();
+  const { session } = useSession();
+  const signOut = useSignOut();
   const pathname = usePathname();
 
   if (variant === "minima") {
@@ -28,11 +30,8 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
   }
 
   const signedIn = session.status === "signed-in";
-
-  async function handleSignOut() {
-    await signOut();
-    router.push("/");
-  }
+  const here = loginHref({ next: pathname });
+  const registerHere = loginHref({ mode: "registro", next: pathname });
 
   return (
     <header className="c3-cabecera">
@@ -61,7 +60,7 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
               ) : null}
               <button
                 type="button"
-                onClick={handleSignOut}
+                onClick={() => void signOut()}
                 className="c3-etiqueta c3-cabecera__texto-etiqueta"
               >
                 Salir
@@ -69,8 +68,8 @@ export function SiteHeader({ variant = "completa" }: { variant?: "completa" | "m
             </>
           ) : (
             <>
-              <Link href="/acceso" className="c3-etiqueta c3-cabecera__texto-etiqueta">Entrar</Link>
-              <Link href="/acceso?modo=registro" className="c3-etiqueta c3-btn c3-btn--primario c3-cabecera__registro">
+              <Link href={here} className="c3-etiqueta c3-cabecera__texto-etiqueta">Entrar</Link>
+              <Link href={registerHere} className="c3-etiqueta c3-btn c3-btn--primario c3-cabecera__registro">
                 Crear cuenta
               </Link>
             </>

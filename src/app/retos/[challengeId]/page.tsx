@@ -1,3 +1,6 @@
+import { cache } from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { StatePill } from "@/components/StatePill";
@@ -11,12 +14,25 @@ import { HttpError } from "@/lib/server/errors";
 
 export const dynamic = "force-dynamic";
 
+// La misma lectura sirve al título de la pestaña y a la página (una consulta por petición).
+const loadChallenge = cache((challengeId: string) => getPublicChallenge(database(), challengeId, new Date()));
+
+export async function generateMetadata({ params }: { params: Promise<{ challengeId: string }> }): Promise<Metadata> {
+  const { challengeId } = await params;
+  try {
+    const { challenge } = await loadChallenge(challengeId);
+    return { title: challenge.title, description: challenge.summary };
+  } catch {
+    return { title: "Challenge no encontrado" };
+  }
+}
+
 /** V03 · Detalle de reto. Solo muestra retos publicados (la experiencia también debe estar publicada). */
 export default async function RetoPage({ params }: { params: Promise<{ challengeId: string }> }) {
   const { challengeId } = await params;
   let detail;
   try {
-    detail = await getPublicChallenge(database(), challengeId, new Date());
+    detail = await loadChallenge(challengeId);
   } catch (error) {
     if (error instanceof HttpError && error.status === 404) notFound();
     throw error;
@@ -50,7 +66,7 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
         </div>
       </div>
 
-      <main className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", padding: "clamp(16px, 4vw, 48px)" }}>
+      <main id="contenido" className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", padding: "clamp(16px, 4vw, 48px)" }}>
         <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
           <div style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
             <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -124,7 +140,7 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
               <p style={{ fontSize: 16, lineHeight: 1.6, color: "#ffffff" }}>
                 Contanos la necesidad técnica de tu equipo y C3 la convierte en un reto como este.
               </p>
-              <span className="c3-btn c3-btn--blanco" aria-disabled="true" style={{ padding: "16px 20px", opacity: 0.85 }}>Próximamente</span>
+              <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 20px" }}>Proponer un challenge</Link>
             </div>
 
             <div className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
