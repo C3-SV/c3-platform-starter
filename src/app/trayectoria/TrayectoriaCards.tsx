@@ -64,11 +64,11 @@ function describe(item: MyEnrollmentView, section: TrajectorySection): { state: 
       state,
       strong: null,
       lines: [item.delivery.state === "borrador" ? "Tenés un borrador sin enviar." : "Todavía no enviaste tu entrega."],
-      link: miReto ? { href: miReto, label: "Ir a mi reto" } : null,
+      link: miReto ? { href: miReto, label: "Ir a mi challenge" } : null,
     };
   }
 
-  return { state: enrollmentState(item.status), strong: null, lines: [], link: miReto ? { href: miReto, label: "Ir a mi reto" } : null };
+  return { state: enrollmentState(item.status), strong: null, lines: [], link: miReto ? { href: miReto, label: "Ir a mi challenge" } : null };
 }
 
 /** Medalla del puesto publicado. El texto y el nombre accesible dicen el puesto; el color solo lo refuerza. */

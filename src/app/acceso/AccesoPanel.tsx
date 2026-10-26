@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmail
 import { useSession } from "@/lib/auth/AuthProvider";
 import { getClientAuth } from "@/lib/firebase/client";
 import { apiRequest, ApiError } from "@/lib/client/api";
+import { safeNext } from "@/lib/domain/navigation";
 
 const LOGIN_ERRORS: Record<string, string> = {
   "auth/invalid-credential": "El correo o la contraseña no coinciden. Revisalos e intentá de nuevo.",
@@ -28,12 +29,6 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function errorCode(error: unknown): string {
   return typeof error === "object" && error !== null && "code" in error ? String((error as { code: unknown }).code) : "";
-}
-
-/** Solo rutas internas: evita redirecciones a otros sitios desde el parámetro next. */
-export function safeNext(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
-  return value;
 }
 
 export function AccesoPanel() {
@@ -89,8 +84,7 @@ export function AccesoPanel() {
     setLoginBusy(true);
     try {
       await signInWithEmailAndPassword(getClientAuth(), loginEmail.trim(), loginPassword);
-      // El perfil se crea en segundo plano: no debe retrasar la entrada.
-      void apiRequest("/api/me").catch(() => undefined);
+      // El perfil se crea al pedir las capacidades de la sesión (/api/me): no retrasa la entrada.
       router.replace(next);
     } catch (error) {
       setLoginError(LOGIN_ERRORS[errorCode(error)] ?? "No pudimos iniciar sesión. Intentá de nuevo en unos minutos.");

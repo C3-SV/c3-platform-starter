@@ -4,7 +4,7 @@ import { enrollInExperience } from "@/lib/server/participation";
 
 export const dynamic = "force-dynamic";
 
-/** Inscripción individual a una experiencia sin retos publicados. El servidor decide la elegibilidad y los cupos. */
+/** Inscripción individual a una experiencia sin challenges publicados. El servidor decide la elegibilidad y los cupos. */
 export function POST(request: Request, context: { params: Promise<{ experienceId: string }> }) {
   return respond(async () => {
     const actor = await requestActor(request);

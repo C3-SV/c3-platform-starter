@@ -1,6 +1,7 @@
-import { AdminPanel } from "./AdminPanel";
+import { redirect } from "next/navigation";
+import { adminHref, ADMIN_HOME } from "@/lib/domain/admin-nav";
 
-/** V12 · C3 Admin. El control de acceso lo hace el panel con el token verificado en cada llamada a la API. */
+/** `/admin` entra por el Resumen, con los pendientes enlazados. */
 export default function AdminPage() {
-  return <AdminPanel />;
+  redirect(adminHref(ADMIN_HOME));
 }

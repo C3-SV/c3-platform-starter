@@ -4,7 +4,7 @@ import { saveEvaluation } from "@/lib/server/evaluation";
 
 export const dynamic = "force-dynamic";
 
-/** Guarda o finaliza mi evaluación de una solución del reto (alias «s1», «s2»…). */
+/** Guarda o finaliza mi evaluación de una solución del challenge (alias «s1», «s2»…). */
 export function PUT(request: Request, context: { params: Promise<{ challengeId: string; alias: string }> }) {
   return respond(async () => {
     const actor = await requestActor(request);

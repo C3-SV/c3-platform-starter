@@ -3,8 +3,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
 
 /**
- * Gestión de experiencias sin reto, de punta a punta: C3 crea un taller, lo edita, lo publica, abre y cierra
- * inscripciones, revisa a quien se inscribe y lo concluye; el público lo ve en Home y Explorar. Los retos
+ * Gestión de experiencias sin challenge, de punta a punta: C3 crea un taller, lo edita, lo publica, abre y cierra
+ * inscripciones, revisa a quien se inscribe y lo concluye; el público lo ve en Home y Explorar. Los challenges
  * técnicos conservan su recorrido (corte1–corte6). Los títulos llevan marca de tiempo para no mezclar proyectos.
  */
 const stamp = Date.now().toString(36);
@@ -32,11 +32,11 @@ async function expectNoSeriousViolations(page: Page, label: string) {
 }
 
 async function openAdminExperiences(page: Page) {
-  await login(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
-  await expect(page.getByRole("heading", { name: "Experiencias y retos", level: 1 })).toBeVisible();
+  await login(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
+  await expect(page.getByRole("heading", { name: "Experiencias y challenges", level: 1 })).toBeVisible();
 }
 
-test.describe.serial("Experiencias sin reto: del borrador al cierre", () => {
+test.describe.serial("Experiencias sin challenge: del borrador al cierre", () => {
   test("C3 crea un taller en borrador con sesión, modalidad, sede y cupos", async ({ page }) => {
     await openAdminExperiences(page);
     const form = page.locator("form").filter({ has: page.locator("#exp-titulo") });

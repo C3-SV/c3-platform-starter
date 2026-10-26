@@ -1,30 +1,23 @@
-# Handoff de diseño — Claude → repositorio C3 Platform
+# Integración del diseño visual — C3 Platform
 
-Claude ya trabaja el estilo visual y las 12 vistas. Este starter NO intenta recrearlas.
+Claude Code y Codex pueden contribuir al **mismo repositorio y sistema visual**. Este contrato fija responsabilidades, referencias y criterios de integración, sin imponer que exista una carpeta o rama por agente.
 
-## Entrega recomendada de Claude
+## Referencias
 
-- Código fuente React/TypeScript de cada vista o componentes exportables, más estilos y assets con licencia de uso.
-- Un listado de los archivos/componentes por vista V01–V12, responsive móvil/escritorio.
-- Descripción de interacciones y estados visibles: loading, vacío, error, bloqueado, enviado, pendiente, publicado.
-- Tokens de estilo: tipografía, colores, espaciado, radios, iconos; preferir el manual de marca vigente.
-- NUNCA incluir contraseñas, keys privadas, tokens personales o secretos Firebase.
+- `diseno-claude/` aporta HTML de referencia V01–V12, `fuente-canvas/` y tokens `--c3-*`. Son referencias visuales; no sustituyen las rutas, permisos ni reglas de negocio vigentes.
+- `src/app/globals.css`, `src/components/` y rutas de `src/app/` contienen la implementación real que se debe revisar antes de proponer componentes.
+- [PRODUCTO-Y-NAVEGACION](PRODUCTO-Y-NAVEGACION.md) fija preguntas y evidencia necesarias para cambios de arquitectura de información; [README](../README.md) contiene rutas actuales.
 
-## Reglas de integración
+## Acuerdos de colaboración
 
-1. Claude aporta UI y componentes presentacionales; dominio, Firestore, permisos y llamadas confiables quedan en este repositorio.
-2. Botones con acción real: cualquier click debe navegar o ejecutar operación implementada. No fingir éxito antes de persistir.
-3. Incluir estados de error y mensajes de validación. Mobile-first para V05–V07.
-4. Una sola identidad de usuario; empresa y jurado solo por permisos verificables.
-5. Las 12 vistas son grupos de capacidad, NO necesariamente 12 rutas URL; definir rutas al integrar.
-6. No instalar una segunda base, Auth duplicado ni un sistema de estilos paralelo sin revisión.
+1. **Un checkout y flujo Git único:** cambios en ramas `feat/*`, `fix/*` o `docs/*` basadas en `dev`, con PR a `dev`. No crear worktrees.
+2. **Diseño y navegación:** un diseño visual debe describir qué rol lo usa, qué acción inicia, a dónde conduce y cómo se vuelve. No reproducir literalmente pantallas que rompan recorridos funcionales.
+3. **Estilo:** reutilizar tokens, tipografías, componentes y estados. Mantener consistencia visual y accesibilidad en escritorio y móvil; no incorporar un sistema paralelo.
+4. **Datos:** la UI consume API y modelos existentes (`Experience`, `Enrollment`, `ChallengeParticipation`, `Submission`, `Evaluation`, `CompanyProposal`), según código real. No crear colecciones, Auth ni lectura Firestore en cliente desde una maqueta.
+5. **Seguridad y persistencia:** una acción de UI debe tener permiso, validación en backend y respuesta real. No botones simulados, permisos por apariencia ni éxito previo a guardar.
+6. **Entrega:** indicar componentes, rutas, estado vacío/cargando/error/sin permiso, pruebas, capturas comparativas y diferencias justificadas con referencia visual.
+7. No incluir secretos, credenciales ni material sin derechos de uso. Las decisiones de producto, permisos o infraestructura requieren autorización del responsable.
 
-## Contrato provisional de datos de UI
+## Definition of Done visual
 
-- Experiencia pública: `Experience` + resumen público de sus retos.
-- Inscripción: `Enrollment` por usuario/experiencia.
-- Participación y entregas: `ChallengeParticipation` + `Submission` de texto/enlaces.
-- Evaluación: `Evaluation` por jurado y entrega, resultado oficial por C3.
-- Propuesta de empresa: `CompanyProposal` inicialmente accesible por formulario público controlado.
-
-Las interfaces TS de `src/lib/domain/types.ts` son conceptuales y pueden ajustarse al fijar el esquema físico de Firestore.
+Un flujo integrado es navegable desde los menús correctos por el rol adecuado, funciona a 390 px y 1280 px, tiene accesibilidad básica y estados completos, y se comprueba con pruebas/recorrido. Las 12 vistas constituyen un inventario de diseño, **no 12 URLs obligatorias**.

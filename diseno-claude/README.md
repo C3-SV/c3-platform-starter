@@ -2,7 +2,7 @@
 
 Paquete de diseño del MVP de C3 Challenges. Contiene las 12 vistas aprobadas en el inventario (D-023), el sistema de estilo aplicado y las decisiones tomadas al dibujarlas.
 
-**Fuente de verdad funcional:** la bitácora «C3 Platform — Bitácora de producto y especificaciones del MVP» (v2.2). Este paquete define cómo se ve y se comporta cada vista; no reemplaza las reglas de negocio, permisos ni estados de la bitácora. Si algo de aquí contradice la bitácora, prevalece la bitácora y debe registrarse el cambio.
+**Alcance de este paquete:** referencia de diseño de las vistas V01–V12. El producto implementado, rutas, permisos y reglas se verifican en `../README.md`, `../AGENTS.md` y el código. Para cambios de navegación consultar `../docs/PRODUCTO-Y-NAVEGACION.md`. Los HTML no son una especificación exhaustiva de interacciones.
 
 Todo el contenido es **de demostración**. Ver la sección «Placeholders y datos de demostración».
 
@@ -96,7 +96,7 @@ Un estado se ve igual en todas las vistas. Si un badge cambia de color entre pan
 | | No priorizada | Neutro (no dibujado) |
 | Reconocimiento | Ganador, Finalista, Mención | Sello con tokens de medalla, no badge |
 
-Los nombres de estado de propuesta **no están cerrados**: la bitácora v2.2 (V10) dice que los nombres finales se revisarán.
+Los nombres de presentación deben contrastarse con `src/lib/domain/` y los textos efectivos; cualquier cambio de vocabulario requiere validación de producto y pruebas.
 
 ---
 
@@ -123,7 +123,7 @@ Los nombres de estado de propuesta **no están cerrados**: la bitácora v2.2 (V1
 
 ### Qué está dibujado y qué no
 
-Cada vista muestra **un estado representativo**, no todos. Para implementar el resto, aplicar el vocabulario de la sección 5 y los estados que la bitácora lista para cada vista.
+Cada vista muestra **un estado representativo**, no todos. Para cubrir el resto, comprobar los estados del dominio, las rutas y las pruebas del repositorio; las referencias HTML no incluyen todos los escenarios.
 
 | Vista | Estado dibujado | No dibujado (hay que resolverlo al implementar) |
 |---|---|---|
@@ -138,7 +138,7 @@ Cada vista muestra **un estado representativo**, no todos. Para implementar el r
 | V11 | Reto en evaluación, una solución abierta para calificar | Sin entregas, evaluación completa, acceso denegado, jurado revocado |
 | V12 | **Solo la sección «Resultados oficiales»** | Las otras cinco secciones: Propuestas, Experiencias y retos, Inscripciones y equipos, Entregas, Jurados y rúbricas |
 
-Tampoco están dibujados los estados transversales «cargando», «sin permisos» y la confirmación posterior a guardar, que la bitácora marca como no omitibles.
+Los estados transversales «cargando», «sin permisos» y la confirmación posterior a guardar también deben diseñarse y validarse, aunque no estén representados en todas las maquetas.
 
 ## 7. Navegación
 
@@ -173,7 +173,7 @@ No son decisiones aprobadas con ID (D-0xx) en la bitácora. Registrarlas allí s
 4. **Equipo por código** en V06 (formato C3-XXXX) en lugar de invitación por correo, para evitar construir invitaciones. La persona debe tener inscripción aprobada.
 5. **V09 aloja el panel de propuestas y la lista de retos de la organización;** V11 se enfoca en un solo reto.
 6. **V10 no exige cuenta para proponer.** Implicación de backend: una propuesta puede existir sin usuario vinculado; debe guardar contacto y organización declarados, y C3 vincula la representación después.
-7. **Rúbrica fija de cuatro criterios, 0 a 10 cada uno (total 40), promedio simple** en V03, V11 y V12. La bitácora (RF-11) habla de criterios y pesos configurables: decidir si el MVP arranca con rúbrica fija.
+7. **Rúbrica fija de cuatro criterios, 0 a 10 cada uno (total 40), promedio simple** en V03, V11 y V12. El modelo actual de rúbrica y el promedio de jurados deben comprobarse en el dominio y en README; no fijar aquí una política diferente.
 8. **Publicación bloqueada hasta que todas las soluciones tengan las dos evaluaciones finalizadas** (V12), y comentarios de jurados **desactivados por defecto** al publicar (PT-04 sigue abierto).
 9. **Perfil dividido visualmente** en «lo que escribió la persona» y «Trayectoria registrada por C3» (V08). La trayectoria no es editable por el usuario.
 10. **Inscripción cancelada visible en la trayectoria**, en gris, indicando que no acredita participación ni resultado (EX-01, EX-06).
@@ -191,7 +191,7 @@ No son decisiones aprobadas con ID (D-0xx) en la bitácora. Registrarlas allí s
 
 ## 10. Notas técnicas sugeridas
 
-Recomendaciones surgidas de la revisión de la bitácora; **ninguna está aprobada**.
+Notas de referencia técnica asociadas a las maquetas. **No prevalecen sobre la implementación, la seguridad ni decisiones vigentes.**
 
 - Dirección ya aprobada (D-003): TypeScript + Next.js + Firebase.
 - **Autorización en el servidor** (route handlers o server actions con Firebase Admin SDK) y reglas de Firestore en denegar-todo para entregas, evaluaciones e inscripciones. El modelo de permisos contextual (D-022, O1–O8, EX-01–EX-06) es difícil de expresar en reglas declarativas.

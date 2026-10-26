@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { SiteHeader } from "@/components/SiteHeader";
+import { SiteShell } from "@/components/SiteShell";
 import { StatePill } from "@/components/StatePill";
 import { experienceLabel, lineColor, lineColorOf, lineTextColorOf, primaryLineOf, type PresentedState } from "@/lib/domain/presentation";
 import { formatDate, modalityLabel, sessionSummary } from "@/lib/domain/format";
 import type { ExperienceKind, ExperienceLine } from "@/lib/domain/types";
 import { database } from "@/lib/server/context";
 import { listPublicCatalog } from "@/lib/server/catalog";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Explorar experiencias" };
 
 export const dynamic = "force-dynamic";
 
@@ -61,13 +64,12 @@ export default async function ExplorarPage() {
   });
 
   return (
-    <div>
-      <SiteHeader />
-      <main className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32, padding: "clamp(16px, 4vw, 48px)" }}>
+    <SiteShell>
+      <main id="contenido" className="c3-page c3-ancho" style={{ display: "flex", flexDirection: "column", gap: 32, padding: "clamp(16px, 4vw, 48px)" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <h1 className="c3-titulo" style={{ fontSize: 40, lineHeight: 1.1, fontWeight: 700 }}>Explorar experiencias</h1>
           <p style={{ maxWidth: 680, fontSize: 18, lineHeight: 1.6, color: "var(--c3-texto-suave)" }}>
-            Retos reales de empresas, competencias y hackathons de C3. Las que tienen inscripción abierta te dejan participar desde aquí.
+            Challenges reales de empresas, competencias y hackathons de C3. Las que tienen inscripción abierta te dejan participar desde aquí.
           </p>
           <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "center", paddingTop: 8 }} aria-label="Leyenda de colores">
             {LEYENDA.map((item) => (
@@ -108,6 +110,6 @@ export default async function ExplorarPage() {
           </div>
         )}
       </main>
-    </div>
+    </SiteShell>
   );
 }

@@ -4,10 +4,13 @@ import { database } from "@/lib/server/context";
 import { getPublicExperience } from "@/lib/server/catalog";
 import { HttpError } from "@/lib/server/errors";
 import { InscripcionExperienciaPanel, type InscripcionExperiencia } from "./InscripcionExperienciaPanel";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Inscripción" };
 
 export const dynamic = "force-dynamic";
 
-/** Inscripción a una experiencia sin retos publicados. Los datos son públicos; la inscripción propia se consulta en el cliente. */
+/** Inscripción a una experiencia sin challenges publicados. Los datos son públicos; la inscripción propia se consulta en el cliente. */
 export default async function InscripcionExperienciaPage({ params }: { params: Promise<{ experienceId: string }> }) {
   const { experienceId } = await params;
   let detail;

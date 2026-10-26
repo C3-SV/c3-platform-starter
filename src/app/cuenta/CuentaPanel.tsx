@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   EmailAuthProvider,
@@ -9,7 +10,8 @@ import {
   updatePassword,
   updateProfile,
 } from "firebase/auth";
-import { SiteHeader } from "@/components/SiteHeader";
+import { AppShell } from "@/components/AppShell";
+import { PerfilPublicoPanel } from "@/components/PerfilPublicoPanel";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError, type FieldIssue } from "@/lib/client/api";
 import { getClientAuth } from "@/lib/firebase/client";
@@ -47,6 +49,15 @@ function issueFor(issues: FieldIssue[], field: string): string | null {
 
 /** Cuenta personal: Auth administra las credenciales; Firestore conserva solo el perfil editable. */
 export function CuentaPanel() {
+  return (
+    <AppShell active="cuenta" signedOut={{ title: "Entrá para administrar tu cuenta", text: "Iniciá sesión para administrar tu cuenta." }}>
+      <CuentaContenido />
+    </AppShell>
+  );
+}
+
+function CuentaContenido() {
+  const router = useRouter();
   const { session, signOut, refreshUser } = useSession();
   const sessionUid = session.status === "signed-in" ? session.user.uid : null;
   const sessionDisplayName = session.status === "signed-in" ? session.user.displayName ?? "" : "";
@@ -213,6 +224,7 @@ export function CuentaPanel() {
     setSignOutError(null);
     try {
       await signOut();
+      router.replace("/");
     } catch (error) {
       setSignOutError(authMessage(error));
     }
@@ -229,25 +241,14 @@ export function CuentaPanel() {
 
   return (
     <>
-      <SiteHeader />
-      <main className="c3-page c3-container c3-cuenta">
+      <div className="c3-page c3-ancho c3-cuenta">
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
-          <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Mi espacio</span>
+          <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Mi cuenta</span>
           <h1 className="c3-titulo" style={{ fontSize: 32, lineHeight: 1.2, fontWeight: 700 }}>Tu cuenta</h1>
           <p style={{ maxWidth: 720, fontSize: 14, lineHeight: 1.6, color: "var(--c3-texto-suave)" }}>
             Administrá tus datos personales y la seguridad de acceso. C3 conserva por separado tu trayectoria y los resultados oficiales.
           </p>
         </div>
-
-        {session.status === "loading" ? <p role="status" style={{ color: "var(--c3-texto-suave)" }}>Cargando tu sesión…</p> : null}
-        {session.status === "unavailable" ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>La cuenta no está disponible</strong><span>{session.message}</span></div> : null}
-        {session.status === "signed-out" ? (
-          <section className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12 }}>
-            <h2 className="c3-titulo" style={{ fontSize: 22, fontWeight: 600 }}>Entrá para administrar tu cuenta</h2>
-            <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Iniciá sesión para administrar tu cuenta.</p>
-            <Link href="/acceso?next=%2Fcuenta" className="c3-btn c3-btn--primario" style={{ alignSelf: "flex-start" }}>Entrar</Link>
-          </section>
-        ) : null}
 
         {signedIn ? (
           <>
@@ -347,13 +348,17 @@ export function CuentaPanel() {
               </section>
             </div>
 
+            <div style={{ marginTop: 20 }}>
+              <PerfilPublicoPanel />
+            </div>
+
             <div className="c3-alerta c3-alerta--info" style={{ marginTop: 20 }}>
               <strong>Tu trayectoria sigue a cargo de C3</strong>
               <span style={{ fontSize: 14, lineHeight: 1.5 }}>Podés consultar tus participaciones y reconocimientos registrados en <Link href="/trayectoria">Trayectoria</Link>. Esos registros oficiales no se editan desde Cuenta.</span>
             </div>
           </>
         ) : null}
-      </main>
+      </div>
     </>
   );
 }

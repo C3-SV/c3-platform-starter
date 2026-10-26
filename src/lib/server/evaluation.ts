@@ -1,6 +1,6 @@
 /**
  * Jurados, evaluaciones, consolidación y publicación oficial (Corte 5).
- * Un jurado —externo o representante autorizado por C3— evalúa solo las soluciones de sus retos asignados,
+ * Un jurado —externo o representante autorizado por C3— evalúa solo las soluciones de sus challenges asignados,
  * sin ver quién las entregó y solo cuando cierran las entregas. C3 publica; nada se publica solo.
  */
 import type { Auth } from "firebase-admin/auth";
@@ -20,6 +20,7 @@ import { requireAdmin, type Actor } from "./auth.ts";
 import { loadChallenge } from "./catalog.ts";
 import { HttpError, notFound } from "./errors.ts";
 import { RESULTS, SUBMISSIONS, TEAMS, USERS } from "./ids.ts";
+import { publicSlugOf } from "./publicProfiles.ts";
 
 export const JUDGE_ASSIGNMENTS = "judgeAssignments";
 export const EVALUATIONS = "evaluations";
@@ -80,7 +81,7 @@ async function activeAssignment(db: Firestore, challengeId: string, uid: string)
   return data && data.status === "active" ? data : null;
 }
 
-/** Asigna un jurado a un reto por correo. La cuenta debe existir. Solo C3. */
+/** Asigna un jurado a un challenge por correo. La cuenta debe existir. Solo C3. */
 export async function assignJudge(db: Firestore, auth: Auth, actor: Actor, challengeId: string, rawEmail: unknown, rawKind: unknown, now: Date): Promise<void> {
   requireAdmin(actor);
   const challenge = await loadChallenge(db, challengeId);
@@ -133,7 +134,7 @@ export async function revokeJudge(db: Firestore, actor: Actor, assignmentId: str
   await ref.update({ status: "revoked", revokedAt: now.toISOString() });
 }
 
-/** Retos asignados a la persona autenticada, con su avance de evaluación. */
+/** Challenges asignados a la persona autenticada, con su avance de evaluación. */
 export async function myAssignments(db: Firestore, actor: Actor, now: Date) {
   const snapshot = await db.collection(JUDGE_ASSIGNMENTS).where("userId", "==", actor.uid).get();
   const active = snapshot.docs.filter((doc) => doc.data().status === "active");
@@ -145,7 +146,7 @@ export async function myAssignments(db: Firestore, actor: Actor, now: Date) {
     const finalized = evaluations.docs.filter((item) => item.data().status === "finalized").length;
     return {
       challengeId: data.challengeId,
-      title: challenge?.title ?? "Reto",
+      title: challenge?.title ?? "Challenge",
       kind: data.kind as JudgeKind,
       canEvaluate: challenge ? now.getTime() >= Date.parse(challenge.submissionClosesAt ?? "9999-01-01") : false,
       solutions: solutions.length,
@@ -154,12 +155,12 @@ export async function myAssignments(db: Firestore, actor: Actor, now: Date) {
   }));
 }
 
-/** Espacio de evaluación: soluciones anónimas del reto, rúbrica y mis evaluaciones. Solo jurados asignados. */
+/** Espacio de evaluación: soluciones anónimas del challenge, rúbrica y mis evaluaciones. Solo jurados asignados. */
 export async function evaluationWorkspace(db: Firestore, actor: Actor, challengeId: string, now: Date) {
   const challenge = await loadChallenge(db, challengeId);
   if (challenge.status !== "published") throw notFound();
   const assignment = await activeAssignment(db, challengeId, actor.uid);
-  if (!assignment) throw new HttpError(403, "sin_asignacion", "No tenés asignado este reto como jurado.");
+  if (!assignment) throw new HttpError(403, "sin_asignacion", "No tenés asignado este challenge como jurado.");
   const canEvaluate = challenge.submissionClosesAt !== null && now.getTime() >= Date.parse(challenge.submissionClosesAt);
   const solutions = await submittedSubmissions(db, challengeId);
   const mine = await db.collection(EVALUATIONS).where("challengeId", "==", challengeId).where("judgeUserId", "==", actor.uid).get();
@@ -185,7 +186,7 @@ export async function evaluationWorkspace(db: Firestore, actor: Actor, challenge
   };
 }
 
-/** Alias público de una solución dentro de su reto: «s1», «s2»… según el orden de envío (estable tras el cierre). */
+/** Alias público de una solución dentro de su challenge: «s1», «s2»… según el orden de envío (estable tras el cierre). */
 export function solutionAlias(index: number): string {
   return `s${index + 1}`;
 }
@@ -201,7 +202,7 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
   const submissionId = target.id;
   if (challenge.status !== "published") throw notFound();
   const assignment = await activeAssignment(db, challengeId, actor.uid);
-  if (!assignment) throw new HttpError(403, "sin_asignacion", "No tenés asignado este reto como jurado.");
+  if (!assignment) throw new HttpError(403, "sin_asignacion", "No tenés asignado este challenge como jurado.");
   if (challenge.submissionClosesAt === null || now.getTime() < Date.parse(challenge.submissionClosesAt)) {
     throw new HttpError(409, "entregas_abiertas", "Todavía no se puede evaluar: las entregas siguen abiertas.");
   }
@@ -352,12 +353,12 @@ export async function resultForSubmission(db: Firestore, challengeId: string, su
   };
 }
 
-/** Ganadores públicos del reto, si C3 publicó y autorizó mostrarlos. */
-export async function publicWinners(db: Firestore, challengeId: string): Promise<{ name: string | null; recognition: string }[]> {
+/** Ganadores públicos del challenge, si C3 publicó y autorizó mostrarlos. */
+export async function publicWinners(db: Firestore, challengeId: string): Promise<{ name: string | null; recognition: string; profileSlug: string | null }[]> {
   const results = await resultsDoc(db, challengeId);
   if (results.status !== "published" || results.showWinners === false) return [];
   const recognitions = (results.recognitions ?? {}) as Record<string, Recognition>;
-  const winners: { name: string | null; recognition: string }[] = [];
+  const winners: { name: string | null; recognition: string; profileSlug: string | null }[] = [];
   for (const [submissionId, recognition] of Object.entries(recognitions)) {
     if (!recognition) continue;
     const submission = await db.collection(SUBMISSIONS).doc(submissionId).get();
@@ -371,7 +372,9 @@ export async function publicWinners(db: Firestore, challengeId: string): Promise
       mode: submission.data()?.mode === "team" ? "team" : "individual",
       userId: submission.data()?.userId,
     };
-    winners.push({ name: await nameOf(db, row), recognition: RECOGNITION_LABEL[recognition] });
+    // Solo una persona ganadora que activó su perfil público tiene enlace; los equipos y las demás, no.
+    const profileSlug = row.mode === "individual" && row.userId ? await publicSlugOf(db, row.userId) : null;
+    winners.push({ name: await nameOf(db, row), recognition: RECOGNITION_LABEL[recognition], profileSlug });
   }
   return winners;
 }

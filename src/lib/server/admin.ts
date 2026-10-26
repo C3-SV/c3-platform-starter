@@ -7,6 +7,8 @@ import { PROPOSALS } from "./proposals.ts";
 export interface AdminDashboard {
   experiences: number;
   proposals: number;
+  /** Propuestas recibidas que C3 todavía no revisó. */
+  pendingProposals: number;
   pendingEnrollments: number;
   submissions: number;
   evaluations: number;
@@ -42,6 +44,7 @@ export async function getAdminDashboard(db: Firestore, actor: Actor): Promise<Ad
   return {
     experiences: experiences.size,
     proposals: proposals.size,
+    pendingProposals: proposals.docs.filter((doc) => doc.data().status === "received").length,
     pendingEnrollments: enrollments.docs.filter((doc) => doc.data().status === "pending").length,
     submissions: submissions.size,
     evaluations: evaluations.size,
@@ -88,7 +91,7 @@ export async function listAdminDeliveries(db: Firestore, actor: Actor): Promise<
     return {
       id: doc.id,
       challengeId: data.challengeId,
-      challengeTitle: (challenge.title as string | undefined) ?? "Reto eliminado",
+      challengeTitle: (challenge.title as string | undefined) ?? "Challenge eliminado",
       experienceTitle: (experience.title as string | undefined) ?? "Experiencia eliminada",
       status: data.status === "submitted" ? "submitted" : "draft",
       mode,

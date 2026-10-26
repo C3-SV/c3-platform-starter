@@ -4,10 +4,13 @@ import { database } from "@/lib/server/context";
 import { getPublicChallenge } from "@/lib/server/catalog";
 import { HttpError } from "@/lib/server/errors";
 import { InscripcionPanel, type InscripcionChallenge } from "./InscripcionPanel";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Inscripción" };
 
 export const dynamic = "force-dynamic";
 
-/** V06 · Inscripción individual. Los datos del reto son públicos; la inscripción se consulta en el cliente con la sesión. */
+/** V06 · Inscripción individual. Los datos del challenge son públicos; la inscripción se consulta en el cliente con la sesión. */
 export default async function InscripcionPage({ params }: { params: Promise<{ challengeId: string }> }) {
   const { challengeId } = await params;
   const now = new Date();

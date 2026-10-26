@@ -1,5 +1,5 @@
 /**
- * Servicios de experiencias y retos. Reciben la base de datos y la hora como parámetros para
+ * Servicios de experiencias y challenges. Reciben la base de datos y la hora como parámetros para
  * poder probarse contra el emulador. Cada función verifica permisos antes de leer o escribir.
  */
 import type { DocumentData, Firestore, Query, QueryDocumentSnapshot } from "firebase-admin/firestore";
@@ -50,7 +50,7 @@ export interface PublicExperienceDetail extends PublicExperience {
     /** Cupos libres, o null si no hay límite. */
     spotsLeft: number | null;
     full: boolean;
-    /** La experiencia no tiene retos publicados, así que la persona se inscribe a la experiencia misma. */
+    /** La experiencia no tiene challenges publicados, así que la persona se inscribe a la experiencia misma. */
     direct: boolean;
   };
 }
@@ -158,7 +158,7 @@ export async function loadExperience(db: Firestore, id: string): Promise<Experie
 
 export async function loadChallenge(db: Firestore, id: string): Promise<Challenge> {
   const snapshot = await db.collection(CHALLENGES).doc(id).get();
-  if (!snapshot.exists) throw notFound("El reto no existe o fue eliminado.");
+  if (!snapshot.exists) throw notFound("El challenge no existe o fue eliminado.");
   return toChallenge(snapshot.id, snapshot.data() as DocumentData);
 }
 
@@ -322,13 +322,13 @@ export async function setExperienceRegistration(db: Firestore, actor: Actor, id:
   return loadExperience(db, id);
 }
 
-/** Crea un reto en borrador dentro de una experiencia existente. */
+/** Crea un challenge en borrador dentro de una experiencia existente. */
 export async function createChallenge(db: Firestore, actor: Actor, rawInput: unknown, now: Date): Promise<Challenge> {
   requireAdmin(actor);
   const input = parseChallengeInput(rawInput, now);
   const experience = await loadExperience(db, input.experienceId);
   if (experience.status === "closed" || experience.status === "cancelled") {
-    throw new HttpError(409, "experiencia_cerrada", "La experiencia ya concluyó o se canceló: no se le agregan retos.");
+    throw new HttpError(409, "experiencia_cerrada", "La experiencia ya concluyó o se canceló: no se le agregan challenges.");
   }
   if (input.organizationId) {
     const organization = await db.collection(ORGANIZATIONS).doc(input.organizationId).get();
@@ -365,14 +365,14 @@ export async function createChallenge(db: Firestore, actor: Actor, rawInput: unk
   return toChallenge(ref.id, data);
 }
 
-/** Cambia el estado de un reto. Un reto concluido es histórico y no se reabre. */
+/** Cambia el estado de un challenge. Un challenge concluido es histórico y no se reabre. */
 export async function setChallengeStatus(db: Firestore, actor: Actor, id: string, rawInput: unknown, now: Date): Promise<Challenge> {
   requireAdmin(actor);
   const { status } = parseStatusInput(rawInput);
   const ref = db.collection(CHALLENGES).doc(id);
   await db.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(ref);
-    if (!snapshot.exists) throw notFound("El reto no existe o fue eliminado.");
+    if (!snapshot.exists) throw notFound("El challenge no existe o fue eliminado.");
     const from = snapshot.data()?.status as ExperienceStatus;
     const result = await transaction.get(db.collection(RESULTS).doc(id));
     const check = checkChallengeStatusTransition(from, status, Boolean(result.data()?.publishedAt));
@@ -388,7 +388,7 @@ export async function setChallengeStatus(db: Firestore, actor: Actor, id: string
   return loadChallenge(db, id);
 }
 
-/** Experiencias y retos con el recuento de inscripciones y retos de cada experiencia, para el listado de Admin. */
+/** Experiencias y challenges con el recuento de inscripciones y challenges de cada experiencia, para el listado de Admin. */
 export interface AdminCatalog {
   experiences: Experience[];
   challenges: Challenge[];
@@ -437,7 +437,7 @@ function byCreatedDesc<T extends { createdAt: string }>(a: T, b: T): number {
   return b.createdAt.localeCompare(a.createdAt);
 }
 
-/** Catálogo público: solo experiencias publicadas y retos publicados dentro de ellas. */
+/** Catálogo público: solo experiencias publicadas y challenges publicados dentro de ellas. */
 export async function listPublicCatalog(db: Firestore, now: Date): Promise<PublicExperience[]> {
   const [experienceSnap, challengeSnap] = await Promise.all([
     db.collection(EXPERIENCES).where("status", "in", ["published", "closed"]).get(),
@@ -455,7 +455,7 @@ export async function listPublicCatalog(db: Firestore, now: Date): Promise<Publi
   }));
 }
 
-/** Detalle público de un reto. Devuelve 404 si el reto o su experiencia no están publicados. */
+/** Detalle público de un challenge. Devuelve 404 si el challenge o su experiencia no están publicados. */
 export async function getPublicChallenge(db: Firestore, challengeId: string, now: Date): Promise<PublicChallenge> {
   const challenge = await loadChallenge(db, challengeId);
   if (challenge.status !== "published" && challenge.status !== "closed") throw notFound();
@@ -470,7 +470,7 @@ export async function getPublicChallenge(db: Firestore, challengeId: string, now
 
 /**
  * Detalle público de una experiencia publicada o concluida. Devuelve 404 si es borrador o cancelada.
- * Incluye si se puede inscribir directamente (sin retos publicados) y cuántos cupos quedan.
+ * Incluye si se puede inscribir directamente (sin challenges publicados) y cuántos cupos quedan.
  */
 export async function getPublicExperience(db: Firestore, experienceId: string, now: Date): Promise<PublicExperienceDetail> {
   const experience = await loadExperience(db, experienceId);

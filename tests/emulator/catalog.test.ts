@@ -18,7 +18,7 @@ const now = new Date("2026-10-12T18:00:00.000Z");
 const experienceInput = {
   title: "Hackathon de Turismo Creativo",
   kind: "hackathon",
-  summary: "Seis retos de turismo resueltos por equipos durante un fin de semana.",
+  summary: "Seis challenges de turismo resueltos por equipos durante un fin de semana.",
   registrationOpensAt: "2026-10-01T00:00:00-06:00",
   registrationClosesAt: "2026-12-31T23:59:00-06:00",
 };
@@ -55,7 +55,7 @@ test("la experiencia nueva empieza en borrador y no aparece en el catálogo púb
   assert.deepEqual(await listPublicCatalog(db, now), []);
 });
 
-test("un reto publicado solo es público si su experiencia también está publicada", async () => {
+test("un challenge publicado solo es público si su experiencia también está publicada", async () => {
   const db = testDb();
   const experience = await createExperience(db, admin, experienceInput, now);
   const challenge = await createChallenge(db, admin, challengeInput(experience.id), now);
@@ -86,7 +86,7 @@ test("el detalle público no expone campos internos como el autor", async () => 
   assert.equal("createdByUid" in detail.experience, false);
 });
 
-test("un reto inválido se rechaza con motivos por campo y no se guarda", async () => {
+test("un challenge inválido se rechaza con motivos por campo y no se guarda", async () => {
   const db = testDb();
   const experience = await createExperience(db, admin, experienceInput, now);
   await assert.rejects(
@@ -96,7 +96,7 @@ test("un reto inválido se rechaza con motivos por campo y no se guarda", async 
   assert.equal((await db.collection("challenges").get()).size, 0);
 });
 
-test("no se puede crear un reto dentro de una experiencia inexistente", async () => {
+test("no se puede crear un challenge dentro de una experiencia inexistente", async () => {
   const db = testDb();
   await assert.rejects(
     createChallenge(db, admin, challengeInput("no-existe"), now),

@@ -10,7 +10,7 @@ import type { ExperienceInput, FieldIssue, RegistrationActionInput } from "./val
 
 /** Tipos que son una sesión con fecha, modalidad y lugar; para publicarlos esos datos son obligatorios. */
 export const SESSION_KINDS: readonly ExperienceKind[] = ["taller", "charla", "encuentro"];
-/** Tipos que se esperan con al menos un reto técnico. */
+/** Tipos que se esperan con al menos un challenge técnico. */
 export const CHALLENGE_KINDS: readonly ExperienceKind[] = ["competencia", "hackathon", "challenge_empresarial"];
 
 export interface EnrollmentCounts {
@@ -154,7 +154,7 @@ const PUBLISHED_RESULTS = refuse("resultados_publicados", "Ya hay resultados ofi
 
 /**
  * Valida un cambio de estado. `totalEnrollments` incluye pendientes, aprobadas, rechazadas y canceladas;
- * `publishedResults` indica si algún reto de la experiencia ya tiene resultados oficiales publicados.
+ * `publishedResults` indica si algún challenge de la experiencia ya tiene resultados oficiales publicados.
  */
 export function checkStatusTransition(
   experience: Pick<Experience, "status" | "kind" | "modality" | "startsAt" | "endsAt" | "location" | "registrationClosesAt">,
@@ -182,10 +182,10 @@ export function checkStatusTransition(
   return ok;
 }
 
-/** Los retos usan las mismas transiciones, sin requisitos de publicación propios. */
+/** Los challenges usan las mismas transiciones, sin requisitos de publicación propios. */
 export function checkChallengeStatusTransition(from: ExperienceStatus, to: ExperienceStatus, publishedResults = false): Check {
   if (from === to) return ok;
-  if (from === "closed") return refuse("reto_historico", "Un reto concluido es histórico: no se reabre ni vuelve a publicarse.");
+  if (from === "closed") return refuse("reto_historico", "Un challenge concluido es histórico: no se reabre ni vuelve a publicarse.");
   if (!STATUS_TRANSITIONS[from].includes(to)) return refuse("transicion_invalida", "Ese cambio de estado no está permitido desde el estado actual.");
   if (publishedResults && (to === "draft" || to === "cancelled")) return PUBLISHED_RESULTS;
   return ok;
@@ -256,7 +256,7 @@ export type GuardedField = (typeof GUARDED_FIELDS)[number];
 
 /**
  * Campos bloqueados y el motivo. Una experiencia concluida o cancelada conserva su calendario y cupos
- * como registro histórico; con retos o inscripciones, el tipo ya no cambia.
+ * como registro histórico; con challenges o inscripciones, el tipo ya no cambia.
  */
 export function lockedFields(
   experience: Pick<Experience, "status">,
@@ -271,7 +271,7 @@ export function lockedFields(
     return locks;
   }
   if (stats.challenges > 0 || stats.enrollments.total > 0) {
-    locks.kind = "Ya tiene retos o inscripciones: el tipo de experiencia no se puede cambiar.";
+    locks.kind = "Ya tiene challenges o inscripciones: el tipo de experiencia no se puede cambiar.";
   }
   return locks;
 }
@@ -369,7 +369,7 @@ export function nextActionsOf(experience: Experience, stats: ExperienceStats, no
     push("info", `Las inscripciones abren el ${formatDateTime(experience.registrationOpensAt) ?? ""}.`);
   }
   if (CHALLENGE_KINDS.includes(experience.kind) && stats.challenges === 0) {
-    push("info", "Agregá al menos un reto para que se pueda participar.");
+    push("info", "Agregá al menos un challenge para que se pueda participar.");
   }
   return actions.slice(0, 3);
 }

@@ -1,9 +1,10 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
+import { expectSignedIn, openAdminSection } from "./helpers";
 
 /**
  * Corte 4 de punta a punta: una empresa propone sin cuenta; C3 pide ajustes, crea la organización,
- * vincula a su representante por correo, acepta la propuesta y publica un reto vinculado; la representante
+ * vincula a su representante por correo, acepta la propuesta y publica un challenge vinculado; la representante
  * entra a su espacio de empresa y ve solo lo suyo.
  */
 const BASE = "http://localhost:3100";
@@ -24,15 +25,15 @@ async function loginAt(page: Page, email: string, password: string, next: string
   await page.locator("#l-correo").fill(email);
   await page.locator("#l-pass").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+  await expectSignedIn(page);
 }
 
 async function withAdmin(browser: Browser, work: (page: Page) => Promise<void>) {
   const context = await browser.newContext({ baseURL: BASE, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   try {
-    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
-    await page.getByRole("button", { name: "Propuestas", exact: true }).click();
+    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
+    await openAdminSection(page, "Propuestas");
     await work(page);
   } finally {
     await context.close();
@@ -92,7 +93,7 @@ test.describe.serial("Corte 4: empresas", () => {
       await rep.locator("#r-pass").fill(representante.password);
       await form.locator('input[type="checkbox"]').check();
       await form.getByRole("button", { name: "Crear cuenta", exact: true }).click();
-      await expect(rep.getByRole("button", { name: "Salir" })).toBeVisible();
+      await expectSignedIn(rep);
     } finally {
       await context.close();
     }
@@ -105,18 +106,18 @@ test.describe.serial("Corte 4: empresas", () => {
     });
   });
 
-  test("C3 acepta la propuesta vinculada a la organización y publica el reto", async ({ browser }) => {
+  test("C3 acepta la propuesta vinculada a la organización y publica el challenge", async ({ browser }) => {
     await withAdmin(browser, async (page) => {
       const region = page.getByRole("region", { name: `Propuesta ${reference}` });
       await region.getByLabel("Organización (opcional)").selectOption({ label: empresa.companyName });
       await region.getByRole("button", { name: "Aceptar", exact: true }).click();
       await expect(page.getByRole("status").filter({ hasText: "Propuesta aceptada" })).toBeVisible();
 
-      await page.getByRole("button", { name: "Experiencias y retos", exact: true }).click();
+      await openAdminSection(page, "Experiencias y challenges");
       const experienceForm = page.locator("form").filter({ has: page.locator("#exp-titulo") });
       await page.locator("#exp-titulo").fill(experienceTitle);
       await page.locator("#exp-tipo").selectOption("challenge_empresarial");
-      await page.locator("#exp-resumen").fill("Retos que plantean empresas reales para equipos jóvenes.");
+      await page.locator("#exp-resumen").fill("Challenges que plantean empresas reales para equipos jóvenes.");
       await page.locator("#exp-abre").fill("2026-10-01T00:00");
       await page.locator("#exp-cierra").fill("2027-06-01T23:59");
       await experienceForm.getByRole("button", { name: "Guardar borrador" }).click();
@@ -136,16 +137,16 @@ test.describe.serial("Corte 4: empresas", () => {
       await page.locator("#ret-rubrica").fill("Exactitud de la conciliación | 10");
       await page.locator("#ret-cierre").fill("2027-06-30T23:59");
       await challengeForm.getByRole("button", { name: "Guardar borrador" }).click();
-      await expect(page.getByRole("status").filter({ hasText: "Reto guardado como borrador" })).toBeVisible();
+      await expect(page.getByRole("status").filter({ hasText: "Challenge guardado como borrador" })).toBeVisible();
       await experienceRegion.getByRole("button", { name: "Publicar", exact: true }).click();
       await expect(page.getByRole("status").filter({ hasText: "Publicado" })).toBeVisible();
     });
   });
 
-  test("la representante ve su espacio de empresa con el reto y la propuesta; sin vínculo no ve nada", async ({ browser, page }) => {
+  test("la representante ve su espacio de empresa con el challenge y la propuesta; sin vínculo no ve nada", async ({ browser, page }) => {
     await loginAt(page, representante.email, representante.password, "/empresa");
     await expect(page.getByRole("heading", { level: 1, name: empresa.companyName })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: "Tus retos" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Tus challenges" })).toBeVisible();
     await expect(page.getByText(challengeTitle)).toBeVisible();
     await expect(page.getByText("Todavía no hay soluciones enviadas")).toBeVisible();
     await expect(page.getByText(`Propuesta ${reference}`)).toBeVisible();

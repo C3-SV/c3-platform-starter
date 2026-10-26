@@ -1,32 +1,43 @@
-# Pendientes operativos (no bloquean la creación del repo)
+# Pendientes y decisiones abiertas — C3 Platform
 
-> **Aviso (2026-10-26):** la sección «Estado (corte 2)» está desactualizada. El repositorio remoto `C3-SV/c3-platform-starter` existe, es público y ejecuta CI; el paso E2E de `main` está en rojo. Los pendientes de esta lista siguen vigentes. Ver [CONSOLIDACION-GIT-2026-10.md](CONSOLIDACION-GIT-2026-10.md) y `AGENTS.md` §5.
+Este archivo mantiene **solo decisiones y trabajos no cerrados**. Actualizar la condición de cierre al resolverlos; no copiar aquí narrativas de implementaciones anteriores. El alcance implementado y las rutas están en [README](../README.md).
 
-## Necesarios antes de almacenar datos de usuarios reales
+## Prioridad alta — estabilidad y experiencia de producto
 
-- Crear proyecto Firebase de desarrollo; habilitar Auth y Firestore en ubicación elegida según usuarios/costo.
-- Definir cómo un miembro de C3 obtiene su rol administrativo, con claims confiables, no por editar Firestore desde el cliente.
-- Mantener la revisión periódica de la API confiable y las reglas seguras para inscripciones, participaciones, equipos, entregas y resultados; las colecciones privadas siguen DENEGADAS por defecto.
-- Probar reglas con emulador: joven A no ve entrega B, patrocinador no ve datos, revocación de jurado, resultado privado.
-- Acordar texto legal mínimo: aviso de privacidad, términos, tratamiento de menores, permisos de fotografía/nombres cuando aplique y propiedad intelectual de soluciones (validación legal local).
-- Propuestas sin cuenta: validación backend, mecanismo anti-spam y política de retención/contacto. NO habilitar endpoint público sin esas defensas.
-- Decidir comunicación básica para pilotos (al menos confirmaciones y estados; manual primero si se documenta).
-- Eliminación de cuentas: no habilitarla hasta definir cómo se retienen, anonimizan o eliminan las participaciones, entregas, evaluaciones y resultados oficiales, junto con la política de privacidad aplicable.
+| Asunto | Situación conocida | Para cerrar |
+| --- | --- | --- |
+| Usabilidad con personas | La arquitectura de navegación (decisiones D1–D10 de la [auditoría](AUDITORIA-NAVEGACION-2026-10.md)) está implementada y verificada con pruebas técnicas, **no con personas**: faltan tareas guiadas por rol (participante, jurado, representante, admin) y una auditoría con lector de pantalla y dispositivos reales | Prueba con 4–5 personas por rol midiendo pasos y errores ([PLAN-CONSTRUCCION](PLAN-CONSTRUCCION.md), «Métricas»); revisión visual a 390 y 1280 px por el responsable |
+| Aviso de seguridad de Next.js | `next build` (16.4.0) muestra un aviso de versión afectada por una vulnerabilidad conocida y, la primera vez de cada tanda, **se detiene** y pide repetir el comando (el CI no se vio afectado). No se actualizó nada | Decidir y planificar la actualización como tarea aparte, con revisión de compatibilidad; hasta entonces repetir `npm run build` si se detiene |
+| Validación integral | CI verde por PR sobre `dev` (typecheck, lint, unitarias, reglas con emulador y E2E de escritorio y móvil). Las pruebas de versiones revisadas no sustituyen una ejecución actual | Repetir el CI sobre `dev` y `main` en cada promoción |
+| Espacio local | El disco C: de esta máquina queda con ~1–2 GB libres tras instalar dependencias y compilar | Recuperar espacio antes de instalar o compilar; verificar con `df` |
+| Perfil público: menores e imagen | El perfil público compartible está implementado (opt-in, privado por defecto, centro de estudio oculto por defecto, sin datos privados). **No hay edad en el modelo**: no se puede distinguir a una persona menor, y el texto legal no está aprobado | Validar con asesoría local el tratamiento de menores, nombre e imagen antes de datos reales; decidir si se exige consentimiento de tutor o una edad mínima para activarlo |
+| Rutas antiguas de evaluación | `/evaluar/[id]` y `/empresa/retos/[id]/evaluacion` redirigen (307) a `/mi-c3/evaluar/[id]` para no romper enlaces ya enviados | Retirarlas cuando no queden invitaciones vigentes |
+| Admin en móvil | Funcional (menú plegable) pero optimizado para escritorio, según la decisión D5 | Revisar si el equipo opera Admin desde teléfono; si no, mantener |
 
-## Pendientes deliberadamente diferidos
+## Repositorio, despliegue y ambientes
 
-- Datos personales históricos Copa 2026 y Hackathon Turismo Creativo: no migrar usuarios, participantes, equipos, entregas ni resultados; cualquier alcance futuro requiere fuentes, privacidad y plan aprobado.
-- Proyecto Firebase real inicializado como `c3-platform-demo`: falta configurar las variables privadas de Vercel y revisar/desplegar reglas e índices después de una última aprobación.
-- Perfil público compartible OPT-IN y sello de evidencia verificada, sin insinuar certificaciones no otorgadas.
-- Piloto real: empresa, problema, participantes, fechas, métricas, capacidad de soporte.
-- Filtros de catálogo y automatizaciones cuando exista suficiente volumen.
+- **Ramas oficiales (`dev` sincronizada con `main` el 26-10-2026):** `dev` para integración y pruebas, `main` para producción; PR de trabajo a `dev` y promoción de `dev` a `main`. Un solo checkout, sin worktrees.
+- **Visibilidad deseada:** repositorio canónico **privado**. El remoto actualmente identificado es `C3-SV/c3-platform-starter` y se reportó como **público**. Antes de hacerlo privado, comprobar compatibilidad, costos y permisos reales del despliegue Vercel. No cambiar repositorio, plan ni visibilidad sin decisión del responsable.
+- **CI:** `.github/workflows/ci.yml` ejecuta PR y push a `main` y a `dev`.
+- **Mantenimiento del flujo Git:** retirar, mediante cambio acotado y revisado, `npm run worktree` y el script `scripts/worktree.mjs` para que las herramientas coincidan con la política de un checkout.
+- **Firebase real:** revisar configuración actual del proyecto `c3-platform-demo`, Web App, Auth, reglas/índices y variables públicas/privadas de Vercel. No hacer cambios remotos sin autorización; entorno de desarrollo usa emuladores `demo-c3-platform`.
+- Confirmar procedimiento de asignación, revocación y auditoría del claim `c3Admin`, así como controles operativos de administradores en el piloto.
 
-## Estado (corte 2)
+## Privacidad, legal y datos reales
 
-- InspecciÃ³n de infraestructura (14-10-2026): el proyecto indicado `c3-platform-demo` existe, pero no tiene Web Apps Firebase y la API de Cloud Firestore estÃ¡ deshabilitada. Vercel tampoco estÃ¡ enlazado localmente; falta autenticaciÃ³n de la CLI y seleccionar el proyecto de Vercel.
+- Acordar y validar aviso de privacidad, términos, tratamiento de menores, permisos de imagen/nombre y propiedad intelectual de soluciones, con asesoría local cuando corresponda.
+- Aprobar retención, anonimización y eliminación de cuentas sin borrar evidencia oficial indebidamente.
+- Revisar anti-spam, privacidad y retención del formulario público de propuestas; no debilitar validaciones del servidor.
+- No migrar datos personales de Copa 2026 o Hackathon de Turismo Creativo sin inventario de fuentes, consentimiento/base legal y plan de migración autorizado.
+- Evaluar y validar con emuladores casos de permisos negativos y revocaciones: participación ajena, empresa sin vínculo, jurado revocado, resultado no publicado.
 
-- Listo y verificado con emuladores: autenticación, catálogo público, administración de experiencias y retos, reglas de Firestore que deniegan acceso directo, pruebas unitarias, de reglas/servicios y de recorridos.
-- Listo y verificado con emuladores: Compite/Crea/Conecta, catálogo compartido, seed determinístico dry-run/apply protegido, dashboard Admin y consulta de entregas de solo lectura.
-- Verificado en `c3-platform-demo`: Firestore `(default)` estándar en `us-central1` con protección contra borrado, Web App `C3 Platform` y Auth Email/Password habilitados. Pendientes: variables privadas/enlace de Vercel, reglas/índices reales y textos legales.
-- Pendiente de CI: `.github/workflows/ci.yml` está escrito; no se ha ejecutado en GitHub porque el repositorio remoto todavía no existe.
-- Repositorio remoto GitHub: pendiente de autenticación de la CLI (`gh auth login`) y de creación del repositorio privado `c3-platform`.
+## Piloto y funcionalidades deliberadamente fuera de alcance
+
+- Definir empresa, challenge, responsables, audiencia, fechas, métricas, soporte y criterios de éxito del piloto.
+- La respuesta de empresa a propuestas que requieren ajustes se gestiona por correo; un flujo interno no está implementado.
+- Comentarios de jurados, filtros avanzados, automatizaciones y eliminación de cuenta requieren decisiones independientes.
+- La «Bitácora de producto y especificaciones del MVP v2.2» citada por el paquete de diseño no figura en este repositorio. Localizarla o formalizar reglas de producto verificadas; nunca suponer contenido.
+
+## Seguimiento
+
+Por cada decisión registrar en su PR o issue: responsable, alcance acordado, criterio de aceptación y prueba. Si no hay decisión, mantenerla aquí sin presentarla como funcionalidad completada.

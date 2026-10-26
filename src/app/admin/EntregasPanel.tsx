@@ -65,9 +65,9 @@ export function EntregasPanel({ challenges }: { challenges: { id: string; title:
       </div>
       {challenges.length > 0 ? (
         <label htmlFor="admin-entregas-reto" className="c3-etiqueta-campo">
-          Reto
+          Challenge
           <select id="admin-entregas-reto" className="c3-campo" value={selected} onChange={(event) => setSelected(event.target.value)} style={{ display: "block", maxWidth: 520, marginTop: 8 }}>
-            <option value="all">Todos los retos</option>
+            <option value="all">Todos los challenges</option>
             {challenges.map((challenge) => <option key={challenge.id} value={challenge.id}>{challenge.title}</option>)}
           </select>
         </label>

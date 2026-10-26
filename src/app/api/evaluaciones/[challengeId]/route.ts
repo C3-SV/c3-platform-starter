@@ -4,7 +4,7 @@ import { evaluationWorkspace } from "@/lib/server/evaluation";
 
 export const dynamic = "force-dynamic";
 
-/** Espacio de evaluación de un reto asignado: soluciones anónimas, rúbrica y mis evaluaciones. */
+/** Espacio de evaluación de un challenge asignado: soluciones anónimas, rúbrica y mis evaluaciones. */
 export function GET(request: Request, context: { params: Promise<{ challengeId: string }> }) {
   return respond(async () => {
     const actor = await requestActor(request);

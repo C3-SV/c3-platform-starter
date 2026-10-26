@@ -19,7 +19,7 @@ interface JudgeRow {
 
 const KIND_LABEL = { empresa: "Representante de la empresa", externo: "Jurado externo" } as const;
 
-/** Jurados asignados por C3 y rúbrica de cada reto. Revocar quita el acceso sin borrar evaluaciones. */
+/** Jurados asignados por C3 y rúbrica de cada challenge. Revocar quita el acceso sin borrar evaluaciones. */
 export function JuradosPanel({ challenges }: { challenges: ChallengeOption[] }) {
   const [selected, setSelected] = useState("");
   const [judges, setJudges] = useState<JudgeRow[] | null>(null);
@@ -38,7 +38,7 @@ export function JuradosPanel({ challenges }: { challenges: ChallengeOption[] }) 
     return data.judges;
   }
 
-  // Carga los jurados del reto elegido; la respuesta actualiza el estado.
+  // Carga los jurados del challenge elegido; la respuesta actualiza el estado.
   useEffect(() => {
     if (!challengeId) return;
     let active = true;
@@ -97,23 +97,23 @@ export function JuradosPanel({ challenges }: { challenges: ChallengeOption[] }) 
   }
 
   if (challenges.length === 0) {
-    return <div className="c3-card" style={{ padding: 24 }}><p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay retos. Creá uno en «Experiencias y retos».</p></div>;
+    return <div className="c3-card" style={{ padding: 24 }}><p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay challenges. Creá uno en «Experiencias y challenges».</p></div>;
   }
 
   return (
     <>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Jurados y rúbricas</h1>
-        <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>Asigná jurados por correo. Solo ven las soluciones de sus retos, y solo después del cierre de entregas.</p>
+        <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>Asigná jurados por correo. Solo ven las soluciones de sus challenges, y solo después del cierre de entregas.</p>
       </div>
 
-      <label htmlFor="jur-reto" className="c3-etiqueta-campo">Reto</label>
+      <label htmlFor="jur-reto" className="c3-etiqueta-campo">Challenge</label>
       <select id="jur-reto" className="c3-campo" value={challengeId} onChange={(event) => setSelected(event.target.value)} style={{ maxWidth: 520 }}>
         {challenges.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
       </select>
 
       {challenge ? (
-        <section className="c3-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 8 }} aria-label="Rúbrica del reto">
+        <section className="c3-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 8 }} aria-label="Rúbrica del challenge">
           <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Rúbrica · máximo {challenge.rubric.reduce((sum, item) => sum + item.maxScore, 0)} puntos</span>
           {challenge.rubric.map((criterion) => (
             <span key={criterion.id} style={{ fontSize: 14 }}>· {criterion.label}: 0 – {criterion.maxScore}</span>
@@ -126,7 +126,7 @@ export function JuradosPanel({ challenges }: { challenges: ChallengeOption[] }) 
       {loadError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{loadError}</strong></div> : null}
 
       {judges && judges.length > 0 ? (
-        <section className="c3-card" style={{ overflow: "hidden" }} aria-label="Jurados del reto">
+        <section className="c3-card" style={{ overflow: "hidden" }} aria-label="Jurados del challenge">
           {judges.map((judge) => (
             <div key={judge.id} role="group" aria-label={judge.email ?? judge.userId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "14px 20px", borderTop: "1px solid var(--c3-borde)" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -144,7 +144,7 @@ export function JuradosPanel({ challenges }: { challenges: ChallengeOption[] }) 
           ))}
         </section>
       ) : null}
-      {judges && judges.length === 0 ? <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay jurados asignados a este reto.</p> : null}
+      {judges && judges.length === 0 ? <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay jurados asignados a este challenge.</p> : null}
 
       <form onSubmit={(event) => void assign(event)} noValidate className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 14 }}>
         <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Asignar jurado</span>

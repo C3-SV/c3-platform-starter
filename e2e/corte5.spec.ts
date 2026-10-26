@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
+import { expectSignedIn, openAdminSection } from "./helpers";
 
 /**
  * Corte 5 en el navegador: C3 asigna un jurado por correo, el jurado ve que debe esperar el cierre de entregas,
@@ -10,7 +11,7 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
 const BASE = "http://localhost:3100";
 const stamp = Date.now().toString(36);
 const experienceTitle = `Experiencia con jurados ${stamp}`;
-const challengeTitle = `Reto evaluable ${stamp}`;
+const challengeTitle = `Challenge evaluable ${stamp}`;
 const jurado = { name: "Marco Solano de Prueba", email: `jurado.${stamp}@correo.test`, password: "clave-jurado-123" };
 let challengeId = "";
 
@@ -19,14 +20,14 @@ async function loginAt(page: Page, email: string, password: string, next: string
   await page.locator("#l-correo").fill(email);
   await page.locator("#l-pass").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+  await expectSignedIn(page);
 }
 
 async function withAdmin(browser: Browser, work: (page: Page) => Promise<void>) {
   const context = await browser.newContext({ baseURL: BASE, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   try {
-    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
+    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
     await work(page);
   } finally {
     await context.close();
@@ -34,7 +35,7 @@ async function withAdmin(browser: Browser, work: (page: Page) => Promise<void>) 
 }
 
 test.describe.serial("Corte 5: jurados y resultados", () => {
-  test("el administrador publica un reto que tendrá jurados", async ({ browser }) => {
+  test("el administrador publica un challenge que tendrá jurados", async ({ browser }) => {
     await withAdmin(browser, async (page) => {
       const experienceForm = page.locator("form").filter({ has: page.locator("#exp-titulo") });
       await page.locator("#exp-titulo").fill(experienceTitle);
@@ -58,7 +59,7 @@ test.describe.serial("Corte 5: jurados y resultados", () => {
       await page.locator("#ret-rubrica").fill("Calidad del resultado | 10\nClaridad del enfoque | 10");
       await page.locator("#ret-cierre").fill("2027-06-30T23:59");
       await challengeForm.getByRole("button", { name: "Guardar borrador" }).click();
-      await expect(page.getByRole("status").filter({ hasText: "Reto guardado como borrador" })).toBeVisible();
+      await expect(page.getByRole("status").filter({ hasText: "Challenge guardado como borrador" })).toBeVisible();
       await region.getByRole("button", { name: "Publicar", exact: true }).click();
       await expect(page.getByRole("status").filter({ hasText: "Publicado" })).toBeVisible();
     });
@@ -84,10 +85,10 @@ test.describe.serial("Corte 5: jurados y resultados", () => {
     await page.locator("#r-pass").fill(jurado.password);
     await form.locator('input[type="checkbox"]').check();
     await form.getByRole("button", { name: "Crear cuenta", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+    await expectSignedIn(page);
 
     await withAdmin(browser, async (admin) => {
-      await admin.getByRole("button", { name: "Jurados y rúbricas", exact: true }).click();
+      await openAdminSection(admin, "Jurados y rúbricas");
       await admin.locator("#jur-reto").selectOption({ label: challengeTitle });
       await expect(admin.getByText("Calidad del resultado: 0 – 10")).toBeVisible();
       await admin.locator("#jur-correo").fill(jurado.email);
@@ -98,7 +99,7 @@ test.describe.serial("Corte 5: jurados y resultados", () => {
     });
   });
 
-  test("el jurado ve el reto en Mi C3 y que debe esperar el cierre de entregas", async ({ page }) => {
+  test("el jurado ve el challenge en Mi C3 y que debe esperar el cierre de entregas", async ({ page }) => {
     await loginAt(page, jurado.email, jurado.password, "/mi-c3");
     await expect(page.getByText("Como jurado", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "En espera" })).toBeVisible();
@@ -107,17 +108,17 @@ test.describe.serial("Corte 5: jurados y resultados", () => {
 
     await page.getByRole("link", { name: "Ver detalle", exact: true }).click();
     await expect(page.getByText("Esperá el cierre de entregas")).toBeVisible();
-    await expect(page.getByText("Todavía no hay soluciones enviadas para este reto.")).toBeVisible();
+    await expect(page.getByText("Todavía no hay soluciones enviadas para este challenge.")).toBeVisible();
   });
 
   test("la publicación queda bloqueada sin soluciones y C3 puede revocar al jurado", async ({ browser, page }) => {
     await withAdmin(browser, async (admin) => {
-      await admin.getByRole("button", { name: "Resultados oficiales", exact: true }).click();
+      await openAdminSection(admin, "Resultados oficiales");
       await admin.locator("#res-reto").selectOption({ label: challengeTitle });
       await expect(admin.getByText("Todavía no hay soluciones enviadas para publicar.")).toBeVisible();
       await expect(admin.getByRole("button", { name: "Publicar resultado", exact: true })).toBeDisabled();
 
-      await admin.getByRole("button", { name: "Jurados y rúbricas", exact: true }).click();
+      await openAdminSection(admin, "Jurados y rúbricas");
       await admin.locator("#jur-reto").selectOption({ label: challengeTitle });
       const row = admin.getByRole("group", { name: jurado.email });
       await row.getByRole("button", { name: "Revocar acceso", exact: true }).click();

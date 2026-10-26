@@ -4,7 +4,7 @@ import { myAssignments } from "@/lib/server/evaluation";
 
 export const dynamic = "force-dynamic";
 
-/** Retos que me asignaron como jurado. */
+/** Challenges que me asignaron como jurado. */
 export function GET(request: Request) {
   return respond(async () => {
     const actor = await requestActor(request);

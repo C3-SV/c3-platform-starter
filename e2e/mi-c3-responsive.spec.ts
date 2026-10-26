@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
+import { expectSignedIn, signOutUi, openAdminSection } from "./helpers";
 
 /**
  * Mi C3 responsive. Un panel de escritorio (cabecera superior, dos columnas, sin barra inferior) y una app móvil
@@ -10,8 +11,8 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
  */
 const BASE = "http://localhost:3100";
 const stamp = Date.now().toString(36);
-const alfa = { experience: `Experiencia Alfa ${stamp}`, challenge: `Reto Alfa ${stamp}` };
-const beta = { experience: `Experiencia Beta ${stamp}`, challenge: `Reto Beta ${stamp}` };
+const alfa = { experience: `Experiencia Alfa ${stamp}`, challenge: `Challenge Alfa ${stamp}` };
+const beta = { experience: `Experiencia Beta ${stamp}`, challenge: `Challenge Beta ${stamp}` };
 const password = "clave-panel-123";
 const sinNada = { name: "Ana Sin Nada de Prueba", email: `ana.${stamp}@correo.test` };
 const pendiente = { name: "Paola Pendiente de Prueba", email: `paola.${stamp}@correo.test` };
@@ -36,7 +37,7 @@ async function loginAt(page: Page, email: string, pass: string, next: string) {
   await page.locator("#l-correo").fill(email);
   await page.locator("#l-pass").fill(pass);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+  await expectSignedIn(page);
 }
 
 async function register(page: Page, name: string, email: string) {
@@ -47,14 +48,14 @@ async function register(page: Page, name: string, email: string) {
   await page.locator("#r-pass").fill(password);
   await form.locator('input[type="checkbox"]').check();
   await form.getByRole("button", { name: "Crear cuenta", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Salir" })).toBeVisible();
+  await expectSignedIn(page);
 }
 
 async function withAdmin(browser: Browser, work: (page: Page) => Promise<void>) {
   const context = await browser.newContext({ baseURL: BASE, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   try {
-    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
+    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
     await work(page);
   } finally {
     await context.close();
@@ -84,7 +85,7 @@ async function publishChallenge(page: Page, experienceTitle: string, challengeTi
   await page.locator("#ret-rubrica").fill("Calidad del resultado | 10\nClaridad del enfoque | 10");
   await page.locator("#ret-cierre").fill("2027-06-30T23:59");
   await challengeForm.getByRole("button", { name: "Guardar borrador" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "Reto guardado como borrador" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Challenge guardado como borrador" })).toBeVisible();
   await region.getByRole("button", { name: "Publicar", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Publicado" })).toBeVisible();
 }
@@ -134,7 +135,7 @@ let alfaId = "";
 let betaId = "";
 
 test.describe.serial("Mi C3 responsive", () => {
-  test("el administrador publica dos retos y se registran las personas de prueba", async ({ browser }) => {
+  test("el administrador publica dos challenges y se registran las personas de prueba", async ({ browser }) => {
     await withAdmin(browser, async (admin) => {
       await publishChallenge(admin, alfa.experience, alfa.challenge);
       await publishChallenge(admin, beta.experience, beta.challenge);
@@ -170,13 +171,13 @@ test.describe.serial("Mi C3 responsive", () => {
       expect(errors, "errores de consola o de página").toEqual([]);
       await expect(page.getByRole("heading", { level: 1, name: `Hola, ${sinNada.name.split(" ")[0]}` })).toBeVisible();
       await expect(page.getByText("Todavía no participás en ninguna experiencia.")).toBeVisible();
-      await expect(page.getByRole("heading", { level: 2, name: "Elegí tu primer reto" })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 2, name: "Elegí tu primer challenge" })).toBeVisible();
       for (const heading of ["Requiere tu atención", "En espera", "En curso", "Finalizadas"]) {
         await expect(page.getByRole("heading", { level: 2, name: heading })).toHaveCount(0);
       }
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
     }
-    await page.getByRole("link", { name: "Explorar retos", exact: true }).click();
+    await page.getByRole("link", { name: "Explorar challenges", exact: true }).click();
     await expect(page).toHaveURL(/\/explorar$/);
   });
 
@@ -257,7 +258,9 @@ test.describe.serial("Mi C3 responsive", () => {
     await expect(page).toHaveURL(/\/$/);
 
     await page.goto("/mi-c3");
-    await page.getByRole("link", { name: new RegExp(`${pendiente.name}.*Mi cuenta`) }).click();
+    // El menú de la cuenta (avatar) lleva a Cuenta y ofrece «Salir».
+    await page.getByRole("button", { name: new RegExp(`^Menú de la cuenta de ${pendiente.name}`) }).click();
+    await page.locator(".c3-usuario__panel").getByRole("link", { name: /^Cuenta/ }).click();
     await expect(page).toHaveURL(/\/cuenta$/);
 
     await page.goto("/mi-c3");
@@ -267,9 +270,7 @@ test.describe.serial("Mi C3 responsive", () => {
     await expect(aside.getByRole("link", { name: /^Trayectoria/ })).toHaveAttribute("href", "/trayectoria");
     await expect(aside.getByRole("link", { name: /^Explorar\b/ })).toHaveAttribute("href", "/explorar");
 
-    await page.getByRole("button", { name: "Salir", exact: true }).click();
-    await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
+    await signOutUi(page);
   });
 
   test("cancelar una inscripción pendiente pide confirmación y se puede desistir", async ({ page }) => {
@@ -293,7 +294,7 @@ test.describe.serial("Mi C3 responsive", () => {
 
   test("entrega pendiente: C3 aprueba y la persona ve la acción que le toca", async ({ browser, page }) => {
     await withAdmin(browser, async (admin) => {
-      await admin.getByRole("button", { name: "Inscripciones y equipos", exact: true }).click();
+      await openAdminSection(admin, "Inscripciones y equipos");
       await admin.locator("#ins-reto").selectOption({ label: alfa.challenge });
       const row = admin.getByRole("group", { name: pendiente.email });
       await expect(row).toBeVisible();
@@ -310,7 +311,7 @@ test.describe.serial("Mi C3 responsive", () => {
       const card = page.getByRole("article").filter({ hasText: alfa.challenge });
       await expect(card.getByText("Sin entrega", { exact: true })).toBeVisible();
       await expect(card.getByText(/^Cierra el /)).toBeVisible();
-      await expect(card.getByRole("link", { name: "Abrir mi reto" })).toHaveAttribute("href", `/mi-c3/retos/${alfaId}`);
+      await expect(card.getByRole("link", { name: "Abrir mi challenge" })).toHaveAttribute("href", `/mi-c3/retos/${alfaId}`);
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
     }
   });
@@ -318,7 +319,7 @@ test.describe.serial("Mi C3 responsive", () => {
   test("experiencia en curso: al enviar la entrega pasa de «Requiere tu atención» a «En curso»", async ({ page }) => {
     await loginAt(page, pendiente.email, password, "/mi-c3");
     await openMiC3(page, { width: 1280, height: 800 });
-    await page.getByRole("link", { name: "Abrir mi reto" }).click();
+    await page.getByRole("link", { name: "Abrir mi challenge" }).click();
     await page.locator("#entrega-texto").fill("Solución de prueba con heurística de inserción y una mejora local posterior.");
     await page.getByLabel("Enlace 1").fill("https://github.com/equipo-de-prueba/panel");
     await page.getByRole("button", { name: "Enviar entrega", exact: true }).click();
@@ -336,9 +337,9 @@ test.describe.serial("Mi C3 responsive", () => {
     }
   });
 
-  test("jurado: el reto asignado aparece como espera hasta el cierre y como acción cuando hay que evaluar", async ({ browser, page }) => {
+  test("jurado: el challenge asignado aparece como espera hasta el cierre y como acción cuando hay que evaluar", async ({ browser, page }) => {
     await withAdmin(browser, async (admin) => {
-      await admin.getByRole("button", { name: "Jurados y rúbricas", exact: true }).click();
+      await openAdminSection(admin, "Jurados y rúbricas");
       await admin.locator("#jur-reto").selectOption({ label: alfa.challenge });
       await admin.locator("#jur-correo").fill(jurado.email);
       await admin.locator("#jur-tipo").selectOption("externo");
@@ -421,7 +422,7 @@ test.describe.serial("Trayectoria responsive", () => {
         await expect(page.getByRole("navigation", { name: "Principal" }), viewport.name).toBeHidden();
       }
     }
-    await page.getByRole("link", { name: "Explorar retos", exact: true }).click();
+    await page.getByRole("link", { name: "Explorar challenges", exact: true }).click();
     await expect(page).toHaveURL(/\/explorar$/);
   });
 
@@ -513,7 +514,7 @@ test.describe.serial("Trayectoria responsive", () => {
     await page.route("**/api/trayectoria", async (route) => {
       const response = await route.fetch();
       const data = await response.json();
-      await route.fulfill({ response, json: { ...data, enrollments: [medal("a", "Reto de oro", 1), medal("b", "Reto de plata", 2), medal("c", "Reto de bronce", 3), medal("d", "Reto sin medalla", 9)] } });
+      await route.fulfill({ response, json: { ...data, enrollments: [medal("a", "Challenge de oro", 1), medal("b", "Challenge de plata", 2), medal("c", "Challenge de bronce", 3), medal("d", "Challenge sin medalla", 9)] } });
     });
     await loginAt(page, pendiente.email, password, "/trayectoria");
     for (const viewport of [{ width: 1440, height: 900 }, { width: 360, height: 800 }]) {
@@ -523,9 +524,9 @@ test.describe.serial("Trayectoria responsive", () => {
       await expect(page.getByRole("img", { name: "Medalla de plata, puesto 2 de 14" })).toHaveText("2.º");
       await expect(page.getByRole("img", { name: "Medalla de bronce, puesto 3 de 14" })).toHaveText("3.º");
       await expect(page.locator(".c3-tray__medalla")).toHaveCount(3);
-      const sinMedalla = page.getByRole("article").filter({ hasText: "Reto sin medalla" });
+      const sinMedalla = page.getByRole("article").filter({ hasText: "Challenge sin medalla" });
       await expect(sinMedalla.getByText("Puesto 9 de 14", { exact: false })).toBeVisible();
-      await expect(page.getByRole("article").filter({ hasText: "Reto de oro" }).getByText("Primer lugar.")).toBeVisible();
+      await expect(page.getByRole("article").filter({ hasText: "Challenge de oro" }).getByText("Primer lugar.")).toBeVisible();
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
       expect(results.violations.map((violation) => `${violation.id}: ${violation.help}`), `accesibilidad en ${viewport.width}`).toEqual([]);
     }

@@ -6,6 +6,8 @@
  * estilo pide definirlos como tokens propios para que el cambio de tema no los rompa.
  */
 :root {
+  /* Ancho máximo del contenido en pantallas muy grandes; por debajo, todo es fluido. */
+  --c3-ancho-pagina: 1440px;
   --c3-info-fondo: #e3ecf8;
   --c3-exito-fondo: #e0f2ea;
   --c3-advertencia-fondo: #fbefdd;
@@ -74,7 +76,7 @@ p {
 }
 
 .c3-container {
-  max-width: 1180px;
+  max-width: var(--c3-ancho-pagina);
   margin: 0 auto;
 }
 
@@ -277,7 +279,7 @@ textarea.c3-campo {
 }
 
 .c3-cabecera__interior {
-  max-width: 1180px;
+  max-width: var(--c3-ancho-pagina);
   margin: 0 auto;
   min-height: 72px;
   display: flex;
@@ -397,6 +399,269 @@ textarea.c3-campo {
   border: 0;
   cursor: pointer;
   font: inherit;
+}
+
+/*
+ * Cabecera del sitio público: logotipo, navegación y acciones en una fila. Por debajo de 900 px la navegación
+ * pasa a un panel que abre el botón «Menú» y la barra queda en una sola fila de ~60 px.
+ */
+.c3-cabecera__interior--sitio {
+  flex-wrap: nowrap;
+  gap: 28px;
+}
+
+.c3-nav-sitio {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.c3-nav-sitio__lineas {
+  display: contents;
+}
+
+.c3-nav-sitio__grupo,
+.c3-nav-sitio__solo-movil,
+.c3-cabecera__hamburguesa {
+  display: none;
+}
+
+.c3-cabecera--sitio__acciones {
+  flex-wrap: nowrap;
+  margin-left: auto;
+}
+
+.c3-cabecera__hamburguesa {
+  min-height: 44px;
+  padding: 0 12px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--c3-navy-claro);
+  border-radius: var(--c3-radius-md);
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.c3-cabecera__hamburguesa-icono,
+.c3-cabecera__hamburguesa-icono::before,
+.c3-cabecera__hamburguesa-icono::after {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.c3-cabecera__hamburguesa-icono {
+  position: relative;
+}
+
+.c3-cabecera__hamburguesa-icono::before,
+.c3-cabecera__hamburguesa-icono::after {
+  content: "";
+  position: absolute;
+  left: 0;
+}
+
+.c3-cabecera__hamburguesa-icono::before {
+  top: -6px;
+}
+
+.c3-cabecera__hamburguesa-icono::after {
+  top: 6px;
+}
+
+@media (max-width: 899px) {
+  .c3-cabecera__interior--sitio {
+    min-height: 60px;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding-block: 8px;
+  }
+
+  .c3-cabecera__hamburguesa {
+    display: inline-flex;
+  }
+
+  .c3-cabecera--sitio__registro {
+    display: none;
+  }
+
+  .c3-nav-sitio {
+    order: 3;
+    flex: 0 0 100%;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    margin-top: 8px;
+    padding: 8px 0 12px;
+    border-top: 1px solid var(--c3-navy-claro);
+  }
+
+  .c3-nav-sitio--abierto {
+    display: flex;
+  }
+
+  .c3-nav-sitio .c3-cabecera__enlace {
+    padding: 12px 4px;
+    font-size: var(--c3-cuerpo-size);
+  }
+
+  .c3-nav-sitio__lineas {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .c3-nav-sitio__grupo {
+    display: block;
+    padding: 8px 4px 0;
+    color: var(--c3-conecta-claro);
+    font-size: var(--c3-leyenda-size);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .c3-nav-sitio__lineas .c3-cabecera__enlace {
+    padding-left: 16px;
+  }
+
+  .c3-nav-sitio__solo-movil {
+    display: block;
+  }
+}
+
+/* Menú de la cuenta (avatar): el mismo en el sitio, la app y la consola. */
+.c3-usuario {
+  position: relative;
+}
+
+.c3-usuario__boton {
+  padding: 4px 12px 4px 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: var(--c3-radius-pill);
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.c3-usuario__boton:hover,
+.c3-usuario__boton[aria-expanded="true"] {
+  background: var(--c3-navy-claro);
+}
+
+.c3-usuario__nombre {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 600;
+}
+
+.c3-usuario__flecha {
+  color: var(--c3-texto-cabecera);
+  font-size: 12px;
+}
+
+.c3-usuario__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  width: min(320px, calc(100vw - 32px));
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--c3-borde);
+  border-radius: var(--c3-radius-md);
+  background: var(--c3-superficie);
+  box-shadow: var(--c3-sombra-lg);
+  color: var(--c3-texto);
+}
+
+.c3-usuario__identidad {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid var(--c3-borde);
+  overflow-wrap: anywhere;
+}
+
+.c3-usuario__identidad span {
+  color: var(--c3-texto-suave);
+  font-size: var(--c3-leyenda-size);
+}
+
+.c3-usuario__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.c3-usuario__enlace {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--c3-radius-sm);
+  color: var(--c3-texto);
+  text-decoration: none;
+}
+
+.c3-usuario__enlace:hover,
+.c3-usuario__enlace[aria-current="page"] {
+  background: var(--c3-superficie-sutil);
+  color: var(--c3-texto);
+}
+
+.c3-usuario__enlace strong {
+  font-size: var(--c3-cuerpo-sm-size);
+}
+
+.c3-usuario__enlace span {
+  color: var(--c3-texto-suave);
+  font-size: var(--c3-leyenda-size);
+}
+
+.c3-usuario__salir {
+  margin-top: 4px;
+  padding: 12px;
+  border: 0;
+  border-top: 1px solid var(--c3-borde);
+  background: none;
+  color: var(--c3-error);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 600;
+  text-align: left;
+}
+
+.c3-usuario__salir:hover {
+  background: var(--c3-superficie-sutil);
+}
+
+/* En teléfono y tablet el menú es solo el avatar. */
+@media (max-width: 1023px) {
+  .c3-usuario__nombre,
+  .c3-usuario__flecha {
+    display: none;
+  }
+
+  .c3-usuario__boton {
+    padding: 4px;
+  }
 }
 
 .c3-line-hero {
@@ -544,66 +809,245 @@ textarea.c3-campo {
   white-space: nowrap;
 }
 
-/* Marco móvil de V05–V07: ancho del teléfono y centrado en escritorio. */
-.c3-movil {
+/* Enlace para saltar la cabecera: invisible hasta que recibe el foco con el teclado. */
+.c3-saltar {
+  position: absolute;
+  left: 16px;
+  top: 8px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--c3-radius-md);
+  background: #ffffff;
+  color: var(--c3-accion-intensa);
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.c3-saltar:focus {
+  transform: none;
+}
+
+/*
+ * Marco de la app autenticada (AppShell). Un solo DOM para todos los anchos; el CSS decide qué se ve.
+ * Breakpoints de la plataforma: 640 px (tablet: la acción de la tarjeta va al costado) y 1024 px (escritorio:
+ * cabecera superior con navegación, sin barra inferior, composiciones en columnas). No hay marco de teléfono.
+ */
+.c3-app {
+  --c3-panel-margen: clamp(16px, 4vw, 48px);
+  --c3-panel-ancho: 100%;
   min-height: 100vh;
-  max-width: 480px;
-  margin: 0 auto;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--c3-fondo);
 }
 
-.c3-movil__barra {
-  background: var(--c3-navy);
-  padding: 16px 20px;
+.c3-app__barra {
+  min-height: 56px;
+  padding: 8px var(--c3-panel-margen);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  background: var(--c3-navy);
 }
 
-.c3-movil__contenido {
+.c3-app__contenido {
   flex: 1;
-  padding: 20px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-width: 0;
 }
 
-.c3-movil__nav {
+.c3-app__estado {
+  padding-block: 32px;
+}
+
+.c3-app__cargando {
+  color: var(--c3-texto-suave);
+}
+
+.c3-app__tabs {
   position: sticky;
   bottom: 0;
+  z-index: 20;
+  display: flex;
   background: var(--c3-superficie);
   border-top: 1px solid var(--c3-borde);
-  display: flex;
 }
 
-.c3-movil__nav-item {
+.c3-app__tab {
   flex: 1;
   min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-top: 3px solid transparent;
+  color: var(--c3-texto-suave);
   font-size: var(--c3-leyenda-size);
   font-weight: 500;
-  color: var(--c3-texto-suave);
   text-decoration: none;
-  border-top: 3px solid transparent;
 }
 
-.c3-movil__nav-item--activo {
+.c3-app__tab--activo {
+  border-top-color: var(--c3-accion);
   color: var(--c3-accion);
   font-weight: 600;
-  border-top-color: var(--c3-accion);
+}
+
+.c3-cabecera--app {
+  display: none;
+}
+
+/* Contenedor de página común: ancho útil, sin marco de teléfono. */
+.c3-ancho {
+  max-width: var(--c3-ancho-pagina);
+  margin-inline: auto;
+}
+
+/* Ruta de navegación («Mi C3 › Mi challenge»): el volver es contextual. */
+.c3-migas ol {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  list-style: none;
+  font-size: var(--c3-cuerpo-sm-size);
+}
+
+.c3-migas li + li::before {
+  content: "›";
+  margin-right: 8px;
+  color: var(--c3-texto-suave);
+}
+
+.c3-migas a {
+  color: var(--c3-enlace);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.c3-migas a:hover {
+  text-decoration: underline;
+}
+
+.c3-migas [aria-current] {
+  color: var(--c3-texto-suave);
+}
+
+/* Pantalla para quien llega a una vista privada sin sesión. */
+.c3-requiere-sesion {
+  max-width: 640px;
+  margin: clamp(8px, 4vw, 48px) auto;
+  padding: clamp(20px, 4vw, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.c3-requiere-sesion h1 {
+  font-size: clamp(24px, 4vw, 30px);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.c3-requiere-sesion p {
+  font-size: var(--c3-cuerpo-sm-size);
+  line-height: 1.5;
+  color: var(--c3-texto-suave);
+}
+
+.c3-requiere-sesion__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/*
+ * Vistas de tarea (entrega, inscripción, evaluación): una columna en teléfono y, desde 1024 px, el contenido
+ * principal y una columna lateral con el contexto (resumen, plazos, rúbrica). Usan todo el ancho útil.
+ */
+.c3-tarea {
+  width: min(100% - 2 * var(--c3-panel-margen), var(--c3-panel-ancho));
+  margin-inline: auto;
+  padding-block: 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.c3-tarea__grilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.c3-tarea__columna {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* En teléfono el contexto (brief, criterios) se lee antes de actuar; en escritorio va al costado. */
+.c3-tarea__lateral {
+  order: -1;
+}
+
+/* Evaluación: la solución y la rúbrica lado a lado desde 1024 px; apiladas en teléfono y tablet. */
+.c3-evaluacion__solucion {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.c3-evaluacion__contenido {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.c3-evaluacion__rubrica {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 0;
+}
+
+@media (min-width: 1024px) {
+  .c3-evaluacion__solucion {
+    padding: 24px;
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+    gap: 32px;
+  }
+
+  .c3-evaluacion__rubrica {
+    padding-left: 32px;
+    border-left: 1px solid var(--c3-borde);
+  }
+}
+
+.c3-tarea__encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.c3-tarea__encabezado h1 {
+  font-size: clamp(24px, 3.4vw, 32px);
+  line-height: 1.2;
+  font-weight: 700;
 }
 
 /* Gestión de Cuenta: formularios en columnas en escritorio y apilados en móvil. */
-.c3-cuenta {
-  max-width: 1080px;
-}
-
 .c3-cuenta__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -619,11 +1063,6 @@ textarea.c3-campo {
   gap: 18px;
 }
 
-.c3-movil__nav-item--pendiente {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 /* Móvil: las grillas de dos y tres columnas pasan a una columna sin desbordar la página. */
 @media (max-width: 760px) {
   .c3-cuenta__grid {
@@ -632,29 +1071,6 @@ textarea.c3-campo {
 
   .c3-cuenta__panel {
     padding: 18px;
-  }
-
-  .c3-cabecera__interior {
-    align-items: flex-start;
-    padding: 14px 0;
-  }
-
-  .c3-cabecera__principal {
-    width: 100%;
-    gap: 18px;
-  }
-
-  .c3-cabecera__acciones {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .c3-nav-principal {
-    gap: 14px;
-    width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 2px;
   }
 
   .c3-home-caminos,
@@ -681,32 +1097,9 @@ textarea.c3-campo {
 }
 
 /*
- * Mi C3 como panel adaptable (MovilShell layout="panel").
- * Breakpoints de la plataforma: 760 px (móvil: grillas a una columna, ya definido arriba), 640 px (tarjetas con
- * la acción al costado y columna de lectura de 760 px) y 1024 px (escritorio: cabecera superior, sin barra
- * inferior y dos columnas). Es el mismo DOM en todos los anchos; solo cambia cómo se presenta.
+ * Mi C3 y Trayectoria dentro del marco de la app (.c3-app define --c3-panel-margen y --c3-panel-ancho).
+ * Es el mismo DOM en todos los anchos; solo cambia cómo se presenta.
  */
-.c3-movil--panel {
-  --c3-panel-margen: clamp(16px, 4vw, 48px);
-  --c3-panel-ancho: 100%;
-  max-width: none;
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-.c3-movil--panel .c3-movil__barra {
-  padding-inline: var(--c3-panel-margen);
-}
-
-.c3-movil--panel .c3-movil__contenido {
-  padding: 0;
-  gap: 0;
-}
-
-.c3-movil--panel .c3-cabecera--panel {
-  display: none;
-}
-
 .c3-mi-c3__contenedor {
   width: min(100% - 2 * var(--c3-panel-margen), var(--c3-panel-ancho));
   margin-inline: auto;
@@ -1224,8 +1617,9 @@ textarea.c3-campo {
   --c3-linea: var(--c3-conecta);
 }
 
-/* Cuenta de la cabecera de escritorio: identidad y acceso a Cuenta. */
-.c3-cabecera--panel :focus-visible {
+/* Cabeceras navy: foco visible y avatar de la cuenta. */
+.c3-cabecera :focus-visible,
+.c3-app__barra :focus-visible {
   outline-color: #ffffff;
 }
 
@@ -1279,16 +1673,8 @@ textarea.c3-campo {
   color: var(--c3-texto-cabecera);
 }
 
-/* Tablet y móvil grande: columna de lectura de 760 px y acción de la tarjeta al costado. */
+/* Tablet y móvil grande: la acción de la tarjeta va al costado. */
 @media (min-width: 640px) {
-  .c3-movil--panel {
-    --c3-panel-ancho: 760px;
-  }
-
-  .c3-movil--panel .c3-movil__barra {
-    padding-inline: max(var(--c3-panel-margen), calc((100% - var(--c3-panel-ancho)) / 2));
-  }
-
   .c3-mi-c3__tarjeta--con-acciones {
     grid-template-columns: minmax(0, 1fr) 200px;
     align-items: center;
@@ -1302,29 +1688,42 @@ textarea.c3-campo {
 
 /* Escritorio: cabecera superior, sin barra inferior, dos columnas. */
 @media (min-width: 1024px) {
-  .c3-movil--panel {
-    --c3-panel-ancho: 1232px;
+  .c3-app {
+    --c3-panel-ancho: var(--c3-ancho-pagina);
   }
 
-  .c3-movil--panel .c3-cabecera--panel {
+  .c3-cabecera--app {
     display: block;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 30;
   }
 
-  .c3-movil--panel .c3-movil__barra,
-  .c3-movil--panel .c3-movil__nav {
+  .c3-app__barra,
+  .c3-app__tabs {
     display: none;
   }
 
-  .c3-cabecera--panel .c3-cabecera__interior {
-    max-width: var(--c3-panel-ancho);
+  .c3-cabecera__interior--app,
+  .c3-cabecera__interior--app .c3-cabecera__principal {
     flex-wrap: nowrap;
   }
 
-  .c3-cabecera--panel .c3-cabecera__principal {
-    flex-wrap: nowrap;
+  .c3-tarea {
+    padding-block: 32px 56px;
+    gap: 20px;
+  }
+
+  .c3-tarea__grilla {
+    grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .c3-tarea__lateral {
+    order: 0;
+    position: sticky;
+    top: 96px;
   }
 
   .c3-mi-c3__resumen {
@@ -1707,4 +2106,380 @@ textarea.c3-campo {
   .c3-tray__tarjeta {
     padding: 20px;
   }
+}
+
+/* Espacio de empresa dentro del marco de la app. */
+.c3-empresa {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/*
+ * Consola de administración (AdminFrame): cabecera con la ruta «Admin › sección», menú lateral con contadores en
+ * escritorio y un botón que lo pliega en pantallas pequeñas. Pensada para escritorio; en móvil sigue siendo usable.
+ */
+.c3-admin {
+  --c3-admin-margen: clamp(16px, 4vw, 48px);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--c3-fondo);
+}
+
+.c3-admin__ruta {
+  padding-left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 1px solid var(--c3-navy-claro);
+  color: var(--c3-texto-cabecera);
+  font-size: var(--c3-cuerpo-sm-size);
+}
+
+.c3-admin__ruta a {
+  color: var(--c3-texto-cabecera);
+  text-decoration: none;
+}
+
+.c3-admin__ruta a:hover {
+  color: #ffffff;
+}
+
+.c3-admin__ruta [aria-current] {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.c3-admin__atajo {
+  padding: 12px 8px;
+}
+
+.c3-admin__cuerpo {
+  width: min(100% - 2 * var(--c3-admin-margen), var(--c3-ancho-pagina));
+  margin-inline: auto;
+  padding-block: 20px 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.c3-admin__menu-boton {
+  width: 100%;
+  justify-content: space-between;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.c3-admin__menu {
+  padding: 8px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c3-admin__menu--abierto {
+  display: flex;
+}
+
+.c3-admin__enlace {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: var(--c3-radius-sm);
+  color: var(--c3-texto);
+  font-size: var(--c3-cuerpo-sm-size);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.c3-admin__enlace:hover {
+  background: var(--c3-superficie-sutil);
+  color: var(--c3-texto);
+}
+
+.c3-admin__enlace[aria-current="page"] {
+  background: var(--c3-accion);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.c3-admin__contador {
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: var(--c3-radius-pill);
+  background: var(--c3-advertencia);
+  color: #ffffff;
+  font-size: var(--c3-leyenda-size);
+  font-weight: 700;
+  text-align: center;
+}
+
+.c3-admin__enlace[aria-current="page"] .c3-admin__contador {
+  background: #ffffff;
+  color: var(--c3-accion);
+}
+
+.c3-admin__contenido {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Resumen: lo que requiere atención y los totales, todo con enlace a su sección. */
+.c3-admin__atencion {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.c3-admin__atencion h2 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.c3-admin__atencion ul {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+
+.c3-admin__atencion-enlace {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: var(--c3-radius-sm);
+  background: var(--c3-advertencia-fondo);
+  color: var(--c3-texto);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.c3-admin__atencion-enlace:hover {
+  color: var(--c3-texto);
+  outline: 1px solid var(--c3-advertencia);
+}
+
+.c3-admin__atencion-vacio {
+  color: var(--c3-texto-suave);
+  font-size: var(--c3-cuerpo-sm-size);
+}
+
+.c3-admin__metrica {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.c3-admin__metrica:hover {
+  border-color: var(--c3-borde-fuerte);
+  color: inherit;
+}
+
+.c3-admin__metrica strong {
+  font-family: var(--c3-font-titulo);
+  font-size: 32px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 639px) {
+  .c3-admin__atajo {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .c3-admin__cuerpo {
+    padding-block: 32px 56px;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .c3-admin__menu-boton {
+    display: none;
+  }
+
+  .c3-admin__lateral {
+    position: sticky;
+    top: 24px;
+  }
+
+  .c3-admin__menu {
+    display: flex;
+  }
+}
+
+/* Perfil público compartible (/personas/[slug]). */
+.c3-persona__hero {
+  padding: 40px clamp(16px, 4vw, 48px) 44px;
+  background: var(--c3-navy);
+}
+
+.c3-persona__hero-interior {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.c3-persona__datos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.c3-persona__datos h1 {
+  color: #ffffff;
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 700;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.c3-persona__centro {
+  color: var(--c3-texto-cabecera);
+  font-size: var(--c3-cuerpo-sm-size);
+}
+
+.c3-persona__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.c3-persona__grilla {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.c3-persona__lado {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.c3-persona__trayectoria {
+  flex: 2 1 480px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.c3-persona__trayectoria-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.c3-persona__trayectoria-cabecera h2 {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.c3-persona__panel {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.c3-persona__panel h2,
+.c3-persona__panel h3 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.c3-persona__bio {
+  font-size: var(--c3-cuerpo-size);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.c3-persona__lista {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  list-style: none;
+}
+
+.c3-persona__lista li {
+  padding-bottom: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  border-bottom: 1px solid var(--c3-borde);
+}
+
+.c3-persona__lista li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.c3-persona__lista a {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.c3-persona__item {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c3-persona__meta {
+  font-size: var(--c3-leyenda-size);
+  font-weight: 600;
+}
+
+.c3-persona__vacio {
+  color: var(--c3-texto-suave);
+  font-size: var(--c3-cuerpo-sm-size);
+}
+
+.c3-persona__cierre {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: var(--c3-radius-md);
+  background: var(--c3-superficie-sutil);
+  font-size: var(--c3-cuerpo-sm-size);
+  line-height: 1.5;
+}
+
+.c3-persona__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* «Compartir perfil» en Trayectoria. */
+.c3-tray__compartir {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }

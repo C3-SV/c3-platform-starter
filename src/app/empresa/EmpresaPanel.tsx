@@ -2,17 +2,26 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
-import { C3BrandMark } from "@/components/BrandMark";
+import { AppShell } from "@/components/AppShell";
 import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/domain/format";
+import { evaluationHref } from "@/lib/domain/navigation";
 import { proposalNextStep, proposalPresentation } from "@/lib/domain/proposals";
 import type { CompanySpace } from "@/lib/server/companies";
 
 /** V09 · Espacio de empresa. Solo muestra las organizaciones vinculadas a la persona autenticada. */
 export function EmpresaPanel() {
-  const { session, signOut } = useSession();
+  return (
+    <AppShell active="empresa" signedOut={{ title: "Entrá para ver tu espacio de empresa", text: "Usás tu cuenta de C3. C3 te vincula a tu organización después de revisar tu solicitud." }}>
+      <EmpresaContenido />
+    </AppShell>
+  );
+}
+
+function EmpresaContenido() {
+  const { session } = useSession();
   const [space, setSpace] = useState<CompanySpace | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string>("");
@@ -38,20 +47,7 @@ export function EmpresaPanel() {
     };
   }, [signedIn]);
 
-  if (session.status === "loading") return <Pagina><p>Cargando…</p></Pagina>;
-  if (session.status === "unavailable") return <Pagina><p role="alert">{session.message}</p></Pagina>;
-  if (session.status === "signed-out") {
-    return (
-      <Pagina>
-        <div className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16, maxWidth: 560 }}>
-          <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Entrá para ver tu espacio de empresa</h1>
-          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Usás tu cuenta de C3. C3 te vincula a tu organización después de revisar tu solicitud.</p>
-          <Link href="/acceso?next=/empresa" className="c3-btn c3-btn--primario" style={{ alignSelf: "flex-start" }}>Entrar</Link>
-        </div>
-        <Como />
-      </Pagina>
-    );
-  }
+  if (session.status !== "signed-in") return null;
 
   if (loadError) {
     return <Pagina><div className="c3-alerta c3-alerta--error" role="alert"><strong>{loadError}</strong></div></Pagina>;
@@ -61,7 +57,7 @@ export function EmpresaPanel() {
   const organizations = space.organizations;
   if (organizations.length === 0) {
     return (
-      <Pagina email={session.user.email} onSignOut={() => void signOut()}>
+      <Pagina>
         <div className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 12 }}>
           <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tu cuenta todavía no está vinculada a una organización</h1>
           <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>C3 revisa tu solicitud y te vincula cuando corresponda. Mientras tanto, podés proponer un problema.</p>
@@ -77,7 +73,7 @@ export function EmpresaPanel() {
   const proposals = space.proposals.filter((item) => item.organizationId === current.id);
 
   return (
-    <Pagina email={session.user.email} onSignOut={() => void signOut()}>
+    <Pagina>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 20, flexWrap: "wrap" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Para empresas</span>
@@ -100,10 +96,10 @@ export function EmpresaPanel() {
       </div>
 
       <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tus retos</h2>
+        <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tus challenges</h2>
         {challenges.length === 0 ? (
           <div style={{ background: "var(--c3-superficie)", border: "1px dashed var(--c3-borde-fuerte)", borderRadius: 12, padding: 24, display: "flex", flexDirection: "column", gap: 10 }}>
-            <span style={{ fontSize: 16, fontWeight: 500 }}>Todavía no tenés más retos publicados</span>
+            <span style={{ fontSize: 16, fontWeight: 500 }}>Todavía no tenés challenges publicados</span>
             <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Cuando C3 publique uno de tus problemas, aparece aquí.</span>
           </div>
         ) : (
@@ -121,6 +117,13 @@ export function EmpresaPanel() {
                     <span style={{ fontSize: 14 }}>
                       {challenge.submissions.length === 0 ? "Todavía no hay soluciones enviadas" : `${challenge.submissions.length} ${challenge.submissions.length === 1 ? "solución recibida" : "soluciones recibidas"}`}
                     </span>
+                    {challenge.submissions.length > 0 ? (
+                      challenge.evaluation.assigned ? (
+                        <Link href={evaluationHref(challenge.id)} className="c3-btn c3-btn--primario">Evaluar soluciones</Link>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>Para evaluar, C3 te asigna como jurado de este challenge.</span>
+                      )
+                    ) : null}
                     {challenge.submissions.map((solution) => (
                       <div key={solution.id} style={{ background: "var(--c3-superficie-sutil)", borderRadius: 8, padding: 12, display: "flex", flexDirection: "column", gap: 6 }}>
                         <span style={{ fontSize: 14, fontWeight: 600 }}>
@@ -183,30 +186,8 @@ export function EmpresaPanel() {
   );
 }
 
-function Pagina({ children, email, onSignOut }: { children: ReactNode; email?: string | null; onSignOut?: () => void }) {
-  return (
-    <div>
-      <header style={{ background: "var(--c3-navy)", padding: "0 clamp(16px, 4vw, 48px)" }}>
-        <div style={{ maxWidth: 1276, margin: "0 auto", minHeight: 72, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-            <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
-              <C3BrandMark className="c3-brand-mark--header" priority />
-            </Link>
-            <span className="c3-etiqueta" style={{ color: "var(--c3-conecta-claro)", borderLeft: "1px solid var(--c3-navy-claro)", paddingLeft: 20 }}>Espacio de empresa</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            {email ? <span style={{ fontSize: 14, color: "var(--c3-texto-cabecera)" }}>{email}</span> : null}
-            {onSignOut ? (
-              <button type="button" className="c3-etiqueta" onClick={onSignOut} style={{ background: "none", border: 0, color: "#ffffff", cursor: "pointer", padding: "12px 8px" }}>Salir</button>
-            ) : null}
-          </div>
-        </div>
-      </header>
-      <main className="c3-page" style={{ maxWidth: 1276, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32, padding: "clamp(16px, 4vw, 40px) clamp(16px, 4vw, 48px)" }}>
-        {children}
-      </main>
-    </div>
-  );
+function Pagina({ children }: { children: ReactNode }) {
+  return <div className="c3-ancho c3-page c3-empresa">{children}</div>;
 }
 
 function Como() {
@@ -216,7 +197,7 @@ function Como() {
       <div className="c3-dos-columnas-cuatro" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 24 }}>
         {[
           ["Proponés la necesidad", "Con tus palabras, sin brief perfecto."],
-          ["C3 define el reto contigo", "Alcance, entregables y rúbrica."],
+          ["C3 define el challenge contigo", "Alcance, entregables y rúbrica."],
           ["Equipos entregan soluciones", "Las ves lado a lado en tu espacio."],
           ["Evaluás y C3 publica", "Resultado oficial sobre la misma rúbrica."],
         ].map(([title, text], index) => (

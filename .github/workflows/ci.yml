@@ -1,10 +1,11 @@
 name: CI
 
-# Comprobaciones en cada pull request y en main. No hay despliegue automático de producción.
+# Comprobaciones en cada pull request y en cada push a main y dev (dev integra y prueba; main es producción).
+# No hay despliegue automático de producción desde este flujo.
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 permissions:
   contents: read

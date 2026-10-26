@@ -56,7 +56,7 @@ interface Confirmation {
 
 const noStats: ExperienceStats = { challenges: 0, enrollments: emptyEnrollmentCounts() };
 
-/** «Experiencias y retos»: listado con búsqueda y filtros, edición, ciclo de vida, retos e inscripciones de cada experiencia. */
+/** «Experiencias y challenges»: listado con búsqueda y filtros, edición, ciclo de vida, challenges e inscripciones de cada experiencia. */
 export function ExperienciasPanel({
   catalog,
   onChanged,
@@ -93,7 +93,7 @@ export function ExperienciasPanel({
     ));
   }, [catalog.experiences, query, statusFilter, lineFilter]);
 
-  // Los retos solo se agregan a experiencias que no concluyeron ni se cancelaron.
+  // Los challenges solo se agregan a experiencias que no concluyeron ni se cancelaron.
   const experienceOptions = catalog.experiences
     .filter((item) => item.status !== "closed" && item.status !== "cancelled")
     .map((item) => ({ id: item.id, title: item.title }));
@@ -184,7 +184,7 @@ export function ExperienciasPanel({
   return (
     <>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias y retos</h1>
+        <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias y challenges</h1>
         <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>
           Todo se guarda como borrador. Solo aparece en el sitio público cuando lo publicás.
         </p>
@@ -257,7 +257,7 @@ export function ExperienciasPanel({
             </div>
             <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>{experience.summary}</p>
 
-            <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: 12 }}>
               {session ? <Detail label="Sesión" value={`${session}${experience.modality ? ` · ${MODALITY_LABEL[experience.modality]}` : ""}`} /> : null}
               {experience.location ? <Detail label="Sede o enlace" value={experience.location} /> : null}
               {experience.registrationOpensAt || experience.registrationClosesAt ? (
@@ -276,7 +276,7 @@ export function ExperienciasPanel({
               {experience.capacity != null ? (
                 <Detail label="Cupos" value={`${stats.enrollments.active} de ${experience.capacity} ocupados · ${left} ${left === 1 ? "libre" : "libres"}`} />
               ) : null}
-              <Detail label="Retos" value={String(challenges.length)} />
+              <Detail label="Challenges" value={String(challenges.length)} />
             </dl>
 
             {actions.length > 0 ? (
@@ -361,10 +361,10 @@ export function ExperienciasPanel({
             ) : null}
 
             <div style={{ borderTop: "1px solid var(--c3-borde)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-              <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Retos</span>
+              <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Challenges</span>
               {challenges.length === 0 ? (
                 <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
-                  Esta experiencia no tiene retos. Mientras no tenga retos publicados, las personas se inscriben a la experiencia misma.
+                  Esta experiencia no tiene challenges. Mientras no tenga challenges publicados, las personas se inscriben a la experiencia misma.
                 </p>
               ) : null}
               {challenges.map((challenge) => (
