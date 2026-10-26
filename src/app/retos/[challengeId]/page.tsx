@@ -110,7 +110,9 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
               <h2 id="titulo-ganadores" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Ganadores y reconocimientos</h2>
               {winners.map((winner) => (
                 <div key={`${winner.recognition}-${winner.name}`} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ fontSize: 16, fontWeight: 500 }}>{winner.name ?? "Solución sin nombre"}</span>
+                  <span style={{ fontSize: 16, fontWeight: 500 }}>
+                    {winner.profileSlug ? <Link href={`/personas/${winner.profileSlug}`}>{winner.name ?? "Ver perfil"}</Link> : (winner.name ?? "Solución sin nombre")}
+                  </span>
                   <span className="c3-pill c3-pill--exito">{winner.recognition}</span>
                 </div>
               ))}
