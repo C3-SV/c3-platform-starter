@@ -1,49 +1,61 @@
-# Flujo de trabajo para agentes
+# Flujo de desarrollo y entrega — C3 Platform
 
-Complementa `AGENTS.md` (reglas) con el procedimiento. Corto a propósito.
+Complementa las reglas de [AGENTS.md](../AGENTS.md). **Un checkout local; ramas Git convencionales; `dev` integra y prueba; `main` representa producción.**
 
-## Arrancar (agente nuevo)
+## Preparar entorno
+
+Requisitos: Node >=22, Java 21, archivo `.env.local` (no versionado) configurado para `demo-c3-platform` y emuladores. Si falta alguna dependencia o hay poco espacio libre, informar el bloqueo en lugar de simular pruebas.
+
 ```bash
 npm ci
-cp .env.example .env.local     # y completar el bloque de emuladores (README)
-npm run doctor                 # diagnóstico: errores bloqueantes vs avisos
-npm run emulators              # terminal 1 (Auth 9099, Firestore 8080, UI 4000)
-npm run dev                    # terminal 2 → http://localhost:3000
+# Crear .env.local desde .env.example con los valores del README
+npm run doctor
+npm run emulators  # terminal 1; Auth 9099, Firestore 8080, UI 4000
+npm run dev        # terminal 2; http://localhost:3000
 ```
-Comandos de calidad: `typecheck`, `lint`, `test` (unitarias), `check` (las tres), `test:rules` (emulador), `test:e2e` (build + Playwright), `test:capturas` (capturas). `seed:*` solo con `--emulator` salvo autorización.
 
-## Qué proyecto Firebase usa mi entorno
-`npm run doctor` imprime proyecto cliente/servidor y si los emuladores están activos. Local correcto: `demo-c3-platform` + `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true` + hosts de emulador definidos. `c3-platform-demo` es el proyecto real: solo con autorización. `.env.local` nunca se versiona.
-
-## Una carpeta de trabajo, ramas convencionales
-Se abandona el modelo de worktrees (ver `AGENTS.md` §10 y [CONSOLIDACION-GIT-2026-10.md](CONSOLIDACION-GIT-2026-10.md)). Hay un solo checkout y las ramas se cambian con `git switch`. Mientras dure la transición, no crees worktrees nuevos (`npm run worktree` queda obsoleto).
+## Ramas y PR
 
 ```bash
+git status --short
 git fetch origin
-git switch main && git merge --ff-only origin/main   # main debe igualar origin/main
-git switch -c feat/<tema>                            # o fix/, chore/, docs/
+git switch dev
+git pull --ff-only origin dev
+git switch -c feat/nombre-descriptivo
 ```
 
-Reglas: un objetivo por rama · commits pequeños y descriptivos · antes de integrar: `git fetch`, probar fusión sin confirmar (`git merge --no-commit --no-ff origin/main`; abortar con `git merge --abort`), pasar la verificación de `AGENTS.md` §11 · integrar por pull request con CI en verde · sin force push · borrar la rama con `git branch -d` solo tras integrarla y con confirmación.
+- Crear `feat/*`, `fix/*`, `docs/*`, `chore/*` desde `dev`. Cada rama contiene un cambio delimitado.
+- Hacer PR **hacia `dev`**; revisar diferencias, pruebas y riesgos. No fusionar código automáticamente si hay conflictos.
+- Promover **`dev` → `main`** solo después de validación funcional, E2E y revisión de release; `main` no es el espacio para pruebas nuevas.
+- Coordinar agentes de uno en uno sobre esta carpeta. No usar `git worktree`, `npm run worktree` ni directorios por agente.
+- No hacer commits, pushes, merges, deploys o borrados irreversibles sin autorización del responsable cuando no estén dentro del alcance autorizado.
 
-**Puertos:** emuladores (9099/8080/4000) y E2E (3100) son fijos, así que `test:rules`, `test:e2e` y `test:capturas` corren una sola vez a la vez. Servidores de desarrollo en paralelo: `npm run dev -- -p 3001`.
+## Evaluar e implementar
+
+1. Leer AGENTS, README, [PRODUCTO-Y-NAVEGACION](PRODUCTO-Y-NAVEGACION.md) y código pertinente.
+2. Definir el problema y el flujo por rol (entrada → tarea → confirmación → salida/retorno). Registrar qué está implementado y qué es propuesta.
+3. Si la petición es de investigación o auditoría, **no editar el producto**. En cambios de UX, validar primero arquitectura de información y rutas, no acumular pantallas aisladas.
+4. Implementar el cambio mínimo consistente con dominio, seguridad y tokens existentes.
+5. Validar `npm run check`; añadir `npm run test:rules` o `npm run test:e2e` según riesgo. E2E requiere emuladores, build y navegador. Solo una suite con puertos fijos a la vez.
+6. Actualizar documentos responsables y entregar handoff.
+
+## Entornos y datos
+
+- Local: `demo-c3-platform`, `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`. `npm run doctor` confirma destino.
+- Firebase real (`c3-platform-demo`) o Vercel: no hacer writes, seeds, cambios de reglas ni despliegues sin orden expresa.
+- No versionar `.env.local`, credenciales ni datos personales. Leer [PENDIENTES-REALES](PENDIENTES-REALES.md) antes de preparar un piloto real.
 
 ## Handoff
-En el mensaje del último commit o en la descripción del PR (sin archivos de progreso):
+
+```text
+Objetivo: ...
+Cambios realizados: ...
+Archivos: ...
+Validaciones ejecutadas y resultados: ...
+Validaciones no ejecutadas y por qué: ...
+Riesgos o decisiones necesarias: ...
 ```
-Cambió: <qué y por qué>
-Archivos clave: <rutas>
-Comportamiento esperado: <qué debe observarse>
-Probado: <comandos y resultado real>
-Falta: <pendiente>
-Riesgos/dependencias: <…>
-```
 
-## Graphify
-`graphify-out/GRAPH_REPORT.md` (nodos centrales, comunidades) y `graph.json` están versionados; el resto (cachés, HTML, costos, carpetas por fecha) se ignora y se regenera. Uso: `graphify query "<pregunta>"`, `graphify explain "<nodo>"`, `graphify path "A" "B"` para ubicar archivos relacionados e impacto. Siempre confirmar leyendo el código: el grafo puede ir un commit atrás. Refrescarlo (`graphify update .`, sin LLM) solo al cerrar un bloque de trabajo y commitearlo aparte; nunca tras cada operación.
+## Herramientas
 
-## Capturas y navegador
-`npm run test:capturas` guarda PNG de las páginas públicas (escritorio y móvil) en `capturas/actual/` (ignorado) y falla ante errores de consola o de página. Para una referencia, copiar a `capturas/referencia/`. Para recorridos puntuales: `npx playwright test e2e/<archivo>.spec.ts --project=movil` (los emuladores deben estar activos o usar `npm run test:e2e`). Windows usa Edge por defecto; `PW_CHANNEL=chromium` usa el de Playwright.
-
-## Skills del repositorio
-Instaladas en `.agents/skills/` (fijadas en `skills-lock.json`): Firebase Firestore, Auth y auditoría de reglas; buenas prácticas React/Next. `web-design-guidelines` aparece en el lock pero no está instalada; no se instaló. No ejecutar instaladores de terceros sin revisar su origen.
+`npm run doctor` revisa el entorno; `npm run test:capturas` produce capturas locales de páginas públicas; `npx playwright test ...` sirve para recorridos puntuales con entorno listo. `graphify-out/` y `diseno-claude/` ayudan a orientarse y validar diseño, pero no sustituyen código y pruebas. Revisar skills existentes antes de instalar nuevas.

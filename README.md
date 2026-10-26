@@ -1,12 +1,12 @@
 # C3 Platform
 
-> C3: Compite · Crea · Conecta. Primer producto demostrable: C3 Challenges.
+> C3: Compite · Crea · Conecta. Producto en desarrollo: C3 Challenges (nombre provisional).
 
-Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. El diseño visual lo produjo Claude y se integra tal cual; la lógica, la persistencia y los permisos viven en este repositorio.
+Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. La referencia visual está en `diseno-claude/` y se integra según flujos y validaciones; la lógica, la persistencia y los permisos viven en este repositorio.
 
-## Estado real (corte actual: 6 · Integración completa)
+## Capacidades implementadas en el código
 
-**Implementado y verificado en esta máquina** (emuladores de Firebase, sin proyecto de producción):
+El inventario siguiente describe funciones presentes en el repositorio recibido. **No significa que todas estén validadas en el último CI o que la navegación esté aprobada.** La validación vigente requiere pruebas reproducibles, revisión por rol y recorrido real de la demo:
 
 - **Acceso** (V04): entrar, crear cuenta con nombre, recuperar contraseña y sesión persistente al recargar.
 - **Experiencias y retos** (V12, sección «Experiencias y retos»): crear, editar y gestionar el ciclo de vida de cada experiencia sin tocar Firebase. Se guarda en borrador y solo aparece en el sitio público al publicarla. El listado busca por nombre, filtra por estado y línea, muestra las próximas acciones, los retos, las inscripciones y los cupos de cada experiencia, y abre cada una para editarla.
@@ -16,18 +16,18 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 - **Visitante**: home (V01), catálogo (V02) y detalle de reto (V03) leídos de Firestore.
 - **Inscripción individual** (V06): una inscripción por experiencia, en estado pendiente hasta que C3 la apruebe o rechace. Cancelable antes del cierre y sin entrega enviada. Si la experiencia define cupos, solo ocupan lugar las inscripciones pendientes y aprobadas; rechazar o cancelar lo libera, y el servidor lo verifica dentro de la transacción.
 - **Revisión de C3** (V12, «Inscripciones y equipos»): por reto, o por experiencia cuando no tiene retos, con el resumen de cupos. Aprobar habilita la participación (y, en un reto, la entrega); rechazar cierra la inscripción.
-- **Equipos** (V06, Corte 3): la inscripción puede ser individual o por equipo. Una líder crea el equipo con un código `C3-XXXX`; las demás se unen con ese código y una inscripción por equipo aprobada. El equipo queda habilitado al llegar al mínimo. Cada persona tiene un solo equipo por experiencia; la líder quita, transfiere el liderazgo o disuelve el equipo, y cualquier integrante puede salir. Todo cambio se cierra al cierre de inscripciones o cuando el equipo envía la entrega.
+- **Equipos** (V06): la inscripción puede ser individual o por equipo. Una líder crea el equipo con un código `C3-XXXX`; las demás se unen con ese código y una inscripción por equipo aprobada. El equipo queda habilitado al llegar al mínimo. Cada persona tiene un solo equipo por experiencia; la líder quita, transfiere el liderazgo o disuelve el equipo, y cualquier integrante puede salir. Todo cambio se cierra al cierre de inscripciones o cuando el equipo envía la entrega.
 - **Mi C3** (V05): lo que toca ahora, las inscripciones en espera, las confirmadas a experiencias sin reto, las entregadas y las cerradas.
 - **Mi reto y entrega** (V07): borrador, envío y enlaces https, con plazo. Una entrega enviada queda estable al cerrar; un borrador sin enviar pasa a «Fuera de plazo».
 - **Permisos en servidor**: cada ruta verifica el token de Firebase, el claim `c3Admin` y la propiedad del recurso. Firestore deniega todo acceso directo desde el cliente.
 - **Errores**: validación con motivos por campo y mensajes claros de sesión y de permisos. Ninguna operación fallida muestra confirmación.
-- **Propuesta pública** (V10, Corte 4): cualquier empresa propone sin cuenta. El servidor valida, descarta en silencio las altas del campo trampa y limita a 5 propuestas por hora y conexión (solo se guarda un hash). La confirmación muestra una referencia y solo aparece cuando la propuesta quedó guardada.
+- **Propuesta pública** (V10): cualquier empresa propone sin cuenta. El servidor valida, descarta en silencio las altas del campo trampa y limita a 5 propuestas por hora y conexión (solo se guarda un hash). La confirmación muestra una referencia y solo aparece cuando la propuesta quedó guardada.
 - **Revisión de C3** (V12, «Propuestas»): pedir ajustes con una nota para la empresa, aceptar (con la organización que la representará) o no priorizar. Crear organizaciones y vincular representantes por correo: la cuenta debe existir y es C3 quien la vincula.
 - **Espacio de empresa** (V09): la representante ve solo los retos publicados de sus organizaciones, las soluciones ya enviadas (nunca borradores) y las propuestas vinculadas con su siguiente paso. Sin vínculo, la vista no muestra datos de nadie.
 - Retos con organización vinculada: al crear un reto en V12 se elige la organización que tendrá su espacio de empresa.
-- **Perfil y trayectoria** (V08, Corte 6): la persona declara su nombre, centro de estudio, una presentación y enlaces https (GitHub, LinkedIn). La trayectoria —inscripciones, entregas, reconocimientos y puesto— la registra C3 y no se edita; la pantalla separa ambas cosas con la etiqueta «Registrada por C3».
+- **Perfil y trayectoria** (V08): la persona declara su nombre, centro de estudio, una presentación y enlaces https (GitHub, LinkedIn). La trayectoria —inscripciones, entregas, reconocimientos y puesto— la registra C3 y no se edita; la pantalla separa ambas cosas con la etiqueta «Registrada por C3».
 - **Cuenta**: consulta correo y verificación, edita los datos personales del perfil, solicita verificación del correo, cambia la contraseña con reautenticación de Firebase y cierra sesión. Los resultados oficiales no se modifican desde Cuenta; la eliminación queda pendiente de una política de retención.
-- **Accesibilidad** (Corte 6): auditoría automática con axe-core (WCAG 2.x A y AA) en las vistas públicas, de acceso y de una persona registrada. Sin incumplimientos serios ni críticos en las páginas auditadas.
+- **Accesibilidad:** existe auditoría automática con axe-core (WCAG 2.x A y AA) para vistas públicas, acceso y usuario registrado. Su resultado debe comprobarse en la ejecución actual antes de aprobar cambios.
 
 - **Jurados** (V12, «Jurados y rúbricas»): C3 asigna jurados por correo —externos o representantes de la empresa—, revoca accesos sin borrar evaluaciones finalizadas, y ve la rúbrica de cada reto.
 - **Evaluación** (Mi C3 «Como jurado» y V11): las soluciones se muestran anónimas («Solución 1», «Solución 2»…) y solo se pueden evaluar cuando cierran las entregas. Cada criterio recibe un entero dentro de su máximo. Se guarda un borrador y se finaliza una sola vez.
@@ -36,27 +36,21 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 - **Ecosistema**: /compite, /crea y /conecta comparten el catálogo de experiencias, clasificación por línea, estados visibles y marcadores de demostración/fuente.
 - **Admin**: resumen operativo y consulta de entregas con reto, estado, participantes/equipo y autorización; las entregas no se modifican desde esta vista.
 
-**Pendiente** (no hay botones falsos: se muestran como «Próximamente», «Próximo corte» o como sección pendiente):
+**No implementado o pendiente de preparación para uso real** (los controles pendientes deben declararse sin simular funcionalidad):
 
 - Respuesta de la empresa a los ajustes pedidos (V10 «Responder a C3»): hoy la empresa lee la nota y responde por correo.
 - Comentarios de jurados: desactivados por defecto y sin implementar en el MVP.
 - Textos legales (términos y privacidad), reglas/índices del proyecto real y variables privadas de Vercel: ver `docs/PENDIENTES-REALES.md`.
 
-### Resultados de las comprobaciones (última ejecución)
+### Validación y CI
 
-| Comprobación | Resultado |
-| --- | --- |
-| `npm run typecheck` | Sin errores |
-| `npm run lint` | Sin errores ni avisos |
-| `npm test` (dominio) | 77 de 77 |
-| `npm run test:rules` (reglas, catálogo, inscripciones, equipos, entregas, empresas, Admin, seed, evaluación y experiencias con emulador) | 87 de 87 |
-| `npm run build` | Compila; páginas dinámicas y API de servidor |
-| `npm run test:e2e` (escritorio y móvil, incluye el build de producción) | 107 superadas, 1 omitida (ya existente) |
-| `npm run test:e2e` (Playwright, escritorio y Pixel 5, contra el build de producción; incluye la auditoría axe) | 76 de 76 |
+Los comandos `npm run check`, `npm run test:rules` y `npm run test:e2e` verifican compilación/tipos, calidad, permisos y recorridos. **No se declara una suite completa en verde solo por conteos de ejecuciones anteriores.** Según la auditoría del 26-10-2026, el CI de `main` fallaba en el recorrido E2E de Cuenta (`e2e/cuenta.spec.ts`); la causa y estado posterior requieren nueva ejecución. Ver [PENDIENTES-REALES](docs/PENDIENTES-REALES.md).
+
+La revisión de navegación por rol y UX está definida en [PRODUCTO-Y-NAVEGACION](docs/PRODUCTO-Y-NAVEGACION.md). No confundir validación técnica con facilidad de uso.
 
 ### Verificación visual
 
-Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03 y V04 en escritorio; V10 y V09 en escritorio; V05 (estado vacío en el marco móvil de 390 px), V06 y V07 en el marco móvil. Diferencias conocidas y aceptadas: la entrega no tiene campo de título (solo descripción y enlaces, según el modelo aprobado); las acciones de líder y el botón «Salir» se añadieron por función; las propuestas de V09 son una lista de tarjetas y no una tabla; V09 no muestra el contador «Tenés N por evaluar»; V10 tiene un consentimiento obligatorio y V01 muestra «Próximamente» en el llamado de empresas. **Sin comparar todavía:** V08, V11 y V12, y las secciones de V12 que el diseño no dibuja.
+Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03 y V04 en escritorio; V10 y V09 en escritorio; V05 (estado vacío en el marco móvil de 390 px), V06 y V07 en el marco móvil. Diferencias conocidas y aceptadas: la entrega no tiene campo de título (solo descripción y enlaces, según el modelo aprobado); las acciones de líder y el botón «Salir» se añadieron por función; las propuestas de V09 son una lista de tarjetas y no una tabla; V09 no muestra el contador «Tenés N por evaluar»; V10 tiene un consentimiento obligatorio y V01 muestra «Próximamente» en el llamado de empresas. **Por validar con la referencia y recorridos reales:** V08, V11 y V12, además de las secciones administrativas no dibujadas en el diseño.
 
 ## Recursos de Claude
 
@@ -98,7 +92,7 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 
 Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/mi-c3`, `/api/retos/*`, `/api/experiencias/*`, `/api/inscripciones/*`, `/api/admin/*`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
 
-> **Agentes y trabajo en paralelo:** leer `AGENTS.md` (reglas, política Git de una sola carpeta) y `docs/FLUJO-AGENTES.md` (ramas, handoff, verificación). Comprobar el entorno con `npm run doctor`.
+> **Desarrollo:** un solo checkout local. `dev` integra y prueba; `main` es producción. Leer `AGENTS.md`, `docs/FLUJO-AGENTES.md` y `docs/PRODUCTO-Y-NAVEGACION.md`. Verificar el entorno con `npm run doctor`.
 
 ## Requisitos
 
@@ -109,7 +103,7 @@ Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos pr
 ## Instalación y primer arranque local
 
 ```bash
-npm install
+npm ci
 cp .env.example .env.local
 ```
 
@@ -194,7 +188,7 @@ En producción, ejecuta el mismo script con credenciales de servicio autorizadas
 | `npm run emulators` | Solo emuladores |
 | `npm run doctor` | Diagnóstico del entorno (Node, Java, dependencias, proyecto Firebase activo, puertos, Git); no modifica nada ni muestra secretos |
 | `npm run test:capturas` | Capturas de las páginas públicas (escritorio y móvil) en `capturas/actual/`; falla ante errores de consola |
-| `npm run worktree -- <nombre>` | **Obsoleto** (política de una sola carpeta, ver `AGENTS.md` §10). Crea un worktree hermano `c3-platform-<nombre>`; no usar |
+
 | `npm run check` | Typecheck, lint y pruebas unitarias |
 
 Para las pruebas de navegador en Windows con Microsoft Edge instalado: `PW_CHANNEL=msedge npm run test:e2e`. Si no defines `PW_CHANNEL`, Playwright usa su Chromium (`npx playwright install chromium`).
@@ -220,7 +214,7 @@ diseno-claude/           Referencia del diseño exportado por Claude (no se dupl
 
 Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas públicas se hacen en el servidor, que filtra campos internos (autor, borradores). Esto es intencional: abrir lecturas directas exigiría reglas por campo.
 
-## Modelo de datos (Cortes 1–3)
+## Modelo de datos
 
 - `experiences/{id}`: título, tipo (`competencia`, `hackathon`, `challenge_empresarial`, `taller`, `charla`, `encuentro`), resumen, estado (`draft`, `published`, `closed`, `cancelled`), ventana de inscripción. Que las inscripciones estén abiertas o cerradas no es un estado guardado: sale de la ventana y de la hora.
 - `experiences/{id}` también puede declarar `primaryLine`, `secondaryLines`, `isDemo`, `demoNote`, `sourceUrl` y `sourceLabel`; los registros legacy usan el tipo como fallback. Los datos de sesión son opcionales: `startsAt`, `endsAt`, `modality` (`presencial`, `virtual`, `hibrida`), `location` (pública) y `capacity` (cupos; vacío es sin límite). Las experiencias anteriores sin estos campos se leen y se editan sin migración.
@@ -239,14 +233,14 @@ Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas
 
 Un reto publicado solo es público si su experiencia también está publicada. Una inscripción solo se crea mientras la ventana de inscripción está abierta y queden cupos, y la entrega solo se acepta con la inscripción aprobada y antes del cierre de entregas. Una inscripción a la experiencia (sin reto) es individual y no habilita retos que se juegan solo por equipo.
 
-## Pendientes para el siguiente corte
+## Ramas, despliegue y prioridades
 
-1. **Revisión visual pendiente:** comparar V06, V07, V08, V09, V11 y el detalle de V12 contra el diseño con capturas; las nuevas landings ya tienen prueba de navegación, no reemplazan la revisión visual manual.
-2. **Proyecto Firebase real:** definir el ID real, confirmar que no comparte colecciones ajenas y autorizar un dry-run con credenciales ADC; esta sesión no escribió ni desplegó nada.
-3. **Migración personal:** sigue fuera de alcance; no se migran usuarios, participantes, equipos, entregas ni resultados privados.
+- **`dev`** es el espacio de integración y pruebas; `main` representa producción. Las ramas de tarea parten de `dev` y se integran por PR a `dev`; la promoción validada va por PR de `dev` hacia `main`. Se trabaja en una sola carpeta, cambiando de rama con `git switch`.
+- El repositorio canónico se identificó como `C3-SV/c3-platform-starter` y actualmente es público. **La intención es hacerlo privado**, sujeta a resolver la relación con el despliegue de Vercel y sus condiciones. No cambiar visibilidad ni desplegar sin autorización.
+- Prioridades verificables: corregir E2E de Cuenta, auditar navegación completa y retornos protegidos, revisar diseño de escritorio y móvil, y preparar reglas, privacidad e infraestructura para piloto autorizado. Ver [PLAN-CONSTRUCCION](docs/PLAN-CONSTRUCCION.md) y [PENDIENTES-REALES](docs/PENDIENTES-REALES.md).
 
 ## Notas
 
-- Los paquetes `firebase` y `@firebase/storage` declaran Node 24.12 como motor; con Node 22 aparecen avisos `EBADENGINE` al instalar. No impiden el uso actual.
-- `AGENTS.md` incluye un bloque que añade `next dev`; es la guía de Next.js 16 para agentes y se conserva.
+- Si surgen avisos `EBADENGINE`, comprobar las versiones instaladas y los requisitos reales de dependencias antes de cambiar Node o ignorar el aviso.
+- `AGENTS.md` contiene un bloque de advertencia sobre documentación local de Next.js 16 para agentes.
 - Las pruebas de navegador usan el build de producción (`next build` y `next start`) para no depender de la compilación bajo demanda de `next dev`.
