@@ -152,7 +152,8 @@ test.describe.serial("Corte 3: equipos", () => {
     await page.getByRole("button", { name: "Unirme con código", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Te uniste al equipo" })).toBeVisible();
     await expect(page.getByText("Habilitado", { exact: true })).toBeVisible();
-    await expect(page.getByText(integrante.name)).toBeVisible();
+    // El nombre también aparece en el menú de la cuenta (escritorio): se busca dentro de la tarjeta del equipo.
+    await expect(page.getByLabel("Tu equipo").getByText(integrante.name)).toBeVisible();
   });
 
   test("solo la líder envía la entrega del equipo; la integrante la ve en solo lectura", async ({ page, browser }) => {

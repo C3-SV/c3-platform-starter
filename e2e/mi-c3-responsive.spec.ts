@@ -260,7 +260,7 @@ test.describe.serial("Mi C3 responsive", () => {
     await page.goto("/mi-c3");
     // El menú de la cuenta (avatar) lleva a Cuenta y ofrece «Salir».
     await page.getByRole("button", { name: new RegExp(`^Menú de la cuenta de ${pendiente.name}`) }).click();
-    await page.getByRole("link", { name: /^Cuenta/ }).click();
+    await page.locator(".c3-usuario__panel").getByRole("link", { name: /^Cuenta/ }).click();
     await expect(page).toHaveURL(/\/cuenta$/);
 
     await page.goto("/mi-c3");
