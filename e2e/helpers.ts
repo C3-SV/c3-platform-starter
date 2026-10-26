@@ -182,6 +182,14 @@ export async function openSiteMenu(page: Page): Promise<void> {
   if (await menu.isVisible()) await menu.click();
 }
 
+/** Abre una sección de la consola de administración desde su menú (plegado en pantallas pequeñas). */
+export async function openAdminSection(page: Page, name: string): Promise<void> {
+  const menu = page.getByRole("navigation", { name: "Secciones de administración" });
+  if (!(await menu.isVisible())) await page.getByRole("button", { name: /^Sección:/ }).click();
+  // El enlace puede llevar un contador («Propuestas 2 por atender»): se compara el comienzo del nombre.
+  await menu.getByRole("link", { name: new RegExp(`^${escapeForRegExp(name)}`) }).click();
+}
+
 /** La sesión está confirmada cuando la cabecera ofrece el menú de la cuenta (o, en vistas aún sin él, «Salir»). */
 export async function expectSignedIn(page: Page): Promise<void> {
   await expect(page.getByRole("button", { name: /^(Menú de la cuenta|Salir)/ }).first()).toBeVisible();

@@ -257,7 +257,7 @@ export function ExperienciasPanel({
             </div>
             <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>{experience.summary}</p>
 
-            <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: 12 }}>
               {session ? <Detail label="Sesión" value={`${session}${experience.modality ? ` · ${MODALITY_LABEL[experience.modality]}` : ""}`} /> : null}
               {experience.location ? <Detail label="Sede o enlace" value={experience.location} /> : null}
               {experience.registrationOpensAt || experience.registrationClosesAt ? (

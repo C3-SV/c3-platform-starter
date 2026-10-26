@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { StatePill } from "@/components/StatePill";
 import { apiRequest, ApiError } from "@/lib/client/api";
+import { adminHref } from "@/lib/domain/admin-nav";
 import { formatDate } from "@/lib/domain/format";
 import { proposalPresentation, type ProposalStatus } from "@/lib/domain/proposals";
 import type { ProposalView } from "@/lib/server/proposals";
@@ -131,6 +133,16 @@ export function PropuestasPanel({ organizations, onChanged }: { organizations: O
           {proposal.desiredOutcome ? <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Resultado buscado: {proposal.desiredOutcome}</p> : null}
           {proposal.constraints ? <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Límites: {proposal.constraints}</p> : null}
           {proposal.reviewNote ? <p style={{ fontSize: 14, lineHeight: 1.5 }}>Nota enviada: {proposal.reviewNote}</p> : null}
+
+          {proposal.status === "accepted" ? (
+            <div className="c3-alerta c3-alerta--info" style={{ marginTop: 2 }}>
+              <strong>Siguiente paso: definir el challenge</strong>
+              <span style={{ fontSize: 14, lineHeight: 1.5 }}>
+                Alcance, entregables, rúbrica y fechas se definen con la empresa. Creá el challenge dentro de una experiencia y vinculalo a su organización.{" "}
+                <Link href={adminHref("experiencias")}>Ir a Experiencias y challenges</Link>
+              </span>
+            </div>
+          ) : null}
 
           {proposal.status !== "accepted" ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12, borderTop: "1px solid var(--c3-borde)", paddingTop: 14 }}>

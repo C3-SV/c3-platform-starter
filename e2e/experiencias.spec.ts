@@ -32,7 +32,7 @@ async function expectNoSeriousViolations(page: Page, label: string) {
 }
 
 async function openAdminExperiences(page: Page) {
-  await login(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
+  await login(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
   await expect(page.getByRole("heading", { name: "Experiencias y challenges", level: 1 })).toBeVisible();
 }
 

@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
-import { expectSignedIn } from "./helpers";
+import { expectSignedIn, openAdminSection } from "./helpers";
 
 /**
  * Corte 5 en el navegador: C3 asigna un jurado por correo, el jurado ve que debe esperar el cierre de entregas,
@@ -27,7 +27,7 @@ async function withAdmin(browser: Browser, work: (page: Page) => Promise<void>) 
   const context = await browser.newContext({ baseURL: BASE, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   try {
-    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
+    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
     await work(page);
   } finally {
     await context.close();
@@ -88,7 +88,7 @@ test.describe.serial("Corte 5: jurados y resultados", () => {
     await expectSignedIn(page);
 
     await withAdmin(browser, async (admin) => {
-      await admin.getByRole("button", { name: "Jurados y rúbricas", exact: true }).click();
+      await openAdminSection(admin, "Jurados y rúbricas");
       await admin.locator("#jur-reto").selectOption({ label: challengeTitle });
       await expect(admin.getByText("Calidad del resultado: 0 – 10")).toBeVisible();
       await admin.locator("#jur-correo").fill(jurado.email);
@@ -113,12 +113,12 @@ test.describe.serial("Corte 5: jurados y resultados", () => {
 
   test("la publicación queda bloqueada sin soluciones y C3 puede revocar al jurado", async ({ browser, page }) => {
     await withAdmin(browser, async (admin) => {
-      await admin.getByRole("button", { name: "Resultados oficiales", exact: true }).click();
+      await openAdminSection(admin, "Resultados oficiales");
       await admin.locator("#res-reto").selectOption({ label: challengeTitle });
       await expect(admin.getByText("Todavía no hay soluciones enviadas para publicar.")).toBeVisible();
       await expect(admin.getByRole("button", { name: "Publicar resultado", exact: true })).toBeDisabled();
 
-      await admin.getByRole("button", { name: "Jurados y rúbricas", exact: true }).click();
+      await openAdminSection(admin, "Jurados y rúbricas");
       await admin.locator("#jur-reto").selectOption({ label: challengeTitle });
       const row = admin.getByRole("group", { name: jurado.email });
       await row.getByRole("button", { name: "Revocar acceso", exact: true }).click();
