@@ -11,6 +11,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { AppShell } from "@/components/AppShell";
+import { PerfilPublicoPanel } from "@/components/PerfilPublicoPanel";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError, type FieldIssue } from "@/lib/client/api";
 import { getClientAuth } from "@/lib/firebase/client";
@@ -345,6 +346,10 @@ function CuentaContenido() {
                   <button type="button" className="c3-btn c3-btn--contorno" onClick={() => void handleSignOut()}>Salir de la cuenta</button>
                 </div>
               </section>
+            </div>
+
+            <div style={{ marginTop: 20 }}>
+              <PerfilPublicoPanel />
             </div>
 
             <div className="c3-alerta c3-alerta--info" style={{ marginTop: 20 }}>

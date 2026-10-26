@@ -42,6 +42,8 @@ git switch -c feat/nombre-descriptivo
 ## Entornos y datos
 
 - Local: `demo-c3-platform`, `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`. `npm run doctor` confirma destino.
+- `next build` (Next.js 16.4.0) puede **detenerse una vez** mostrando un aviso de seguridad y pidiendo repetir el comando; repetirlo continúa. Es un aviso conocido (ver [PENDIENTES-REALES](PENDIENTES-REALES.md)): no se actualiza Next.js dentro de una tarea de producto.
+- Una suite E2E a la vez: usa los puertos fijos 3100, 8080 y 9099. No añadir archivos `*.spec.ts` a `e2e/` mientras corre una ejecución (Playwright los descubre al arrancar).
 - Firebase real (`c3-platform-demo`) o Vercel: no hacer writes, seeds, cambios de reglas ni despliegues sin orden expresa.
 - No versionar `.env.local`, credenciales ni datos personales. Leer [PENDIENTES-REALES](PENDIENTES-REALES.md) antes de preparar un piloto real.
 

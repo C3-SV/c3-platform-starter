@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
-import { expectSignedIn, signOutUi } from "./helpers";
+import { expectSignedIn, signOutUi, openAdminSection } from "./helpers";
 
 /**
  * Mi C3 responsive. Un panel de escritorio (cabecera superior, dos columnas, sin barra inferior) y una app móvil
@@ -55,7 +55,7 @@ async function withAdmin(browser: Browser, work: (page: Page) => Promise<void>) 
   const context = await browser.newContext({ baseURL: BASE, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   try {
-    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
+    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
     await work(page);
   } finally {
     await context.close();
@@ -294,7 +294,7 @@ test.describe.serial("Mi C3 responsive", () => {
 
   test("entrega pendiente: C3 aprueba y la persona ve la acción que le toca", async ({ browser, page }) => {
     await withAdmin(browser, async (admin) => {
-      await admin.getByRole("button", { name: "Inscripciones y equipos", exact: true }).click();
+      await openAdminSection(admin, "Inscripciones y equipos");
       await admin.locator("#ins-reto").selectOption({ label: alfa.challenge });
       const row = admin.getByRole("group", { name: pendiente.email });
       await expect(row).toBeVisible();
@@ -339,7 +339,7 @@ test.describe.serial("Mi C3 responsive", () => {
 
   test("jurado: el challenge asignado aparece como espera hasta el cierre y como acción cuando hay que evaluar", async ({ browser, page }) => {
     await withAdmin(browser, async (admin) => {
-      await admin.getByRole("button", { name: "Jurados y rúbricas", exact: true }).click();
+      await openAdminSection(admin, "Jurados y rúbricas");
       await admin.locator("#jur-reto").selectOption({ label: alfa.challenge });
       await admin.locator("#jur-correo").fill(jurado.email);
       await admin.locator("#jur-tipo").selectOption("externo");

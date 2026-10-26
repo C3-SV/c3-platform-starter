@@ -147,7 +147,7 @@ function EntregaContenido({ challengeId }: { challengeId: string }) {
 
       <div className="c3-card" style={{ padding: 16, display: "flex", alignItems: "center", gap: 8 }} aria-label="Progreso del challenge">
         {steps.map((step, index) => (
-          <div key={step.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <div key={step.label} style={{ flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
             <div
               aria-hidden="true"
               style={{
@@ -165,7 +165,7 @@ function EntregaContenido({ challengeId }: { challengeId: string }) {
             >
               {index + 1}
             </div>
-            <span style={{ fontSize: 11, fontWeight: step.current ? 600 : 500, textAlign: "center", color: step.done || step.current ? "var(--c3-texto)" : "var(--c3-texto-suave)" }}>
+            <span style={{ maxWidth: "100%", fontSize: 11, fontWeight: step.current ? 600 : 500, textAlign: "center", hyphens: "auto", overflowWrap: "anywhere", color: step.done || step.current ? "var(--c3-texto)" : "var(--c3-texto-suave)" }}>
               {step.label}
             </span>
           </div>

@@ -20,6 +20,7 @@ import { requireAdmin, type Actor } from "./auth.ts";
 import { loadChallenge } from "./catalog.ts";
 import { HttpError, notFound } from "./errors.ts";
 import { RESULTS, SUBMISSIONS, TEAMS, USERS } from "./ids.ts";
+import { publicSlugOf } from "./publicProfiles.ts";
 
 export const JUDGE_ASSIGNMENTS = "judgeAssignments";
 export const EVALUATIONS = "evaluations";
@@ -353,11 +354,11 @@ export async function resultForSubmission(db: Firestore, challengeId: string, su
 }
 
 /** Ganadores públicos del challenge, si C3 publicó y autorizó mostrarlos. */
-export async function publicWinners(db: Firestore, challengeId: string): Promise<{ name: string | null; recognition: string }[]> {
+export async function publicWinners(db: Firestore, challengeId: string): Promise<{ name: string | null; recognition: string; profileSlug: string | null }[]> {
   const results = await resultsDoc(db, challengeId);
   if (results.status !== "published" || results.showWinners === false) return [];
   const recognitions = (results.recognitions ?? {}) as Record<string, Recognition>;
-  const winners: { name: string | null; recognition: string }[] = [];
+  const winners: { name: string | null; recognition: string; profileSlug: string | null }[] = [];
   for (const [submissionId, recognition] of Object.entries(recognitions)) {
     if (!recognition) continue;
     const submission = await db.collection(SUBMISSIONS).doc(submissionId).get();
@@ -371,7 +372,9 @@ export async function publicWinners(db: Firestore, challengeId: string): Promise
       mode: submission.data()?.mode === "team" ? "team" : "individual",
       userId: submission.data()?.userId,
     };
-    winners.push({ name: await nameOf(db, row), recognition: RECOGNITION_LABEL[recognition] });
+    // Solo una persona ganadora que activó su perfil público tiene enlace; los equipos y las demás, no.
+    const profileSlug = row.mode === "individual" && row.userId ? await publicSlugOf(db, row.userId) : null;
+    winners.push({ name: await nameOf(db, row), recognition: RECOGNITION_LABEL[recognition], profileSlug });
   }
   return winners;
 }

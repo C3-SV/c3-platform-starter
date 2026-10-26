@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
-import { expectSignedIn } from "./helpers";
+import { expectSignedIn, openAdminSection } from "./helpers";
 
 /**
  * Corte 4 de punta a punta: una empresa propone sin cuenta; C3 pide ajustes, crea la organización,
@@ -32,8 +32,8 @@ async function withAdmin(browser: Browser, work: (page: Page) => Promise<void>) 
   const context = await browser.newContext({ baseURL: BASE, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   try {
-    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
-    await page.getByRole("button", { name: "Propuestas", exact: true }).click();
+    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
+    await openAdminSection(page, "Propuestas");
     await work(page);
   } finally {
     await context.close();
@@ -113,7 +113,7 @@ test.describe.serial("Corte 4: empresas", () => {
       await region.getByRole("button", { name: "Aceptar", exact: true }).click();
       await expect(page.getByRole("status").filter({ hasText: "Propuesta aceptada" })).toBeVisible();
 
-      await page.getByRole("button", { name: "Experiencias y challenges", exact: true }).click();
+      await openAdminSection(page, "Experiencias y challenges");
       const experienceForm = page.locator("form").filter({ has: page.locator("#exp-titulo") });
       await page.locator("#exp-titulo").fill(experienceTitle);
       await page.locator("#exp-tipo").selectOption("challenge_empresarial");

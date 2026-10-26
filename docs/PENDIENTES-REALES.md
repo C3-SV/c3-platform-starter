@@ -6,12 +6,13 @@ Este archivo mantiene **solo decisiones y trabajos no cerrados**. Actualizar la 
 
 | Asunto | Situación conocida | Para cerrar |
 | --- | --- | --- |
-| E2E de Cuenta | **Reproducido en CI** (run 40379030628 de la PR #9, solo documentación): `e2e/cuenta.spec.ts` navegaba a `/acceso` antes de que terminara el cierre de sesión; la sesión seguía abierta y el acceso redirigía. Corregido esperando a que «Salir» termine (URL `/` y «Entrar» visible). No era un defecto del producto | CI verde con la corrección (rama `fix/navegacion-fase-0`) |
-| UX y navegación integral | Auditoría del 26-10-2026 ([AUDITORIA-NAVEGACION-2026-10](AUDITORIA-NAVEGACION-2026-10.md)). Decisiones D1–D10 aprobadas el mismo día; implementación por fases sobre `dev`: Fase 0 lista, marcos, Admin y perfil público en curso | Todas las fases validadas en `dev` y promovidas a `main`; [PRODUCTO-Y-NAVEGACION](PRODUCTO-Y-NAVEGACION.md) actualizado |
-| Navegación posacceso del jurado | Corregida en la Fase 0: la evaluación tiene una sola dirección canónica y las anteriores redirigen; prueba `e2e/navegacion.spec.ts` parte de la URL sin sesión | CI verde en `dev` |
-| Aviso de seguridad de Next.js | `next build` (16.4.0) se detuvo con un aviso de versión afectada por una vulnerabilidad conocida; un segundo intento compiló. No se actualizó nada | Decidir y planificar la actualización como tarea aparte, con revisión de compatibilidad |
-| Validación integral | Las pruebas de versiones revisadas no sustituyen una ejecución actual | Ejecutar typecheck, lint, unitarias, reglas, E2E y revisión responsive; registrar resultados reales |
-| Espacio local | Auditoría reportó 4 GB libres en C: | Recuperar espacio para dependencias, builds y Playwright; verificar antes de instalar |
+| Usabilidad con personas | La arquitectura de navegación (decisiones D1–D10 de la [auditoría](AUDITORIA-NAVEGACION-2026-10.md)) está implementada y verificada con pruebas técnicas, **no con personas**: faltan tareas guiadas por rol (participante, jurado, representante, admin) y una auditoría con lector de pantalla y dispositivos reales | Prueba con 4–5 personas por rol midiendo pasos y errores ([PLAN-CONSTRUCCION](PLAN-CONSTRUCCION.md), «Métricas»); revisión visual a 390 y 1280 px por el responsable |
+| Aviso de seguridad de Next.js | `next build` (16.4.0) muestra un aviso de versión afectada por una vulnerabilidad conocida y, la primera vez de cada tanda, **se detiene** y pide repetir el comando (el CI no se vio afectado). No se actualizó nada | Decidir y planificar la actualización como tarea aparte, con revisión de compatibilidad; hasta entonces repetir `npm run build` si se detiene |
+| Validación integral | CI verde por PR sobre `dev` (typecheck, lint, unitarias, reglas con emulador y E2E de escritorio y móvil). Las pruebas de versiones revisadas no sustituyen una ejecución actual | Repetir el CI sobre `dev` y `main` en cada promoción |
+| Espacio local | El disco C: de esta máquina queda con ~1–2 GB libres tras instalar dependencias y compilar | Recuperar espacio antes de instalar o compilar; verificar con `df` |
+| Perfil público: menores e imagen | El perfil público compartible está implementado (opt-in, privado por defecto, centro de estudio oculto por defecto, sin datos privados). **No hay edad en el modelo**: no se puede distinguir a una persona menor, y el texto legal no está aprobado | Validar con asesoría local el tratamiento de menores, nombre e imagen antes de datos reales; decidir si se exige consentimiento de tutor o una edad mínima para activarlo |
+| Rutas antiguas de evaluación | `/evaluar/[id]` y `/empresa/retos/[id]/evaluacion` redirigen (307) a `/mi-c3/evaluar/[id]` para no romper enlaces ya enviados | Retirarlas cuando no queden invitaciones vigentes |
+| Admin en móvil | Funcional (menú plegable) pero optimizado para escritorio, según la decisión D5 | Revisar si el equipo opera Admin desde teléfono; si no, mantener |
 
 ## Repositorio, despliegue y ambientes
 
@@ -34,7 +35,7 @@ Este archivo mantiene **solo decisiones y trabajos no cerrados**. Actualizar la 
 
 - Definir empresa, challenge, responsables, audiencia, fechas, métricas, soporte y criterios de éxito del piloto.
 - La respuesta de empresa a propuestas que requieren ajustes se gestiona por correo; un flujo interno no está implementado.
-- Comentarios de jurados, perfil público compartible opt-in, filtros avanzados, automatizaciones y eliminación de cuenta requieren decisiones independientes.
+- Comentarios de jurados, filtros avanzados, automatizaciones y eliminación de cuenta requieren decisiones independientes.
 - La «Bitácora de producto y especificaciones del MVP v2.2» citada por el paquete de diseño no figura en este repositorio. Localizarla o formalizar reglas de producto verificadas; nunca suponer contenido.
 
 ## Seguimiento

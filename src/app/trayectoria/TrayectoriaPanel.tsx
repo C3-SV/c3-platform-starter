@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { CompartirPerfil } from "@/components/CompartirPerfil";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
 import { initialsOf } from "@/lib/domain/format";
@@ -119,7 +120,7 @@ function TrayectoriaContenido() {
                   {profile.bio || "Todavía no escribiste nada. Editá tu perfil para contar en unas líneas qué te interesa."}
                 </p>
                 <p className="c3-tray__aviso">Lo escribís vos y C3 no lo verifica.</p>
-                <span aria-disabled="true" className="c3-tray__proximamente">Compartir perfil: próximamente</span>
+                <CompartirPerfil />
               </section>
             </aside>
 

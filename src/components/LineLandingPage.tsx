@@ -45,7 +45,7 @@ export async function LineLandingPage({ line }: { line: ExperienceLine }) {
         </section>
 
         <section id="como-funciona" className="c3-page">
-          <div className="c3-container" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 24 }}>
+          <div className="c3-container c3-dos-columnas" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 24 }}>
             <article className="c3-card" style={{ padding: 28, borderTop: "6px solid " + content.accent }}>
               <h2 className="c3-titulo" style={{ fontSize: 26, lineHeight: 1.2, fontWeight: 700 }}>{content.whatTitle}</h2>
               <p style={{ marginTop: 14, fontSize: 16, lineHeight: 1.65, color: "var(--c3-texto-suave)" }}>{content.what}</p>

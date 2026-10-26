@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
-import { expectSignedIn } from "./helpers";
+import { expectSignedIn, openAdminSection } from "./helpers";
 
 /**
  * Corte 2 de punta a punta: un joven se inscribe, C3 aprueba desde su panel (en otro contexto de navegador),
@@ -28,7 +28,7 @@ test.describe.serial("Corte 2: participación individual", () => {
     const context = await browser.newContext({ baseURL: BASE, viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
     try {
-      await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
+      await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
       await expect(page.getByRole("heading", { name: "Experiencias y challenges", level: 1 })).toBeVisible();
 
       const experienceForm = page.locator("form").filter({ has: page.locator("#exp-titulo") });
@@ -96,8 +96,8 @@ test.describe.serial("Corte 2: participación individual", () => {
     const context = await browser.newContext({ baseURL: BASE, viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
     try {
-      await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
-      await page.getByRole("button", { name: "Inscripciones y equipos", exact: true }).click();
+      await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
+      await openAdminSection(page, "Inscripciones y equipos");
       await page.locator("#ins-reto").selectOption({ label: challengeTitle });
       const row = page.getByRole("group", { name: joven.email });
       await expect(row).toBeVisible();

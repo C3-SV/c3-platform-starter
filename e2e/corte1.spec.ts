@@ -22,7 +22,7 @@ async function login(page: Page, email: string, password: string, next = "/") {
 
 test.describe.serial("Corte 1: primer challenge", () => {
   test("el administrador crea una experiencia y un challenge, y los publica", async ({ page }) => {
-    await login(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
+    await login(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
     await expect(page.getByRole("heading", { name: "Experiencias y challenges", level: 1 })).toBeVisible();
 
     const experienceForm = page.locator("form").filter({ has: page.locator("#exp-titulo") });

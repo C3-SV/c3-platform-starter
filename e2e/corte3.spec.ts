@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
-import { expectSignedIn } from "./helpers";
+import { expectSignedIn, openAdminSection } from "./helpers";
 
 /**
  * Corte 3 de punta a punta: dos personas se inscriben por equipo, C3 aprueba, la líder crea el equipo,
@@ -53,7 +53,7 @@ async function withAdmin(browser: Browser, work: (page: Page) => Promise<void>) 
   const context = await browser.newContext({ baseURL: BASE, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   try {
-    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin");
+    await loginAt(page, ADMIN_EMAIL, ADMIN_PASSWORD, "/admin/experiencias");
     await work(page);
   } finally {
     await context.close();
@@ -121,7 +121,7 @@ test.describe.serial("Corte 3: equipos", () => {
 
   test("C3 aprueba a las dos inscripciones desde su panel", async ({ browser }) => {
     await withAdmin(browser, async (page) => {
-      await page.getByRole("button", { name: "Inscripciones y equipos", exact: true }).click();
+      await openAdminSection(page, "Inscripciones y equipos");
       await page.locator("#ins-reto").selectOption({ label: challengeTitle });
       for (const person of [lider, integrante]) {
         const row = page.getByRole("group", { name: person.email });
