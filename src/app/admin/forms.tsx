@@ -353,8 +353,8 @@ export function ChallengeForm({
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line) => {
-        const [label, score] = line.split("|").map((part) => part.trim());
-        return { label, maxScore: score ? Number(score) : 10 };
+        const [label, score, weight] = line.split("|").map((part) => part.trim());
+        return { label, maxScore: score ? Number(score) : 10, weight: weight ? Number(weight) : undefined };
       });
     try {
       await apiRequest("/api/admin/retos", {
@@ -433,7 +433,7 @@ export function ChallengeForm({
       <Field id="ret-entregables" label="Qué tienen que entregar" help="Un entregable por línea." error={issueFor(issues, "deliverables")}>
         <textarea id="ret-entregables" className="c3-campo" rows={4} value={deliverables} onChange={(e) => setDeliverables(e.target.value)} />
       </Field>
-      <Field id="ret-rubrica" label="Rúbrica" help="Un criterio por línea con su puntaje máximo, por ejemplo: Calidad del resultado | 10. Si omitís el puntaje, es 10." error={issueFor(issues, "rubric")}>
+      <Field id="ret-rubrica" label="Rúbrica" help="Un criterio por línea: Criterio | puntaje máximo | peso (opcional), por ejemplo: Calidad del resultado | 10 | 20. Si omitís el puntaje, es 10. Con pesos, ponelos en todos los criterios y que sumen 100." error={issueFor(issues, "rubric")}>
         <textarea id="ret-rubrica" className="c3-campo" rows={4} value={rubric} onChange={(e) => setRubric(e.target.value)} />
       </Field>
 

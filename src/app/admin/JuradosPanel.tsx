@@ -6,7 +6,7 @@ import { apiRequest, ApiError, type FieldIssue } from "@/lib/client/api";
 interface ChallengeOption {
   id: string;
   title: string;
-  rubric: { id: string; label: string; maxScore: number }[];
+  rubric: { id: string; label: string; maxScore: number; weight?: number }[];
 }
 
 interface JudgeRow {
@@ -114,9 +114,9 @@ export function JuradosPanel({ challenges }: { challenges: ChallengeOption[] }) 
 
       {challenge ? (
         <section className="c3-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 8 }} aria-label="Rúbrica del challenge">
-          <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Rúbrica · máximo {challenge.rubric.reduce((sum, item) => sum + item.maxScore, 0)} puntos</span>
+          <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Rúbrica · {challenge.rubric.every((item) => typeof item.weight === "number") ? "puntaje ponderado de 0 a 100" : `máximo ${challenge.rubric.reduce((sum, item) => sum + item.maxScore, 0)} puntos`}</span>
           {challenge.rubric.map((criterion) => (
-            <span key={criterion.id} style={{ fontSize: 14 }}>· {criterion.label}: 0 – {criterion.maxScore}</span>
+            <span key={criterion.id} style={{ fontSize: 14 }}>· {criterion.label}: 0 – {criterion.maxScore}{typeof criterion.weight === "number" ? ` · peso ${criterion.weight} %` : ""}</span>
           ))}
         </section>
       ) : null}

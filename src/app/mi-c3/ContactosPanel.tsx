@@ -89,6 +89,11 @@ export function ContactosPanel() {
             Challenge: {contact.challengeTitle} · Actualizado {formatDateTime(contact.updatedAt) ?? ""}
           </span>
           {contact.message ? <p style={{ fontSize: 14, lineHeight: 1.5 }}><strong>Mensaje de la empresa:</strong> {contact.message}</p> : null}
+          {contact.status === "aceptado" ? (
+            <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
+              Canal simulado de la demo: C3 facilita el contacto por mensaje interno. No se comparten correo ni teléfono.
+            </p>
+          ) : null}
           {contact.actions.length > 0 ? (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {contact.actions.map((to) => (

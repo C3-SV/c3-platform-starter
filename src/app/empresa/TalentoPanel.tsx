@@ -319,7 +319,10 @@ function ContactoAcciones({ row, busy, onAdvance }: { row: TalentRow; busy: stri
         {contact.status === "esperando_consentimiento" ? "La persona decide si acepta. Mientras tanto no se comparte ningún dato de contacto." : null}
       </span>
       {contact.status === "aceptado" ? (
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
+            Canal simulado de la demo: C3 facilita el contacto por mensaje interno. No se comparten correo ni teléfono.
+          </p>
           <button type="button" className="c3-btn c3-btn--contorno" disabled={advanceBusy} onClick={() => onAdvance(contact.id, "contactado")}>
             {advanceBusy ? "Guardando…" : "Registrar que ya la contactamos"}
           </button>

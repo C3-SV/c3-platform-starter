@@ -52,6 +52,8 @@ export interface RegistrationActionInput {
 export interface RubricInputCriterion {
   label: string;
   maxScore: number;
+  /** Peso en porcentaje, o null si la rúbrica no es ponderada. */
+  weight: number | null;
 }
 
 export interface ChallengeInput {
@@ -250,6 +252,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
         return {
           label: typeof criterion.label === "string" ? criterion.label.trim() : "",
           maxScore: Number(criterion.maxScore),
+          weight: criterion.weight === undefined || criterion.weight === "" ? null : Number(criterion.weight),
         };
       }).filter((criterion) => criterion.label !== "")
     : [];
@@ -259,6 +262,16 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
     issues.push({ field: "rubric", message: "Cada criterio necesita entre 3 y 120 caracteres." });
   } else if (rubric.some((criterion) => !Number.isInteger(criterion.maxScore) || criterion.maxScore < 1 || criterion.maxScore > 10)) {
     issues.push({ field: "rubric", message: "El puntaje máximo de cada criterio debe ser un entero de 1 a 10." });
+  }
+
+  // Pesos: si un criterio tiene peso, todos lo tienen, son enteros de 1 a 100 y suman 100.
+  const weighted = rubric.length > 0 && rubric.every((criterion) => criterion.weight !== null);
+  if (!weighted && rubric.some((criterion) => criterion.weight !== null)) {
+    issues.push({ field: "rubric", message: "Si usás pesos, poné un peso a cada criterio." });
+  } else if (weighted && rubric.some((criterion) => !Number.isInteger(criterion.weight) || (criterion.weight as number) < 1 || (criterion.weight as number) > 100)) {
+    issues.push({ field: "rubric", message: "Cada peso es un entero de 1 a 100." });
+  } else if (weighted && rubric.reduce((sum, criterion) => sum + (criterion.weight as number), 0) !== 100) {
+    issues.push({ field: "rubric", message: "Los pesos de la rúbrica deben sumar 100." });
   }
 
   const allows = Array.isArray(raw.allows)
@@ -295,7 +308,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
     summary,
     problem,
     deliverables,
-    rubric: rubric.map((criterion) => ({ label: criterion.label, maxScore: criterion.maxScore })),
+    rubric: rubric.map((criterion) => ({ label: criterion.label, maxScore: criterion.maxScore, weight: weighted ? criterion.weight : null })),
     organizationName,
     commercialPackage,
     allows: uniqueAllows,

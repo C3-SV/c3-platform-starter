@@ -14,7 +14,7 @@ export const RECOGNITION_LABEL: Record<Recognition, string> = {
   mencion: "Mención",
 };
 
-/** Puntajes por criterio: cada criterio de la rúbrica, un entero entre 0 y su máximo. Sin ponderaciones. */
+/** Puntajes por criterio: cada criterio de la rúbrica, un entero entre 0 y su máximo. La ponderación se aplica al total. */
 export function parseScores(input: unknown, rubric: RubricCriterion[]): Record<string, number> {
   const raw = typeof input === "object" && input !== null ? (input as Record<string, unknown>) : {};
   const issues: FieldIssue[] = [];
@@ -31,12 +31,26 @@ export function parseScores(input: unknown, rubric: RubricCriterion[]): Record<s
   return scores;
 }
 
+/** Rúbrica ponderada: todos los criterios tienen peso (los pesos suman 100). Sin pesos, cada punto cuenta igual. */
+export function isWeighted(rubric: RubricCriterion[]): boolean {
+  return rubric.length > 0 && rubric.every((criterion) => typeof criterion.weight === "number");
+}
+
+/** Máximo del total: 100 con pesos; si no, la suma de los máximos de cada criterio. */
 export function maxTotal(rubric: RubricCriterion[]): number {
+  if (isWeighted(rubric)) return 100;
   return rubric.reduce((sum, criterion) => sum + criterion.maxScore, 0);
 }
 
 export function totalOf(scores: Record<string, number>): number {
   return Object.values(scores).reduce((sum, value) => sum + value, 0);
+}
+
+/** Total de una evaluación. Con pesos, cada criterio aporta su peso según el puntaje relativo a su máximo. */
+export function scoreOf(scores: Record<string, number>, rubric: RubricCriterion[]): number {
+  if (!isWeighted(rubric)) return totalOf(scores);
+  const total = rubric.reduce((sum, criterion) => sum + ((scores[criterion.id] ?? 0) / criterion.maxScore) * (criterion.weight ?? 0), 0);
+  return Math.round(total * 10) / 10;
 }
 
 /** Promedio simple de los totales finalizados. Null si todavía no hay evaluaciones finalizadas. */
