@@ -155,7 +155,14 @@ export function TalentoPanel({ challengeId }: { challengeId: string }) {
             onUnshortlist={() => run(`lista:${row.submissionId}`, () => apiRequest(`/api/empresa/retos/${challengeId}/lista-corta/${row.submissionId}`, { method: "DELETE" }), "Quitada de la lista corta.")}
             onRequestContact={(message) => run(`contacto:${row.submissionId}`, () => apiRequest(`/api/empresa/retos/${challengeId}/contacto`, { method: "POST", body: { submissionId: row.submissionId, message } }), "Solicitud enviada. Queda esperando el consentimiento de la persona.")}
             challengeId={challengeId}
-            onFeedbackSaved={() => void reload().then(() => setNotice("Retroalimentación guardada."))}
+            onFeedbackSaved={() => {
+              setNotice(null);
+              setLoadError(null);
+              reload().then(
+                () => setNotice("Retroalimentación guardada."),
+                () => setLoadError("La retroalimentación se guardó, pero no pudimos actualizar el tablero. Recargá la página."),
+              );
+            }}
             onAdvance={(requestId, to) => run(`avance:${requestId}`, () => apiRequest(`/api/empresa/contactos/${requestId}`, { method: "PATCH", body: { to } }), "Seguimiento registrado.")}
           />
         ))

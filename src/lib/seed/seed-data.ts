@@ -29,9 +29,11 @@ export interface SeedRecord {
   data: Record<string, unknown>;
 }
 
+// v3 (4-nov-2026): el challenge demostrativo lleva la marca demo; la solución publicada tiene dos evaluaciones finalizadas de jurados distintos; la retroalimentación de la cuenta joven está publicada.
 // v2 (3-nov-2026): línea Conecta para el challenge empresarial, nombre y rúbrica del reto demostrativo y paquete comercial.
-// Un documento ya aplicado con v1 aparece como conflicto en buildSeedPlan: no se sobrescribe sin una migración explícita.
-const SEED_VERSION = 2;
+// Un documento con la misma versión y contenido distinto aparece como conflicto en buildSeedPlan. Una versión anterior se
+// actualiza con `update` (con respaldo y --allow-update), nunca con `apply`.
+const SEED_VERSION = 3;
 const MANAGED_BY = "c3-seed";
 
 export function seedId(namespace: string, key: string): string {
@@ -194,6 +196,7 @@ const challenges: SeedRecord[] = [
       teamMaxSize: 4,
       submissionClosesAt: "2026-12-31T23:59:00.000Z",
       status: "published",
+      demo: true,
       seedVersion: SEED_VERSION,
       managedBy: MANAGED_BY,
       createdAt: "2026-10-01T00:00:00.000Z",
@@ -377,7 +380,7 @@ const demoJoven: DemoParticipant = {
     { text: "Comparé la heurística de inserción contra la búsqueda exhaustiva en 40 instancias pequeñas. La diferencia de kilómetros fue menor al 5 %." },
     { text: "Decidí mantener la inserción secuencial: con 300 pedidos responde en menos de un segundo. Lo dejo registrado con la medición.", link: DEMO_LINK },
   ],
-  feedback: { text: "Buena comparación con la búsqueda exhaustiva. Falta medir el costo de cambiar de ruta después de cumplir las ventanas.", publish: false },
+  feedback: { text: "Buena comparación con la búsqueda exhaustiva. Falta medir el costo de cambiar de ruta después de cumplir las ventanas.", publish: true },
 };
 
 const demoParticipants: DemoParticipant[] = [
@@ -523,7 +526,8 @@ function evaluationRecords(): SeedRecord[] {
       { judge: externalJudge, scores: { c1: 6, c2: 7, c3: 6, c4: 7 }, finalized: true },
     ],
     "sofia-ramirez": [
-      { judge: DEMO_UID.admin, scores: { c1: 8, c2: 7, c3: 7, c4: 8 }, finalized: false },
+      { judge: DEMO_UID.admin, scores: { c1: 8, c2: 7, c3: 7, c4: 8 }, finalized: true },
+      { judge: externalJudge, scores: { c1: 7, c2: 8, c3: 6, c4: 7 }, finalized: true },
     ],
   };
   const evaluations: SeedRecord[] = Object.entries(scoresBy).flatMap(([key, entries]) => {

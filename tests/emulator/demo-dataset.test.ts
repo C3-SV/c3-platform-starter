@@ -11,6 +11,7 @@ const now = new Date("2026-11-03T12:00:00.000Z");
 const challengeId = seedId("challenge", "empresa-demostracion-rutas");
 const empresaUid = DEMO_ACCOUNTS.find((account) => account.key === "empresa")?.uid as string;
 const jovenUid = DEMO_ACCOUNTS.find((account) => account.key === "joven")?.uid as string;
+const jovenName = "Joven demostrativa";
 
 async function writeAllSeed(): Promise<void> {
   const db = testDb();
@@ -41,7 +42,7 @@ test("el tablero de la empresa demo muestra entregas enviadas, defensas, lista c
   assert.equal(board.rows.length, 4, "joven, Ana, Luis y Sofía; Diego tiene borrador");
   assert.equal(board.rows.filter((row) => row.defense).length, 3);
   assert.equal(board.rows.filter((row) => row.shortlist).length, 2);
-  assert.equal(board.rows.find((row) => row.userId === jovenUid)?.contact?.status, "esperando_consentimiento");
+  assert.equal(board.rows.find((row) => row.name === jovenName)?.contact?.status, "esperando_consentimiento");
   assert.equal(board.rows.find((row) => row.name === "Ana Martínez")?.contact?.status, "aceptado");
   assert.ok(!board.rows.some((row) => row.name === "Diego Castillo"), "el borrador no es visible");
 });
@@ -90,11 +91,13 @@ test("la matriz por criterio aparece porque C3 publicó con puntajes; los estado
   assert.equal(board.challenge.rubric.length, 4);
   const ana = board.rows.find((row) => row.name === "Ana Martínez");
   const sofia = board.rows.find((row) => row.name === "Sofía Ramírez");
-  const joven = board.rows.find((row) => row.userId === jovenUid);
+  const joven = board.rows.find((row) => row.name === jovenName);
   assert.equal(ana?.evaluation.state, "publicada");
   assert.equal(ana?.evaluation.average, 34);
   assert.deepEqual(ana?.evaluation.criteria, { c1: 8.5, c2: 8.5, c3: 8.5, c4: 8.5 });
-  assert.equal(sofia?.evaluation.state, "sin_completar", "Sofía tiene un borrador: sin dos jurados finalizados");
-  assert.equal(sofia?.evaluation.criteria, null, "un borrador no se muestra como puntaje");
+  // Sofía tiene dos jurados finalizados (v3 del seed): su promedio es (30 + 28) / 2 = 29.
+  assert.equal(sofia?.evaluation.state, "publicada");
+  assert.equal(sofia?.evaluation.average, 29);
+  assert.deepEqual(sofia?.evaluation.criteria, { c1: 7.5, c2: 7.5, c3: 6.5, c4: 7.5 });
   assert.equal(joven?.evaluation.state, "sin_evaluar");
 });

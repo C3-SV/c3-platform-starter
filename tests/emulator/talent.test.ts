@@ -263,3 +263,63 @@ test("la bitácora la escribe solo la persona inscrita; la retroalimentación so
   assert.equal((await getMyFeedback(db, joven, challenge.id))?.text, feedbackText, "publicada, la persona la ve");
   assert.equal(await getMyFeedback(db, otra, challenge.id), null, "otra persona no ve la retroalimentación");
 });
+
+test("la inscripción a un challenge no habilita entregar en otro challenge de la misma experiencia", async () => {
+  const { db, org, experience, challenge } = await scenario();
+  const otro = await createChallenge(db, admin, { ...challengeFor(experience.id, org.id), title: "Segundo challenge de la misma experiencia" }, now);
+  await setChallengeStatus(db, admin, otro.id, { status: "published" }, now);
+
+  await assert.rejects(
+    saveDelivery(db, joven, otro.id, {
+      text: "Heurística de inserción con ventanas horarias y comparación contra búsqueda exhaustiva.",
+      links: ["https://github.com/equipo/rutas-atlas"],
+      submit: true,
+    }, duringDeadline),
+    expectHttp(403),
+  );
+  assert.equal((await db.collection("submissions").doc(`${otro.id}__${joven.uid}`).get()).exists, false, "la entrega ajena no se guarda");
+  assert.equal((await getTalentBoard(db, representante, otro.id)).rows.length, 0, "el segundo challenge no recibe la entrega");
+  assert.equal((await getTalentBoard(db, representante, challenge.id)).rows.length, 1, "el primero conserva solo su entrega");
+});
+
+test("el tablero y las solicitudes no muestran el uid de la persona", async () => {
+  const { db, challenge, submissionId } = await scenario();
+  await addToShortlist(db, representante, challenge.id, {
+    submissionId,
+    reason: "Explica los trade-offs con datos y reconoce sus límites.",
+  }, duringDeadline);
+  const contact = await requestContact(db, representante, challenge.id, { submissionId }, duringDeadline);
+  const row = (await getTalentBoard(db, representante, challenge.id)).rows[0];
+  assert.equal("userId" in row, false, "la fila del tablero no expone el identificador de la persona");
+  assert.equal(contact.id.includes(joven.uid), false, "el id de la solicitud no contiene el uid");
+  assert.equal((await listMyContactRequests(db, joven)).some((item) => item.id === contact.id), true, "la persona sí localiza su solicitud");
+});
+
+test("una solicitud de otra empresa responde como inexistente al avanzarla", async () => {
+  const { db, challenge, submissionId } = await scenario();
+  await addToShortlist(db, representante, challenge.id, {
+    submissionId,
+    reason: "Explica los trade-offs con datos y reconoce sus límites.",
+  }, duringDeadline);
+  const contact = await requestContact(db, representante, challenge.id, { submissionId }, duringDeadline);
+  await answerContactRequest(db, joven, contact.id, { to: "aceptado" }, duringDeadline);
+
+  await createAuthUser(representanteOtra.email, representanteOtra.uid);
+  const otraOrg = await createOrganization(db, admin, "Meridiano Seguros", now);
+  await linkRepresentative(db, testAuth(), admin, otraOrg.id, representanteOtra.email, now);
+  await assert.rejects(advanceContactRequest(db, representanteOtra, contact.id, { to: "contactado" }, duringDeadline), expectHttp(404));
+  await assert.rejects(advanceContactRequest(db, representanteOtra, `${challenge.id}__inventado`, { to: "contactado" }, duringDeadline), expectHttp(404));
+  const advanced = await advanceContactRequest(db, representante, contact.id, { to: "contactado" }, duringDeadline);
+  assert.equal(advanced.status, "contactado", "la empresa dueña sí puede registrar el contacto");
+});
+
+test("con el challenge concluido la persona sigue viendo su retroalimentación publicada, pero no se registran cambios", async () => {
+  const { db, challenge, submissionId } = await scenario();
+  await saveFeedback(db, representante, challenge.id, { submissionId, text: "Retroalimentación publicada antes del cierre.", publish: true }, duringDeadline);
+  await db.collection("challenges").doc(challenge.id).update({ status: "closed" });
+
+  assert.equal((await getMyFeedback(db, joven, challenge.id))?.text, "Retroalimentación publicada antes del cierre.");
+  assert.equal((await listMyCheckpoints(db, joven, challenge.id)).length, 0);
+  await assert.rejects(addCheckpoint(db, joven, challenge.id, { text: "Avance que llega después del cierre." }, duringDeadline), expectHttp(409, "reto_concluido"));
+  await assert.rejects(saveDefense(db, joven, challenge.id, defenseInput, duringDeadline), expectHttp(409, "reto_concluido"));
+});

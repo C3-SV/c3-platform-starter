@@ -2,9 +2,9 @@
 // Provisiona las cuentas demo (joven, empresa, administración) y sus vínculos. Simulación por defecto.
 //
 // Simulación (no escribe nada):
-//   node --experimental-strip-types scripts/provision-demo-accounts.mjs --project c3-challenges-demo
+//   node --experimental-strip-types scripts/provision-demo-accounts.mjs --project c3-platform-demo
 // Aplicar (remoto, con autorización):
-//   node --experimental-strip-types scripts/provision-demo-accounts.mjs --project c3-challenges-demo --apply --confirm-project c3-challenges-demo --credentials-file "<ruta FUERA del repositorio>"
+//   node --experimental-strip-types scripts/provision-demo-accounts.mjs --project c3-platform-demo --apply --confirm-project c3-platform-demo --credentials-file "<ruta FUERA del repositorio>"
 // Emulador (pruebas locales):
 //   firebase emulators:exec --only auth,firestore --project demo-c3-platform "node --experimental-strip-types scripts/provision-demo-accounts.mjs --emulator --project demo-c3-platform --apply --credentials-file <ruta>"
 //
@@ -58,10 +58,21 @@ if (apply && !emulator) {
   if (existsSync(credentialsTarget)) fail("el archivo de credenciales ya existe; elegí otra ruta para no sobrescribirlo.");
 }
 
+// Como en seed.mjs: .env.local puede apuntar al emulador; una provisión remota nunca debe heredar ese endpoint.
+if (!emulator) {
+  delete process.env.FIRESTORE_EMULATOR_HOST;
+  delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
+}
+
 if (!getApps().length) {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (serviceAccountJson && !emulator) {
-    const serviceAccount = JSON.parse(serviceAccountJson);
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+    } catch {
+      fail("FIREBASE_SERVICE_ACCOUNT_JSON no contiene un JSON válido.");
+    }
     if (serviceAccount.project_id !== project) fail("FIREBASE_SERVICE_ACCOUNT_JSON no pertenece al proyecto indicado.");
     initializeApp({ projectId: project, credential: cert(serviceAccount) });
   } else {

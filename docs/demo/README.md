@@ -32,7 +32,7 @@ Firebase Auth no envía correos en la demo: la recuperación de contraseña no e
 ## Recorrido de 60 segundos (joven)
 
 1. Explorar challenges con los filtros de tipo, línea y estado.
-2. Entrar como joven. En Mi challenge: la bitácora con dos avances, la entrega enviada y la defensa.
+2. Entrar como joven. En Mi challenge: la bitácora con dos avances (seed local; carga remota pendiente), la entrega enviada y la defensa.
 3. Mostrar la solicitud de contacto de la empresa: aceptar o declinar. Aclarar que aceptar no es una oferta de empleo.
 4. Mostrar que la retroalimentación sin publicar no aparece; solo se ve la publicada.
 
@@ -55,14 +55,15 @@ Firebase Auth no envía correos en la demo: la recuperación de contraseña no e
 
 `scripts/demo-reset.mjs` lista, por defecto, los documentos de demostración del seed que borraría. No escribe nada en simulación. Con `--apply`, `--confirm-project` y `--backup-file` (ruta fuera del repo), guarda un respaldo JSON y después borra. Nunca toca cuentas de Auth, perfiles de personas reales ni experiencias históricas con procedencia (la Copa 2026 y las ediciones anteriores de C3).
 
-## Estado de la evaluación en la demo
+## Estado de la evaluación en la demo (seed local; carga remota pendiente)
 
 - Dos jurados asignados: la administradora demo y un jurado externo sin cuenta.
-- Ana y Luis tienen dos evaluaciones finalizadas; Sofía tiene un borrador.
+- Ana, Luis y Sofía tienen dos evaluaciones finalizadas cada una (de jurados distintos), así que las tres soluciones están completas. Diego tiene un borrador de entrega que no es visible para la empresa.
 - El resultado está publicado con puntajes visibles **solo para esta demostración**; no muestra ganadores públicos. La empresa ve el promedio y la matriz por criterio.
+- Estos datos están en el seed local (`src/lib/seed/seed-data.ts`). El registro de ejecución remota del plan (§8) no los incluye: antes de presentar, cargarlos en `c3-platform-demo` con autorización expresa y verificarlos en solo lectura.
 
 ## Pendiente antes de presentar
 
 - Revisión visual a 390 px y 1280 px de las páginas nuevas (ver resultados de capturas en la sesión).
-- Pruebas E2E de los paneles nuevos: cubiertas en `e2e/zz-demo-talento.spec.ts` (escritorio).
-- Los recorridos móviles de sesión y consola de administración fallan de forma intermitente en esta máquina; no se confirma que sea regresión (falta corrida de referencia en `dev`).
+- Pruebas E2E: `e2e/zz-demo-talento.spec.ts` cubre en escritorio el tablero de talento, la bitácora, la solicitud de contacto, los filtros del catálogo y la intención de la propuesta con el enlace E1. No cubre la defensa ni la retroalimentación.
+- E2E final de esta rama (escritorio y móvil): 217 pasan, 0 fallan y 23 se saltan porque cada prueba declara su proyecto. Antes se fallaba de forma intermitente en «Salir» de administración y en el recorrido de desbordes móviles. Causa: el menú de la cuenta se cierra al cambiar de ruta (la consola redirige de `/admin` a `/admin/resumen`), y la espera de red inactiva no era fiable con datos en vivo. Se corrigieron las pruebas, no la interfaz.

@@ -121,7 +121,7 @@ export interface ProvisionSummary {
 export async function provisionDemoAccounts(options: ProvisionOptions): Promise<ProvisionSummary> {
   const organization = await options.db.collection("organizations").doc(options.organizationId).get();
   if (!organization.exists) {
-    throw new Error("Falta la organización demo: aplicá primero el seed (npm run seed:apply) y repetí la provisión.");
+    throw new Error("Falta la organización demo: aplicá primero el seed (ver docs/demo/README.md) y repetí la provisión.");
   }
 
   const existing = new Map<string, UserRecord>();
@@ -175,14 +175,18 @@ export async function provisionDemoAccounts(options: ProvisionOptions): Promise<
         if (current.c3Admin !== true) await options.auth.setCustomUserClaims(uid, { ...current, c3Admin: true });
       }
       if (account.role === "representante") {
-        await options.db.collection(ORGANIZATION_MEMBERS).doc(`${options.organizationId}__${uid}`).set({
-          organizationId: options.organizationId,
-          userId: uid,
-          email: account.email,
-          role: "representante",
-          createdAt: options.now.toISOString(),
-          createdByUid: PROVISIONED_BY,
-        }, { merge: true });
+        // La alta de la membresía se registra una sola vez: una segunda ejecución no cambia su fecha original.
+        const membershipRef = options.db.collection(ORGANIZATION_MEMBERS).doc(`${options.organizationId}__${uid}`);
+        if (!(await membershipRef.get()).exists) {
+          await membershipRef.set({
+            organizationId: options.organizationId,
+            userId: uid,
+            email: account.email,
+            role: "representante",
+            createdAt: options.now.toISOString(),
+            createdByUid: PROVISIONED_BY,
+          });
+        }
       }
     }
   }

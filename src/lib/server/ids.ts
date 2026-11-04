@@ -2,6 +2,8 @@
  * Nombres de colecciones e identificadores deterministas compartidos por el servidor.
  * Viven aquí para que los servicios no dependan unos de otros (sin ciclos de importación).
  */
+import { createHash } from "node:crypto";
+
 export const USERS = "users";
 /** Direcciones públicas de perfil (publicProfiles/{slug} → persona). Solo la escribe el servidor. */
 export const PUBLIC_PROFILES = "publicProfiles";
@@ -47,7 +49,10 @@ export const CHECKPOINTS = "checkpoints";
 /** Retroalimentación de la empresa por entrega (id = submissionId). Solo la ve la persona cuando está publicada. */
 export const FEEDBACKS = "feedbacks";
 
-/** Solicitud de contacto: como máximo una por persona y challenge; la empresa solo puede tener una activa. */
+/**
+ * Solicitud de contacto: como máximo una por persona y challenge; la empresa solo puede tener una activa.
+ * El uid no aparece en el id: el id viaja a la empresa en el tablero y en las respuestas de la API.
+ */
 export function contactRequestDocId(challengeId: string, userId: string): string {
-  return `${challengeId}__${userId}`;
+  return `${challengeId}__${createHash("sha256").update(`${challengeId}:${userId}`).digest("hex").slice(0, 32)}`;
 }

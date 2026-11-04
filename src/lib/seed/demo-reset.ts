@@ -9,7 +9,7 @@ export function isResettableDemoRecord(collection: string, id: string, data: Rec
   if (!id.startsWith("seed_")) return false;
   if (data.managedBy !== "c3-seed") return false;
   if (collection === "experiences") return data.isDemo === true && !data.sourceUrl;
-  if (collection === "challenges") return id === demoChallengeId;
+  if (collection === "challenges") return id === demoChallengeId && data.demo === true;
   return data.demo === true || data.isDemo === true;
 }
 

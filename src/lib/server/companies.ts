@@ -37,6 +37,8 @@ export interface CompanyChallenge {
   id: string;
   title: string;
   organizationId: string;
+  /** Datos inventados de la demostración: la interfaz los marca como tales. */
+  isDemo: boolean;
   /** Cifras operativas del challenge. Son conteos reales de registros; no hay métricas inventadas. */
   metrics: { enrolled: number; submitted: number; shortlisted: number; evaluating: number };
   state: PresentedState;
@@ -135,7 +137,17 @@ export async function getCompanySpace(db: Firestore, actor: Actor, now: Date): P
       ]);
       const evaluating = new Set(evaluations.docs.map((item) => item.data().submissionId as string)).size;
       const metrics = { enrolled: enrolled.data().count, submitted: submissions.length, shortlisted: shortlisted.data().count, evaluating };
-      challenges.push({ id: doc.id, title: data.title, organizationId: organization.id, metrics, state, submissions, results, evaluation: { assigned: assigned.has(doc.id) } });
+      challenges.push({
+        id: doc.id,
+        title: data.title,
+        organizationId: organization.id,
+        isDemo: data.demo === true,
+        metrics,
+        state,
+        submissions,
+        results,
+        evaluation: { assigned: assigned.has(doc.id) },
+      });
     }
     const proposalSnapshot = await db.collection(PROPOSALS).where("organizationId", "==", organization.id).get();
     proposals.push(...proposalSnapshot.docs.map((doc) => toProposalView(doc.id, doc.data())));

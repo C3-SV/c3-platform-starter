@@ -109,8 +109,9 @@ export function BitacoraPanel({ challengeId }: { challengeId: string }) {
           value={link}
           onChange={(event) => setLink(event.target.value)}
           aria-invalid={issueFor(issues, "link") ? true : undefined}
+          aria-describedby={issueFor(issues, "link") ? "bitacora-enlace-error" : undefined}
         />
-        {issueFor(issues, "link") ? <span style={{ fontSize: 13, color: "var(--c3-error)" }}>{issueFor(issues, "link")}</span> : null}
+        {issueFor(issues, "link") ? <span id="bitacora-enlace-error" style={{ fontSize: 13, color: "var(--c3-error)" }}>{issueFor(issues, "link")}</span> : null}
         <div>
           <button type="submit" className="c3-btn c3-btn--primario" disabled={busy}>{busy ? "Guardando…" : "Agregar a la bitácora"}</button>
         </div>

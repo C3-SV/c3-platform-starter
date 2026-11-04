@@ -74,7 +74,7 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 | Vista | Ruta | Acceso | Estado |
 | --- | --- | --- | --- |
 | V01 Home | `/` | Público | Implementada (destacados reales) |
-| V02 Explorar | `/explorar` | Público | Implementada, sin filtros |
+| V02 Explorar | `/explorar` | Público | Implementada, con filtros de tipo, línea, estado y «solo demo» (en el cliente) |
 | V03 Detalle de challenge | `/retos/[challengeId]` | Público | Implementada; el llamado lleva a V04 o a V06 |
 | Detalle de experiencia | `/experiencias/[experienceId]` | Público | Sesión, modalidad, sede, cupos, challenges asociados e inscripción cuando no tiene challenges |
 | V04 Acceso | `/acceso` | Público | Implementada |
@@ -239,8 +239,10 @@ Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas
 - `teamMemberships/{experienceId}__{uid}`: un equipo por persona y experiencia.
 - `challenges/{id}` puede declarar `commercialPackage` (`esencial`, `completo`, `destacado` o `null`): tarifa de referencia en `src/lib/domain/commercial.ts`, sin cobro en la demo.
 - `shortlists/{submissionId}`: lista corta de una entrega enviada, con motivo obligatorio y quién la agregó. La escribe el servidor.
-- `contactRequests/{challengeId}__{uid}`: solicitud de contacto con consentimiento (`esperando_consentimiento`, `aceptado`, `declinado`, `contactado`, `seguimiento`, `revocado`). Sin datos de contacto; la escribe el servidor.
+- `contactRequests/{challengeId}__{hash}`: solicitud de contacto con consentimiento (`esperando_consentimiento`, `aceptado`, `declinado`, `contactado`, `seguimiento`, `revocado`). El `hash` es un resumen del uid de la persona, así que el id no revela el uid. Sin datos de contacto; la escribe el servidor.
 - `defenses/{submissionId}`: defensa de una entrega enviada (enlace https opcional, resumen, decisiones y campos opcionales). La escribe el servidor.
+- `checkpoints/{id}`: entrada de la bitácora de proceso de una entrega (`challengeId`, `submissionId`, `authorUid`, texto y enlace opcional). Solo con inscripción aprobada y hasta el cierre de entregas. La escribe el servidor.
+- `feedbacks/{submissionId}`: retroalimentación de la empresa sobre una entrega enviada. `publishedAt` nulo es un borrador que solo ve la empresa; la persona la lee cuando está publicada. La escribe el servidor.
 
 Un challenge publicado solo es público si su experiencia también está publicada. Una inscripción solo se crea mientras la ventana de inscripción está abierta y queden cupos, y la entrega solo se acepta con la inscripción aprobada y antes del cierre de entregas. Una inscripción a la experiencia (sin challenge) es individual y no habilita challenges que se juegan solo por equipo.
 

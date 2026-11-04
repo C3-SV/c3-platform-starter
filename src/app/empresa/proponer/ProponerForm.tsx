@@ -7,7 +7,6 @@ import type { FieldIssue } from "@/lib/client/api";
 interface Confirmation {
   reference: string;
   email: string;
-  stored: boolean;
 }
 
 function issueFor(issues: FieldIssue[], field: string): string | null {
@@ -48,8 +47,13 @@ export function ProponerForm() {
         body: JSON.stringify({ ...values, consent }),
       });
       const payload = await response.json().catch(() => ({}));
+      // La confirmación aparece solo si la propuesta quedó guardada; una respuesta sin guardar no se presenta como recibida.
+      if (response.status === 201 && payload.proposal?.stored === true) {
+        setConfirmation({ reference: payload.proposal.reference, email: values.contactEmail.trim() });
+        return;
+      }
       if (response.status === 201) {
-        setConfirmation({ reference: payload.proposal?.reference ?? "", email: values.contactEmail.trim(), stored: payload.proposal?.stored !== false });
+        setFormError("No pudimos registrar tu propuesta. Revisá los datos e intentá de nuevo.");
         return;
       }
       setIssues(payload?.error?.issues ?? []);

@@ -79,7 +79,10 @@ export function ContactosPanel() {
       {contacts.map((contact) => (
         <article key={contact.id} style={{ borderTop: "1px solid var(--c3-borde)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>{contact.organizationName}</span>
+            <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontSize: 16, fontWeight: 600 }}>{contact.organizationName}</span>
+              {contact.isDemo ? <span className="c3-etiqueta" style={{ color: "var(--c3-advertencia)" }}>DEMO · datos demostrativos</span> : null}
+            </span>
             <StatePill state={contact.state} />
           </div>
           <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>

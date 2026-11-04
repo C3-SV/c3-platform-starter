@@ -114,6 +114,7 @@ function EmpresaContenido() {
                     <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Challenge empresarial</span>
                     <StatePill state={challenge.state} />
                   </div>
+                  {challenge.isDemo ? <span className="c3-etiqueta" style={{ color: "var(--c3-advertencia)" }}>DEMO · datos demostrativos</span> : null}
                   <span className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{challenge.title}</span>
                   <dl aria-label="Cifras del challenge" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 8, margin: 0 }}>
                     {[

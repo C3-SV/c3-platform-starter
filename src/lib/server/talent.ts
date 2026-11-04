@@ -65,8 +65,6 @@ export interface ContactView {
 export interface TalentRow {
   submissionId: string;
   mode: "individual" | "team";
-  /** Solo en entregas individuales: el contacto se solicita a una persona concreta. */
-  userId: string | null;
   name: string | null;
   submittedAt: string | null;
   text: string;
@@ -119,6 +117,8 @@ export interface ContactForMe {
   state: PresentedState;
   message: string | null;
   updatedAt: string;
+  /** Datos inventados de la demostración: se marcan como tales en la interfaz. */
+  isDemo: boolean;
   /** Acciones que la persona puede tomar ahora sobre esta solicitud. */
   actions: ContactStatus[];
 }
@@ -147,8 +147,12 @@ async function requireCompanyChallenge(db: Firestore, actor: Actor, challengeId:
 
 async function requireOrganizationMember(db: Firestore, actor: Actor, organizationId: string | null): Promise<void> {
   if (!organizationId) throw forbidden("Este challenge no tiene una empresa vinculada.");
-  const membership = await db.collection(ORGANIZATION_MEMBERS).doc(`${organizationId}__${actor.uid}`).get();
-  if (!membership.exists) throw forbidden("Solo la representante de la empresa de este challenge puede hacer esto.");
+  if (!(await isOrganizationMember(db, actor, organizationId))) throw forbidden("Solo la representante de la empresa de este challenge puede hacer esto.");
+}
+
+async function isOrganizationMember(db: Firestore, actor: Actor, organizationId: string | null): Promise<boolean> {
+  if (!organizationId) return false;
+  return (await db.collection(ORGANIZATION_MEMBERS).doc(`${organizationId}__${actor.uid}`).get()).exists;
 }
 
 async function displayNamesOf(db: Firestore, userIds: string[]): Promise<Map<string, string | null>> {
@@ -217,7 +221,6 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
     return {
       submissionId: doc.id,
       mode: isTeam ? "team" : "individual",
-      userId,
       name: isTeam ? (teamNames.get(doc.id.split("__team__")[1]) ?? null) : (names.get(userId as string) ?? null),
       submittedAt: data.submittedAt ?? null,
       text: data.text ?? "",
@@ -359,23 +362,6 @@ export async function requestContact(db: Firestore, actor: Actor, challengeId: s
   }
   const userId = submission.userId as string;
 
-  const [shortlistEntry, enrollment, existing] = await Promise.all([
-    db.collection(SHORTLISTS).doc(submissionId).get(),
-    db.collection(ENROLLMENTS).doc(enrollmentDocId(challenge.experienceId, userId)).get(),
-    db.collection(CONTACT_REQUESTS).doc(contactRequestDocId(challengeId, userId)).get(),
-  ]);
-  const issue = contactEligibilityIssue({
-    isLinkedRepresentative: true,
-    hasShortlistEntry: shortlistEntry.exists,
-    hasApprovedEnrollment: enrollment.data()?.status === "approved",
-    hasActiveRequest: existing.exists && ACTIVE_CONTACT_STATUSES.includes(existing.data()?.status as ContactStatus),
-  });
-  // Declinada o revocada son respuestas finales: no se vuelve a pedir contacto ni se reemplaza la solicitud cerrada.
-  if (existing.exists && !ACTIVE_CONTACT_STATUSES.includes(existing.data()?.status as ContactStatus)) {
-    throw new HttpError(409, "contacto_cerrado", "La persona ya respondió a una solicitud anterior: declinó o revocó el permiso. No se vuelve a pedir contacto.");
-  }
-  if (issue) throw new HttpError(409, "contacto_no_disponible", issue);
-
   const id = contactRequestDocId(challengeId, userId);
   const stamp = now.toISOString();
   const status = nextContactStatus(null, "company", "esperando_consentimiento");
@@ -390,10 +376,28 @@ export async function requestContact(db: Firestore, actor: Actor, challengeId: s
     createdAt: stamp,
     updatedAt: stamp,
   };
-  const batch = db.batch();
-  batch.set(db.collection(CONTACT_REQUESTS).doc(id), data);
-  recordAudit(db, batch, actor, now, { action: "contacto.solicitar", target: { type: "contactRequest", id }, details: { challengeId } });
-  await batch.commit();
+  // Comprobaciones y escritura en una transacción: dos solicitudes simultáneas no se pisan y una solicitud
+  // declinada o revocada no vuelve a abrirse.
+  await db.runTransaction(async (transaction) => {
+    const shortlistEntry = await transaction.get(db.collection(SHORTLISTS).doc(submissionId));
+    const enrollment = await transaction.get(db.collection(ENROLLMENTS).doc(enrollmentDocId(challenge.experienceId, userId)));
+    const existing = await transaction.get(db.collection(CONTACT_REQUESTS).doc(id));
+    const active = existing.exists && ACTIVE_CONTACT_STATUSES.includes(existing.data()?.status as ContactStatus);
+    // Declinada o revocada son respuestas finales: no se vuelve a pedir contacto ni se reemplaza la solicitud cerrada.
+    if (existing.exists && !active) {
+      throw new HttpError(409, "contacto_cerrado", "La persona ya respondió a una solicitud anterior: declinó o revocó el permiso. No se vuelve a pedir contacto.");
+    }
+    const issue = contactEligibilityIssue({
+      isLinkedRepresentative: true,
+      hasShortlistEntry: shortlistEntry.exists,
+      // La inscripción aprobada debe ser la de este challenge: una de otro challenge de la misma experiencia no cuenta.
+      hasApprovedEnrollment: enrollment.data()?.status === "approved" && enrollment.data()?.challengeId === challengeId,
+      hasActiveRequest: active,
+    });
+    if (issue) throw new HttpError(409, "contacto_no_disponible", issue);
+    transaction.set(db.collection(CONTACT_REQUESTS).doc(id), data);
+    recordAudit(db, transaction, actor, now, { action: "contacto.solicitar", target: { type: "contactRequest", id }, details: { challengeId } });
+  });
   return contactViewOf(id, data);
 }
 
@@ -433,7 +437,10 @@ export async function advanceContactRequest(db: Firestore, actor: Actor, request
     const snapshot = await transaction.get(ref);
     const data = snapshot.data();
     if (!snapshot.exists || !data) throw notFound("No encontramos esa solicitud.");
-    if (!actor.isAdmin) await requireOrganizationMember(db, actor, (data.organizationId as string | null) ?? null);
+    // Una solicitud ajena responde como inexistente: no se revela si existe para otra empresa.
+    if (!actor.isAdmin && !(await isOrganizationMember(db, actor, (data.organizationId as string | null) ?? null))) {
+      throw notFound("No encontramos esa solicitud.");
+    }
     if (!canTransitionContact(data.status as ContactStatus, "company", to)) {
       throw new ValidationFailure([{ field: "to", message: "Esa acción no está disponible para el estado actual de la solicitud." }]);
     }
@@ -462,16 +469,20 @@ export async function listMyContactRequests(db: Firestore, actor: Actor): Promis
       state: contactStatePresentation(status, "participant"),
       message: (data.message as string | null) ?? null,
       updatedAt: data.updatedAt as string,
+      isDemo: challenge?.demo === true,
       actions: candidates.filter((to) => canTransitionContact(status, "participant", to)),
     };
   }));
   return rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
-/** Entrega propia de la persona en el challenge: la submission individual, o la del equipo si ella es integrante. */
+/**
+ * Entrega propia de la persona en el challenge: la submission individual, o la del equipo si ella es integrante.
+ * Un challenge concluido sigue mostrando lo que la empresa publicó; las escrituras se cierran aparte.
+ */
 async function ownSubmissionOf(db: Firestore, actor: Actor, challengeId: string): Promise<{ submissionId: string; isLeader: boolean } | null> {
   const challenge = await loadChallenge(db, challengeId);
-  if (challenge.status !== "published") throw notFound();
+  if (challenge.status !== "published" && challenge.status !== "closed") throw notFound();
   const experience = await loadExperience(db, challenge.experienceId);
   const enrollment = (await db.collection(ENROLLMENTS).doc(enrollmentDocId(experience.id, actor.uid)).get()).data();
   if (!enrollment || enrollment.status !== "approved" || enrollment.challengeId !== challengeId) return null;
@@ -494,6 +505,9 @@ export async function saveDefense(db: Firestore, actor: Actor, challengeId: stri
   const own = await ownSubmissionOf(db, actor, challengeId);
   if (!own) throw forbidden("Tu inscripción todavía no está aprobada para este challenge.");
   if (!own.isLeader) throw new HttpError(403, "solo_lider", "Solo la líder del equipo registra la defensa.");
+  if ((await loadChallenge(db, challengeId)).status !== "published") {
+    throw new HttpError(409, "reto_concluido", "El challenge ya concluyó: la defensa ya no se puede modificar.");
+  }
   const submission = (await db.collection(SUBMISSIONS).doc(own.submissionId).get()).data();
   if (!canRecordDefense(submission?.status ?? null)) {
     throw new HttpError(409, "entrega_no_enviada", "Enviá tu entrega antes de registrar la defensa.");
@@ -530,6 +544,9 @@ export async function addCheckpoint(db: Firestore, actor: Actor, challengeId: st
   const own = await ownSubmissionOf(db, actor, challengeId);
   if (!own) throw forbidden("Tu inscripción todavía no está aprobada para este challenge.");
   const challenge = await loadChallenge(db, challengeId);
+  if (challenge.status !== "published") {
+    throw new HttpError(409, "reto_concluido", "El challenge ya concluyó: la bitácora ya no se puede modificar.");
+  }
   if (challenge.submissionClosesAt && Date.parse(challenge.submissionClosesAt) <= now.getTime()) {
     throw new HttpError(409, "plazo_cerrado", "La bitácora se cierra con el plazo de entregas.");
   }
