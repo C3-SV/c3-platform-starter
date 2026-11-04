@@ -15,10 +15,10 @@ import { USERS } from "../server/ids.ts";
 export const DEMO_EMAIL_DOMAIN = "demo.c3.com.sv";
 /**
  * Único proyecto remoto donde se admiten cuentas demo. Es el proyecto Firebase que ya existe en la cuenta del
- * responsable; la decisión de usarlo (3-nov-2026) es explícita y está registrada en AGENTS §15.
+ * responsable; la decisión de usarlo (3-nov-2026) es explícita y está registrada en AGENTS §13.
  */
 export const DEMO_PROJECT = "c3-platform-demo";
-/** Proyecto que usan los emuladores locales (AGENTS §9). */
+/** Proyecto que usan los emuladores locales (AGENTS §8). */
 export const EMULATOR_PROJECT = "demo-c3-platform";
 const PROVISIONED_BY = "c3-demo-provision";
 

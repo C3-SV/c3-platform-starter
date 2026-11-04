@@ -1,8 +1,10 @@
 # Auditoría de producto, UX y navegación — C3 Platform (26-10-2026)
 
-> **Actualización (26-10-2026):** las decisiones D1–D10 de §8 fueron **aprobadas** y se implementaron por fases (Fase 0, marcos, capacidades, Admin por secciones, perfil público); la arquitectura vigente y su verificación están en [PRODUCTO-Y-NAVEGACION](PRODUCTO-Y-NAVEGACION.md). Este documento se conserva como el diagnóstico original: sus hallazgos describen el estado **anterior** a esas fases y no se reescriben.
+> **Archivo histórico.** Las referencias a «AGENTS §N» usan la numeración anterior a la compactación del 4-nov-2026.
+>
+> **Actualización (26-10-2026):** las decisiones D1–D10 de §8 fueron **aprobadas** y se implementaron por fases (Fase 0, marcos, capacidades, Admin por secciones, perfil público); la arquitectura vigente y su verificación están en [PRODUCTO-Y-NAVEGACION](../PRODUCTO-Y-NAVEGACION.md). Este documento se conserva como el diagnóstico original: sus hallazgos describen el estado **anterior** a esas fases y no se reescriben.
 
-**Estado original: diagnóstico y propuesta para revisión. Nada de lo propuesto estaba implementado ni aprobado.** No se modificó código, rutas ni diseños. Este documento cumple el «próximo entregable» de [PRODUCTO-Y-NAVEGACION §6](PRODUCTO-Y-NAVEGACION.md) y no repite lo que ya describen [README](../README.md) (rutas, modelo), [AGENTS](../AGENTS.md) (reglas) ni [PENDIENTES-REALES](PENDIENTES-REALES.md) (bloqueos); los enlaza.
+**Estado original: diagnóstico y propuesta para revisión. Nada de lo propuesto estaba implementado ni aprobado.** No se modificó código, rutas ni diseños. Este documento cumple el «próximo entregable» de [PRODUCTO-Y-NAVEGACION §6](../PRODUCTO-Y-NAVEGACION.md) y no repite lo que ya describen [README](../../README.md) (rutas, modelo), [AGENTS](../../AGENTS.md) (reglas) ni [PENDIENTES-REALES](../PENDIENTES-REALES.md) (bloqueos); los enlaza.
 
 Etiquetas de evidencia: **[N]** observado en navegador · **[C]** leído en código · **[H]** hipótesis sin probar · **[P]** propuesta.
 
@@ -39,7 +41,7 @@ Etiquetas de evidencia: **[N]** observado en navegador · **[C]** leído en cód
 | Panel responsive de Mi C3 y Trayectoria (barra superior en 1280 px, tab bar en 390 px) | Es el único marco que sirve bien en ambos tamaños | [N] |
 | Continuidad de inscripción: CTA → `/acceso?modo=registro&next=…` → inscripción | Probado de punta a punta en 4 clics más formulario; es el patrón a generalizar | [N] J1 |
 | Pantallas de entrega por pasos (Inscrito → Habilitado → Entrega → Evaluación → Resultado) | Orienta sin explicar | [N] `esc-03` |
-| Vocabulario único de estados (`StatePill`) y evaluación anónima («Solución 1…») | Coherente con [AGENTS §6](../AGENTS.md) y el diseño | [N] [C] |
+| Vocabulario único de estados (`StatePill`) y evaluación anónima («Solución 1…») | Coherente con [AGENTS §6](../../AGENTS.md) y el diseño | [N] [C] |
 | Menú Admin en orden de ciclo de vida (Propuestas → Experiencias → Inscripciones → Entregas → Jurados → Resultados) | La secuencia es correcta; falta la URL y el atajo a pendientes | [N] `esc-06` |
 | **Cero desbordes horizontales** en 116 cargas de página a 390 y 1280 px | La base responsive es sólida | [N] crawl |
 | `Cuenta` separada de `Trayectoria` (lo editable vs. lo que C3 registra) | Decisión de producto correcta; solo falta clarificar el copy (H13) | [N] [C] |
@@ -48,7 +50,7 @@ Etiquetas de evidencia: **[N]** observado en navegador · **[C]** leído en cód
 
 ## 3. Mapa real de marcos y entradas
 
-Rutas, accesos y estado de cada vista están en [README «Rutas y vistas»](../README.md); aquí solo lo que importa para navegar.
+Rutas, accesos y estado de cada vista están en [README «Rutas y vistas»](../../README.md); aquí solo lo que importa para navegar.
 
 | Marco (cabecera) | Rutas que lo usan | Navegación que ofrece | ¿Cómo se vuelve? |
 | --- | --- | --- | --- |
@@ -81,10 +83,10 @@ Severidad: **Crítica** = bloquea o rompe un recorrido; **Alta** = el recorrido 
 ### 4.1 Bloqueantes de recorrido
 
 **H1 · Enlace del jurado roto — Crítica.**
-`EvaluadorPanel` arma `/acceso?next=/evaluar/[id]` ([src/components/EvaluadorPanel.tsx](../src/components/EvaluadorPanel.tsx)), pero la página vive en `/mi-c3/evaluar/[id]`. [N] Sin sesión → «Entrar» → login correcto → `/evaluar/[id]` → 404 («Puede que el reto haya sido retirado…»), tanto desde `/mi-c3/evaluar/[id]` como desde `/empresa/retos/[id]/evaluacion`. Un jurado invitado por enlace hace todo bien y termina en «No encontramos esta página». Confirma la sospecha de PRODUCTO-Y-NAVEGACION §2. Ninguna prueba E2E parte de una URL de evaluación sin sesión ([C] las especificaciones inician con un acceso explícito, p. ej. `corte5` con `loginAt(..., "/mi-c3")`).
+`EvaluadorPanel` arma `/acceso?next=/evaluar/[id]` ([src/components/EvaluadorPanel.tsx](../../src/components/EvaluadorPanel.tsx)), pero la página vive en `/mi-c3/evaluar/[id]`. [N] Sin sesión → «Entrar» → login correcto → `/evaluar/[id]` → 404 («Puede que el reto haya sido retirado…»), tanto desde `/mi-c3/evaluar/[id]` como desde `/empresa/retos/[id]/evaluacion`. Un jurado invitado por enlace hace todo bien y termina en «No encontramos esta página». Confirma la sospecha de PRODUCTO-Y-NAVEGACION §2. Ninguna prueba E2E parte de una URL de evaluación sin sesión ([C] las especificaciones inician con un acceso explícito, p. ej. `corte5` con `loginAt(..., "/mi-c3")`).
 
 **H2 · Espacio de empresa inalcanzable y aislado — Crítica para el piloto con empresa.**
-[N] Una representante vinculada inicia sesión, aterriza en `/` y no encuentra ningún enlace a su espacio; solo llega escribiendo `/empresa`. Dentro, la cabecera solo ofrece logo y «Salir» (`esc-05`): sin Mi C3, Cuenta, Explorar ni «Evaluar». Las soluciones se ven en tarjetas pero **no hay acción para evaluarlas**; la evaluación vive en otra ruta sin enlace entrante (`/empresa/retos/[id]/evaluacion`) o, para jurado asignado, en Mi C3. El diseño preveía V09 → V05 y V09 → V11 ([diseno-claude/README §7](../diseno-claude/README.md)); ninguno de los dos enlaces se implementó.
+[N] Una representante vinculada inicia sesión, aterriza en `/` y no encuentra ningún enlace a su espacio; solo llega escribiendo `/empresa`. Dentro, la cabecera solo ofrece logo y «Salir» (`esc-05`): sin Mi C3, Cuenta, Explorar ni «Evaluar». Las soluciones se ven en tarjetas pero **no hay acción para evaluarlas**; la evaluación vive en otra ruta sin enlace entrante (`/empresa/retos/[id]/evaluacion`) o, para jurado asignado, en Mi C3. El diseño preveía V09 → V05 y V09 → V11 ([diseno-claude/README §7](../../diseno-claude/README.md)); ninguno de los dos enlaces se implementó.
 
 **H3 · Destino posterior al acceso — Alta.**
 [N] Las seis cuentas probadas (participante nueva, participante con entregas, jurado, representante vinculada, representante sin vínculo y admin) caen en `/` tras entrar sin `next`. [N] J2: desde `/retos/[id]`, el «Entrar» de la cabecera enlaza a `/acceso` sin `next` y vuelve a la Home. Para entrar hay que dar un clic extra («Mi C3» o «Admin») sobre una página de marketing. Lo que sí funciona: los CTA de inscripción y las pantallas «Entrá para…» sí pasan `next` (salvo H1).
@@ -99,7 +101,7 @@ Severidad: **Crítica** = bloquea o rompe un recorrido; **Alta** = el recorrido 
 - [C] Los marcos D llevan siempre «← Mi C3» aunque el destino sea otro: en `/experiencias/[id]/inscripcion` el enlace dice «← Mi C3» pero va al detalle de la experiencia (`backHref` sin `backLabel`). [N] Sin sesión, esas pantallas muestran además la tab bar «Inicio · Explorar · Trayectoria» con destinos que exigen cuenta.
 
 **H5 · La cuenta de varios sombreros no está modelada — Alta.** [C] [N]
-[AccesoPanel](../src/app/acceso/AccesoPanel.tsx) promete «usás esta misma cuenta» para empresas, y Mi C3 ya mezcla participante + jurado. Pero la navegación solo conoce «admin» (`session.user.isAdmin`). Una persona que además es representante o jurado no ve ni «Mi empresa» ni «Evaluaciones» en ningún menú. La Home, en cambio, sí distingue dos puertas: la navegación no.
+[AccesoPanel](../../src/app/acceso/AccesoPanel.tsx) promete «usás esta misma cuenta» para empresas, y Mi C3 ya mezcla participante + jurado. Pero la navegación solo conoce «admin» (`session.user.isAdmin`). Una persona que además es representante o jurado no ve ni «Mi empresa» ni «Evaluaciones» en ningún menú. La Home, en cambio, sí distingue dos puertas: la navegación no.
 
 **H6 · Admin es una consola desconectada — Alta.** [N] [C]
 - Sección en estado de React: URL fija `/admin`; **recargar pierde la sección**; «atrás» sale del panel; no se puede enlazar a «Propuestas».
@@ -110,7 +112,7 @@ Severidad: **Crítica** = bloquea o rompe un recorrido; **Alta** = el recorrido 
 - Código [C]: el campo `pending` de `NAV` y `PendingSection` son residuos de cuando las secciones no existían.
 
 **H7 · El marco de teléfono se usa también para tareas densas de escritorio — Alta (evaluación), Media (entrega e inscripción).** [N]
-Entrega, inscripción y evaluación se ven en 1280 px como una columna de ~480 px con 400 px vacíos a cada lado (`esc-03`, `esc-04`). El diseño pedía **mobile-first para V05–V08** pero **escritorio para V09–V11** («soluciones lado a lado y rúbrica», V11). La evaluación del jurado y la del representante comparten componente; hoy ninguna cumple V11. [AGENTS §4](../AGENTS.md) ya advierte que «un marco móvil centrado en escritorio no sustituye un panel de escritorio útil».
+Entrega, inscripción y evaluación se ven en 1280 px como una columna de ~480 px con 400 px vacíos a cada lado (`esc-03`, `esc-04`). El diseño pedía **mobile-first para V05–V08** pero **escritorio para V09–V11** («soluciones lado a lado y rúbrica», V11). La evaluación del jurado y la del representante comparten componente; hoy ninguna cumple V11. [AGENTS §4](../../AGENTS.md) ya advierte que «un marco móvil centrado en escritorio no sustituye un panel de escritorio útil».
 
 **H8 · Cabecera pública en móvil — Media.** [N] 243 px de 844 (29 %), enlaces en una fila con scroll horizontal («Empr…») y botones «Entrar/Crear cuenta» en otra fila. No hay menú colapsable.
 
@@ -118,7 +120,7 @@ Entrega, inscripción y evaluación se ven en 1280 px como una columna de ~480 p
 
 **H9 · Tres URL para la tarea «evaluar» — Media.** [N] [C] `/mi-c3/evaluar/[id]` (correcta), `/empresa/retos/[id]/evaluacion` (mismo componente, otro marco, sin enlace entrante) y `/evaluar/[id]` (inexistente, la usa el `next` de H1). Según la ruta, el mismo jurado ve el marco de teléfono (`esc-04`) o la cabecera pública con «Empresas» resaltado aunque sea externo.
 
-**H10 · «Próximamente» donde la función ya existe — Media.** [N] [C] El detalle de reto muestra un botón «Próximamente» en «¿Tenés un problema así?» ([src/app/retos/[challengeId]/page.tsx](../src/app/retos/%5BchallengeId%5D/page.tsx)) aunque `/empresa/proponer` está implementada y la Home ya la enlaza. Contradice «lo no implementado se marca Próximamente» ([AGENTS §6](../AGENTS.md)) por el lado opuesto: marca como pendiente algo disponible. El README (§Verificación visual) también sigue diciendo que V01 lo muestra.
+**H10 · «Próximamente» donde la función ya existe — Media.** [N] [C] El detalle de reto muestra un botón «Próximamente» en «¿Tenés un problema así?» ([src/app/retos/[challengeId]/page.tsx](../../src/app/retos/%5BchallengeId%5D/page.tsx)) aunque `/empresa/proponer` está implementada y la Home ya la enlaza. Contradice «lo no implementado se marca Próximamente» ([AGENTS §6](../../AGENTS.md)) por el lado opuesto: marca como pendiente algo disponible. El README (§Verificación visual) también sigue diciendo que V01 lo muestra.
 
 **H11 · Salir termina en lugares distintos — Media.** [N] J6: desde Mi C3, Cuenta, Trayectoria, Entrega y Explorar → `/`. Desde Empresa → se queda en `/empresa` mostrando «Entrá para ver tu espacio»; desde Admin → se queda en `/admin` con «Entrá con una cuenta de administrador». Posible relación con la falla de E2E de Cuenta, no probada (ver §9, D-4).
 
@@ -127,7 +129,7 @@ Entrega, inscripción y evaluación se ven en 1280 px como una columna de ~480 p
 **H13 · Nombres inconsistentes — Media.** [N] [C]
 - Cuenta se rotula «MI ESPACIO»; Mi C3 dice «tu espacio»; la empresa tiene «Espacio de empresa».
 - «Empresas» (menú) abre el formulario público; «Conecta» (menú) es la línea para empresas; el botón dice «Proponer un challenge» mientras todo lo demás dice «reto».
-- **Copy que promete algo inexistente:** Mi C3 describe Trayectoria como «Tu perfil público…» (`src/app/mi-c3/MiC3Lateral.tsx` en `origin/main`); el perfil público compartible está pendiente de decisión ([PENDIENTES-REALES](PENDIENTES-REALES.md)).
+- **Copy que promete algo inexistente:** Mi C3 describe Trayectoria como «Tu perfil público…» (`src/app/mi-c3/MiC3Lateral.tsx` en `origin/main`); el perfil público compartible está pendiente de decisión ([PENDIENTES-REALES](../PENDIENTES-REALES.md)).
 - El formulario de registro pide aceptar «términos y política de privacidad» sin enlaces; el pie de página existe solo en Home y las tres líneas (12 de 112 páginas medidas). Los textos legales son un pendiente conocido: aquí solo se señala su efecto en la navegación.
 
 ### 4.4 Repositorio, documentación y verificación (afectan cómo se ejecutará esto)
@@ -144,7 +146,7 @@ Entrega, inscripción y evaluación se ven en 1280 px como una columna de ~480 p
 
 ## 5. Contraste con la visión y los diseños
 
-El paquete `diseno-claude/` dibuja **12 vistas, no una navegación**: no define cabecera global, ni el rol de jurado fuera de V05/V11, ni Cuenta, ni experiencias sin reto ([README §6–7](../diseno-claude/README.md)). Lo implementado cubre esos huecos pantalla por pantalla, y ahí aparecen los marcos A–F.
+El paquete `diseno-claude/` dibuja **12 vistas, no una navegación**: no define cabecera global, ni el rol de jurado fuera de V05/V11, ni Cuenta, ni experiencias sin reto ([README §6–7](../../diseno-claude/README.md)). Lo implementado cubre esos huecos pantalla por pantalla, y ahí aparecen los marcos A–F.
 
 | Tema | Diseño | Implementación | Recomendación |
 | --- | --- | --- | --- |
@@ -168,7 +170,7 @@ Lo que **no se debe copiar del diseño** [P]: el marco de teléfono centrado en 
 2. **Tres zonas, una cabecera cada una:** *Sitio* (descubrir y convertir), *App* (trabajo autenticado) y *Consola* (operación de C3). Cambiar de zona es una decisión visible, no un accidente.
 3. **Mi C3 es el *hub*** de lo autenticado: lo que toca ahora, venga de donde venga (entregas, evaluaciones, solicitudes de empresa, pendientes de Admin) y las puertas a los demás espacios.
 4. **Cada tarea tiene una sola URL canónica** y las demás redirigen.
-5. **Mantener las URL actuales.** Solo se añaden rutas por sección en Admin; lo demás son redirecciones ([PRODUCTO-Y-NAVEGACION §5](PRODUCTO-Y-NAVEGACION.md)).
+5. **Mantener las URL actuales.** Solo se añaden rutas por sección en Admin; lo demás son redirecciones ([PRODUCTO-Y-NAVEGACION §5](../PRODUCTO-Y-NAVEGACION.md)).
 6. **El marco de teléfono es solo móvil.** En escritorio el contenido usa el ancho útil dentro de la misma cabecera de la app.
 
 ### 6.2 Menús por zona y capacidad
@@ -269,14 +271,14 @@ Mi C3 (hub), orden de bloques      │ Experiencias │                         
 | Un menú global único para todos | Sobrecarga al visitante con accesos que no puede usar |
 | Integrar Admin en el marco de la app | Admin necesita menú lateral denso; conviene mantenerlo como consola, pero conectada |
 | Sustituir la tab bar móvil por hamburguesa en la app | Peor descubribilidad para el público joven; la tab bar ya funciona |
-| Renombrar rutas (`/mi-c3` → `/panel`) | Rompe enlaces guardados sin beneficio ([PRODUCTO §5](PRODUCTO-Y-NAVEGACION.md)) |
+| Renombrar rutas (`/mi-c3` → `/panel`) | Rompe enlaces guardados sin beneficio ([PRODUCTO §5](../PRODUCTO-Y-NAVEGACION.md)) |
 | Acceder a la evaluación con `/evaluar/[id]` como canónica | Viable (ver D3); se prefiere `/mi-c3/evaluar/[id]` porque ya existe, está probada y es la que enlaza Mi C3 |
 
 ---
 
 ## 7. Roadmap priorizado [P]
 
-Esfuerzo: **S** ≈ horas–1 día · **M** ≈ 2–5 días · **L** ≈ 1–2 semanas. Cada fase puede entregarse y verificarse sola. Antes de implementar, resolver D-1 (rama base) y seguir [FLUJO-AGENTES](FLUJO-AGENTES.md): rama desde `dev`, PR, `npm run check` y, donde toque, `test:rules`/`test:e2e`.
+Esfuerzo: **S** ≈ horas–1 día · **M** ≈ 2–5 días · **L** ≈ 1–2 semanas. Cada fase puede entregarse y verificarse sola. Antes de implementar, resolver D-1 (rama base) y seguir [FLUJO-AGENTES](../FLUJO-AGENTES.md): rama desde `dev`, PR, `npm run check` y, donde toque, `test:rules`/`test:e2e`.
 
 ### Fase 0 — Correcciones sin decisión de producto (S)
 
@@ -315,7 +317,7 @@ Esfuerzo: **S** ≈ horas–1 día · **M** ≈ 2–5 días · **L** ≈ 1–2 s
 | # | Qué | Criterio |
 | --- | --- | --- |
 | 3.1 | Matriz E2E de navegación **rol × tamaño**: llegar a cada destino sin URL, retornos `next`, «Salir», sin permiso | Cubre D-5; se ejecuta en CI |
-| 3.2 | Prueba de usabilidad con 4–5 personas por rol (participante, jurado, representante, admin) con tareas de §6.5 | Medir pasos y errores ([PLAN-CONSTRUCCION «Métricas»](PLAN-CONSTRUCCION.md)); sin cifras inventadas |
+| 3.2 | Prueba de usabilidad con 4–5 personas por rol (participante, jurado, representante, admin) con tareas de §6.5 | Medir pasos y errores ([PLAN-CONSTRUCCION «Métricas»](../PLAN-CONSTRUCCION.md)); sin cifras inventadas |
 | 3.3 | Filtros de Explorar al superar ~10 experiencias; auditoría de accesibilidad con herramienta y lector de pantalla | — |
 | 3.4 | Asunto aparte: actualización de Next.js por el aviso de seguridad (D-3) | Decisión y plan de compatibilidad propios |
 
@@ -331,7 +333,7 @@ Esfuerzo: **S** ≈ horas–1 día · **M** ≈ 2–5 días · **L** ≈ 1–2 s
 | D4 | URL por sección de Admin | Segmentos `/admin/[sección]` (mínimo viable: `?s=` + historial) | Recarga, «atrás» y enlaces directos |
 | D5 | ¿Admin en móvil? | Usable (menú colapsable) pero optimizado para escritorio | Nadie pidió Admin móvil; evita invertir de más |
 | D6 | Entrega, inscripción y evaluación en escritorio | Columna de ~720 px (entrega, inscripción) y dos columnas (evaluación) dentro del marco de la app; móvil sin cambios | Respeta el diseño móvil aprobado y AGENTS §4 |
-| D7 | Compite · Crea · Conecta en el menú | Mantener en escritorio; agrupar en el menú móvil | Son identidad de marca ([AGENTS §1](../AGENTS.md)) |
+| D7 | Compite · Crea · Conecta en el menú | Mantener en escritorio; agrupar en el menú móvil | Son identidad de marca ([AGENTS §1](../../AGENTS.md)) |
 | D8 | «Reto» vs «challenge» y «Para empresas» | Un solo término en la interfaz; «Para empresas» como etiqueta del menú | Coherencia de vocabulario |
 | D9 | Perfil público | Corregir copy ahora; decidir el perfil público como pendiente aparte | Evita prometer lo no implementado |
 | D10 | ¿Sobre qué rama implementar? | Reconciliar `dev`/`main`/documentación antes de la Fase 0 | D-1 |
@@ -348,7 +350,7 @@ Esfuerzo: **S** ≈ horas–1 día · **M** ≈ 2–5 días · **L** ≈ 1–2 s
 
 **No ejecutado:** `npm run check`, `test:rules`, la suite E2E completa, axe-core, lector de pantalla, dispositivos reales, Firefox/Safari, pruebas con personas, el flujo completo de equipos (más allá de lo sembrado), resultados publicados ni el ciclo de vida de experiencias. Los datos son de emulador; no hay conclusiones sobre datos reales. Las observaciones son de una sola sesión: distinguir **observación [N]**, **código [C]** y **hipótesis [H]** antes de tomar decisiones.
 
-**Verificación de las hipótesis de [PRODUCTO-Y-NAVEGACION §3](PRODUCTO-Y-NAVEGACION.md):**
+**Verificación de las hipótesis de [PRODUCTO-Y-NAVEGACION §3](../PRODUCTO-Y-NAVEGACION.md):**
 
 | Hipótesis | Resultado |
 | --- | --- |
