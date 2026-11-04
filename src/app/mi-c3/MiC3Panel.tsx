@@ -9,6 +9,7 @@ import { formatDateTime } from "@/lib/domain/format";
 import { GROUP_COPY, GROUP_ORDER, organizeParticipation, overviewMessage, type ParticipationEntry, type ParticipationGroup } from "@/lib/domain/mi-c3";
 import type { MyEnrollmentView } from "@/lib/server/participation";
 import { AssignmentCard, EnrollmentCard, type Assignment } from "./MiC3Cards";
+import { ContactosPanel } from "./ContactosPanel";
 import { MiC3Lateral } from "./MiC3Lateral";
 
 type Entry = ParticipationEntry<MyEnrollmentView, Assignment>;
@@ -158,6 +159,7 @@ function MiC3Contenido() {
               {GROUP_ORDER.map((group) => (
                 <Seccion key={group} group={group} entries={overview.groups[group]} busyId={busyId} onCancel={(id) => void cancel(id)} />
               ))}
+              <ContactosPanel />
             </div>
             <MiC3Lateral user={user} />
           </div>

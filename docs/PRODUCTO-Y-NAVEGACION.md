@@ -64,7 +64,7 @@ Una misma cuenta puede participar, evaluar, representar una organización y admi
 
 | Ruta | Rol | Tarea | Entrada | Salida / retorno | Menú |
 | --- | --- | --- | --- | --- | --- |
-| `/mi-c3` | Cualquier cuenta | Ver lo que toca ahora y los espacios | Destino por defecto tras entrar; menú de la cuenta; tab bar | Cada tarjeta lleva a su tarea | Mi C3 |
+| `/mi-c3` | Cualquier cuenta | Ver lo que toca ahora, los espacios y, si existen, las solicitudes de contacto (sección «Solicitudes de contacto», solo con solicitudes) | Destino por defecto tras entrar; menú de la cuenta; tab bar | Cada tarjeta lleva a su tarea; aceptar, declinar o revocar el permiso se hace en la misma sección | Mi C3 |
 | `/mi-c3/retos/[id]` | Participante | Ver el challenge y entregar | Tarjeta de Mi C3; Trayectoria | Migas → Mi C3 | Mi C3 |
 | `/mi-c3/evaluar/[id]` | Jurado (externo o representante) | Evaluar soluciones | Tarjeta «Como jurado»; Empresa → «Evaluar soluciones»; enlace de invitación (con `next`) | Migas → Mi C3 | Mi C3 |
 | `/evaluar/[id]`, `/empresa/retos/[id]/evaluacion` | — | **Redirigen** (307) a la canónica | Enlaces antiguos | — | — |
@@ -106,6 +106,26 @@ Opt-in, **privado por defecto**, controlado por la persona en Cuenta («Perfil p
 - **Pendiente legal** (ver [PENDIENTES-REALES](PENDIENTES-REALES.md)): el tratamiento de menores y los permisos de imagen y nombre deben validarse antes de usar datos reales; hasta entonces el perfil es una demostración con datos de prueba.
 
 ## 9. Verificación y límites
+
+## 10. Talento para empresas y solicitudes de contacto (demo 3-nov-2026)
+
+Plan y estado por tarea: [plan 2026-11-03](superpowers/plans/2026-11-03-c3-challenges-demo.md). Reglas en AGENTS §6.
+
+| Recorrido | Pantalla y ruta | Acción real | Estado |
+| --- | --- | --- | --- |
+| Empresa revisa entregas de su challenge | `/empresa` → tarjeta del challenge → «Ver talento y lista corta» (`TalentoPanel`) | Lee entregas enviadas con entregable, proceso y defensa separados | Hecho |
+| Empresa agrega a lista corta | Mismo panel; formulario «Motivo para la lista corta» (10–500 caracteres) | `POST /api/empresa/retos/[id]/lista-corta` | Hecho |
+| Empresa quita de la lista corta | Mismo panel, salvo con solicitud activa | `DELETE /api/empresa/retos/[id]/lista-corta/[submissionId]` | Hecho |
+| Empresa solicita contacto | Mismo panel; solo con lista corta, inscripción aprobada y entrega individual | `POST /api/empresa/retos/[id]/contacto` → queda «Esperando consentimiento» | Hecho |
+| Empresa registra contacto o seguimiento | Mismo panel, tras la aceptación | `PATCH /api/empresa/contactos/[id]` | Hecho |
+| Joven responde a la solicitud | `/mi-c3`, sección «Solicitudes de contacto» (`ContactosPanel`) | `PATCH /api/contactos/[id]`: aceptar, declinar o revocar | Hecho |
+| Joven registra su defensa | `/mi-c3/retos/[id]`, sección «Defensa» (`DefensaPanel`), tras enviar la entrega | `PUT /api/retos/[id]/defensa` (en equipo, solo la líder) | Hecho |
+| Empresa compara por criterios (tabla de evidencia) | Mismo panel: tabla «Comparación de evidencia» con defensa, lista corta y contacto por participante | Tabla y cifras por challenge (inscritas, entregas, lista corta) | Hecho (tabla de evidencia). **Próximamente:** matriz por criterios de la rúbrica y estado de evaluación |
+| Datos de contacto tras aceptación | — | — | **Próximamente** (canal sin decidir) |
+| Contactar a personas de un equipo | — | — | **Próximamente** (sin decidir) |
+| Filtros del catálogo por tipo, línea, estado y demo | `/explorar` (`FiltrosExplorar`, en el cliente) | Muestra solo las tarjetas que coinciden; no cambia qué existe | Hecho |
+
+Reglas de visibilidad: la empresa ve solo su organización (admin también); la persona ve solo sus solicitudes y su defensa; ninguna vista muestra correo ni otros datos de contacto.
 
 - **Pruebas:** `tests/unit/` (navegación, capacidades, administración, perfil público), `tests/emulator/` (capacidades propias, perfil público y su privacidad, panel de resumen) y `e2e/navegacion.spec.ts` más las especificaciones por área. Ejecutar según la matriz de [AGENTS §11](../AGENTS.md).
 - **No cubierto:** pruebas de usabilidad con personas de cada rol (tareas de §6), auditoría con lector de pantalla y dispositivos reales, Firefox/Safari. No afirmar facilidad de uso sin ellas.

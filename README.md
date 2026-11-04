@@ -9,6 +9,7 @@ Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. 
 El inventario siguiente describe funciones presentes en el repositorio recibido. **No significa que todas estén validadas en el último CI o que la navegación esté aprobada.** La validación vigente requiere pruebas reproducibles, revisión por rol y recorrido real de la demo:
 
 - **Acceso** (V04): entrar, crear cuenta con nombre, recuperar contraseña y sesión persistente al recargar. Sin destino previo se llega a **Mi C3**; con `?next=` (solo rutas internas) se vuelve a donde estaba la persona.
+- **Talento para empresas (demo del 3-nov-2026)**: tablero de entregas enviadas por challenge con entregable, proceso y defensa separados (`/empresa` → «Ver talento y lista corta»); lista corta con motivo; solicitud de contacto que la persona acepta, declina o revoca desde «Solicitudes de contacto» en Mi C3; defensa de la entrega desde Mi challenge. Sin datos de contacto ni envío de correos. Detalle y pendientes en [PRODUCTO §10](docs/PRODUCTO-Y-NAVEGACION.md) y [plan 2026-11-03](docs/superpowers/plans/2026-11-03-c3-challenges-demo.md).
 - **Navegación unificada**: tres zonas con una cabecera cada una (sitio, app y consola de administración), menú de la cuenta común y accesos según las **capacidades** de la cuenta (`GET /api/me`: administración, organizaciones vinculadas, challenges que evalúa; solo datos propios). Detalle en [docs/PRODUCTO-Y-NAVEGACION.md](docs/PRODUCTO-Y-NAVEGACION.md).
 - **Perfil público compartible** (opt-in, desactivado por defecto): la persona lo activa en Cuenta, elige qué muestra (nombre siempre; centro de estudio, presentación, enlaces y trayectoria a elección) y comparte `/personas/[slug]`. Nunca expone correo, entregas, notas ni inscripciones sin aprobar; se puede cambiar el enlace o desactivarlo. Tratamiento de menores y permisos de imagen y nombre: pendiente legal.
 - **Experiencias y challenges** (V12, sección «Experiencias y challenges»): crear, editar y gestionar el ciclo de vida de cada experiencia sin tocar Firebase. Se guarda en borrador y solo aparece en el sitio público al publicarla. El listado busca por nombre, filtra por estado y línea, muestra las próximas acciones, los challenges, las inscripciones y los cupos de cada experiencia, y abre cada una para editarla.
@@ -92,7 +93,7 @@ Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03
 | Conecta | `/conecta` | Público | Landing institucional conectada al catálogo |
 | V12 Admin | `/admin` → `/admin/[seccion]` | Administrador | Una URL por sección: `resumen` (entrada, con pendientes enlazados), `propuestas`, `experiencias` (crear, editar, ciclo de vida, cupos, challenges), `inscripciones` (`?reto=` / `?experiencia=`), `entregas`, `jurados` y `resultados`. Una sección desconocida es un 404 |
 
-Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/perfil/*`, `/api/mi-c3`, `/api/retos/*`, `/api/experiencias/*`, `/api/inscripciones/*`, `/api/admin/*`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
+Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/perfil/*`, `/api/mi-c3`, `/api/retos/*`, `/api/experiencias/*`, `/api/inscripciones/*`, `/api/admin/*`, `/api/empresa/*`, `/api/contactos`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
 
 > **Desarrollo:** un solo checkout local. `dev` integra y prueba; `main` es producción. Leer `AGENTS.md`, `docs/FLUJO-AGENTES.md` y `docs/PRODUCTO-Y-NAVEGACION.md`. Verificar el entorno con `npm run doctor`.
 
@@ -186,7 +187,10 @@ En producción, ejecuta el mismo script con credenciales de servicio autorizadas
 | `npm run test:e2e` | Recorridos con Playwright: inicia los emuladores, prepara la cuenta administradora, construye la aplicación y la sirve |
 | `npm run seed:dry-run -- --project <id> --emulator` | Lee el catálogo seed, muestra existentes/conflictos/escrituras y no modifica datos |
 | `npm run seed:apply -- --project <id> --confirm-project <id> --allow-write --emulator` | Crea solo documentos determinísticos del seed; exige identidad repetida y autorización |
+| `node --env-file-if-exists=.env.local --experimental-strip-types scripts/seed.mjs --mode update --project <id> --confirm-project <id> --allow-write --allow-update --backup-file "<ruta fuera del repo>"` | Actualiza los documentos del seed con versión anterior (los demás campos se conservan) y crea los nuevos. Escribe primero un respaldo JSON del estado anterior. `apply` se niega si hay versiones anteriores. Requiere credenciales de Admin SDK, no `FIREBASE_CLI_ACCESS_TOKEN` |
 | `FIREBASE_CLI_ACCESS_TOKEN=<token> npm run seed:dry-run -- --project <id>` | Dry-run contra Firebase real usando una sesion local autenticada de Firebase CLI; el token no se guarda |
+| `node --experimental-strip-types scripts/provision-demo-accounts.mjs --project <id>` | Simulación de las cuentas demo (joven, empresa, administración) y sus vínculos; no escribe nada. Solo admite `c3-platform-demo` (decisión del responsable, 3-nov-2026) y el emulador |
+| `node --experimental-strip-types scripts/provision-demo-accounts.mjs --project <id> --apply --confirm-project <id> --credentials-file "<ruta fuera del repo>"` | Crea las cuentas que faltan, asigna el permiso de administración y vincula la representante. Escribe las contraseñas nuevas una sola vez en la ruta indicada; no las imprime ni las guarda en el repositorio. Requiere autorización y credenciales de Admin SDK (`FIREBASE_SERVICE_ACCOUNT_JSON` o ADC) |
 | `npm run emulators` | Solo emuladores |
 | `npm run doctor` | Diagnóstico del entorno (Node, Java, dependencias, proyecto Firebase activo, puertos, Git); no modifica nada ni muestra secretos |
 | `npm run test:capturas` | Capturas de las páginas públicas (escritorio y móvil) en `capturas/actual/`; falla ante errores de consola |
@@ -233,6 +237,10 @@ Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas
 - `teams/{id}`: nombre, código `C3-XXXX`, líder, integrantes, estado (`incompleto` o `habilitado`), mínimo y máximo de integrantes.
 - `teamCodes/{code}`: índice que garantiza que cada código sea único.
 - `teamMemberships/{experienceId}__{uid}`: un equipo por persona y experiencia.
+- `challenges/{id}` puede declarar `commercialPackage` (`esencial`, `completo`, `destacado` o `null`): tarifa de referencia en `src/lib/domain/commercial.ts`, sin cobro en la demo.
+- `shortlists/{submissionId}`: lista corta de una entrega enviada, con motivo obligatorio y quién la agregó. La escribe el servidor.
+- `contactRequests/{challengeId}__{uid}`: solicitud de contacto con consentimiento (`esperando_consentimiento`, `aceptado`, `declinado`, `contactado`, `seguimiento`, `revocado`). Sin datos de contacto; la escribe el servidor.
+- `defenses/{submissionId}`: defensa de una entrega enviada (enlace https opcional, resumen, decisiones y campos opcionales). La escribe el servidor.
 
 Un challenge publicado solo es público si su experiencia también está publicada. Una inscripción solo se crea mientras la ventana de inscripción está abierta y queden cupos, y la entrega solo se acepta con la inscripción aprobada y antes del cierre de entregas. Una inscripción a la experiencia (sin challenge) es individual y no habilita challenges que se juegan solo por equipo.
 

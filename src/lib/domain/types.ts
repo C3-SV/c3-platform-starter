@@ -3,6 +3,9 @@
  * Firestore en el Corte 1; el resto (inscripciones, equipos, entregas, evaluaciones,
  * propuestas) sigue siendo conceptual y se ajustará al implementar cada corte.
  */
+import type { CommercialPackageId } from "./commercial.ts";
+import type { ContactActor, ContactStatus } from "./contact.ts";
+
 export type ExperienceStatus = "draft" | "published" | "closed" | "cancelled";
 export type ExperienceKind = "competencia" | "hackathon" | "challenge_empresarial" | "taller" | "charla" | "encuentro";
 export type ExperienceLine = "compite" | "crea" | "conecta";
@@ -53,6 +56,8 @@ export interface Challenge {
   deliverables: string[];
   rubric: RubricCriterion[];
   organizationName: string;
+  /** Paquete de referencia del challenge empresarial (Esencial, Completo o Destacado). Null en el resto. */
+  commercialPackage?: CommercialPackageId | null;
   allows: ParticipationMode[];
   teamMinSize: number | null;
   teamMaxSize: number | null;
@@ -113,4 +118,33 @@ export interface CompanyProposal {
   contactEmail: string;
   problem: string;
   status: "received" | "reviewing" | "accepted" | "not_prioritized";
+}
+/**
+ * Entrega enviada que la empresa marcó para revisar más de cerca. Una entrada por entrega (id = submissionId).
+ * userId solo existe en entregas individuales: el contacto con personas de un equipo queda pendiente de decisión.
+ */
+export interface ShortlistEntry {
+  id: string;
+  organizationId: string;
+  challengeId: string;
+  submissionId: string;
+  userId: string | null;
+  /** Motivo cualitativo obligatorio: por qué destaca la entrega. */
+  reason: string;
+  addedByUserId: string;
+  createdAt: string;
+}
+/** Solicitud de contacto con consentimiento. Nunca expone el correo de la persona a la empresa antes de «aceptado». */
+export interface ContactRequest {
+  id: string;
+  organizationId: string;
+  challengeId: string;
+  userId: string;
+  status: ContactStatus;
+  message: string | null;
+  requestedByUserId: string;
+  /** Último actor que cambió el estado: la empresa o la persona. */
+  lastChangedBy: ContactActor;
+  createdAt: string;
+  updatedAt: string;
 }
