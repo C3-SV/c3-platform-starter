@@ -7,7 +7,7 @@ Esta carpeta reúne lo necesario para presentar la demo: el relato, las cuentas,
 ## Dónde corre
 
 - Proyecto Firebase: `c3-platform-demo`, el mismo que usa la aplicación. Decisión del responsable (3-nov-2026), registrada en [AGENTS §15](../../AGENTS.md).
-- Dataset: `docs/demo/seed-manifest.json` (generado con `scripts/seed-manifest.mjs`). Versión 4 del seed (rúbrica ponderada). Cargada en `c3-platform-demo` el 4-nov-2026 (plan §8). No contiene credenciales.
+- Dataset: `docs/demo/seed-manifest.json` (generado con `scripts/seed-manifest.mjs`). Versión 5 del seed: rúbrica ponderada y cuatro challenges (rutas, retail, fintech y conciliación). En `c3-platform-demo` está cargada la v4; la v5 espera autorización (plan §8). No contiene credenciales.
 
 ## Cuentas
 
