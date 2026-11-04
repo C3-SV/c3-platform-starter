@@ -16,7 +16,7 @@ test("el seed crea el catálogo compartido y sus referencias en el emulador", as
   }
 
   const catalog = await listPublicCatalog(db, new Date("2026-10-14T00:00:00.000Z"));
-  assert.equal(catalog.length, 7);
+  assert.equal(catalog.length, 10, "siete experiencias del catálogo y tres de los challenges demo adicionales");
   assert.ok(catalog.some((item) => item.experience.primaryLine === "compite"));
   assert.ok(catalog.some((item) => item.experience.primaryLine === "crea"));
   assert.ok(catalog.some((item) => item.experience.primaryLine === "conecta"));

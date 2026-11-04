@@ -252,7 +252,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
         return {
           label: typeof criterion.label === "string" ? criterion.label.trim() : "",
           maxScore: Number(criterion.maxScore),
-          weight: criterion.weight === undefined || criterion.weight === "" ? null : Number(criterion.weight),
+          weight: criterion.weight === undefined || criterion.weight === null || criterion.weight === "" ? null : Number(criterion.weight),
         };
       }).filter((criterion) => criterion.label !== "")
     : [];
