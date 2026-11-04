@@ -48,8 +48,10 @@ try {
 if (emulator && !process.env.FIRESTORE_EMULATOR_HOST) fail("--emulator requiere FIRESTORE_EMULATOR_HOST: ejecutá el comando dentro de firebase emulators:exec.");
 if (apply && !emulator && confirmProject !== project) fail("--apply exige --confirm-project con el mismo ID del proyecto.");
 
+// En emulador, las cuentas usan la contraseña de prueba de la suite (solo emulador): no hay archivo de credenciales.
+const EMULATOR_PASSWORD = "clave-prueba-123";
 let credentialsTarget = null;
-if (apply) {
+if (apply && !emulator) {
   if (!credentialsPath) fail("--apply exige --credentials-file con una ruta fuera del repositorio.");
   credentialsTarget = resolve(credentialsPath);
   if (!isOutsideDirectory(repoRoot, credentialsTarget)) fail("las credenciales no pueden guardarse dentro del repositorio.");
@@ -88,7 +90,8 @@ const summary = await provisionDemoAccounts({
   organizationId: DEMO_ORGANIZATION_ID,
   apply,
   now: new Date(),
-  writeCredentials,
+  writeCredentials: emulator ? () => {} : writeCredentials,
+  passwordFor: emulator ? () => EMULATOR_PASSWORD : undefined,
 }).catch((error) => fail(error.message));
 
 console.log(`Destino: ${project}${emulator ? " (emulador)" : ""} · ${summary.dryRun ? "simulación" : "aplicado"}`);

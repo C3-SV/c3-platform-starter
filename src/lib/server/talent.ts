@@ -19,6 +19,9 @@ import {
 } from "../domain/contact.ts";
 import { canRecordDefense, parseDefenseInput, type DefenseInput } from "../domain/defense.ts";
 import { canViewFeedback, parseCheckpointInput, parseFeedbackInput } from "../domain/process.ts";
+import { consolidatedAverage, criterionAverages, evaluationStateOf } from "../domain/evaluation.ts";
+import type { RubricCriterion } from "../domain/types.ts";
+import { EVALUATIONS } from "./evaluation.ts";
 import type { PresentedState } from "../domain/presentation.ts";
 import type { Challenge } from "../domain/types.ts";
 import { ValidationFailure } from "../domain/validation.ts";
@@ -32,6 +35,7 @@ import {
   CONTACT_REQUESTS,
   DEFENSES,
   FEEDBACKS,
+  RESULTS,
   ENROLLMENTS,
   SHORTLISTS,
   SUBMISSIONS,
@@ -70,6 +74,8 @@ export interface TalentRow {
   defense: DefenseView | null;
   shortlist: { reason: string; addedAt: string } | null;
   contact: ContactView | null;
+  /** Estado de evaluación de la entrega. Promedio y criterios solo cuando C3 publicó con puntajes visibles. */
+  evaluation: { state: string; average: number | null; criteria: Record<string, number | null> | null };
   /** Bitácora de la persona, en orden de creación. */
   checkpoints: CheckpointView[];
   /** Retroalimentación de la empresa, incluido el borrador no publicado (la empresa la ve siempre). */
@@ -99,6 +105,7 @@ export interface TalentBoard {
     status: string;
     isDemo: boolean;
     commercialPackage: CommercialPackageId | null;
+    rubric: RubricCriterion[];
   };
   rows: TalentRow[];
 }
@@ -218,6 +225,7 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
       defense: defenseById.get(doc.id) ?? null,
       shortlist: entry ? { reason: entry.reason, addedAt: entry.createdAt } : null,
       contact: request && userId ? contactViewOf(request.id, request.data) : null,
+      evaluation: { state: "sin_evaluar", average: null, criteria: null },
       checkpoints: [],
       feedback: null,
       canRequestContact: contactEligibilityIssue({
@@ -244,6 +252,26 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
     row.feedback = feedbackBySubmission.get(row.submissionId) ?? null;
   }
 
+  const [evaluationDocs, resultsSnapshot] = await Promise.all([
+    db.collection(EVALUATIONS).where("challengeId", "==", challengeId).get(),
+    db.collection(RESULTS).doc(challengeId).get(),
+  ]);
+  const resultsData = resultsSnapshot.data();
+  const published = resultsData?.status === "published";
+  const showScores = published && resultsData?.showScores === true;
+  for (const row of rows) {
+    const mine = evaluationDocs.docs.map((doc) => doc.data()).filter((data) => data.submissionId === row.submissionId);
+    const finalized = mine.filter((data) => data.status === "finalized");
+    const finalizedJudges = new Set(finalized.map((data) => data.judgeUserId)).size;
+    row.evaluation = {
+      state: evaluationStateOf({ evaluations: mine.length, finalizedJudges, published }),
+      average: showScores ? consolidatedAverage(finalized.map((data) => data.total as number)) : null,
+      criteria: showScores && finalized.length > 0
+        ? criterionAverages(finalized.map((data) => data.scores as Record<string, number>), challenge.rubric)
+        : null,
+    };
+  }
+
   const experience = await loadExperience(db, challenge.experienceId);
   return {
     challenge: {
@@ -253,6 +281,7 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
       status: challenge.status,
       isDemo: experience.isDemo === true,
       commercialPackage: challenge.commercialPackage ?? null,
+      rubric: challenge.rubric,
     },
     rows: rows.sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? "")),
   };
@@ -371,43 +400,48 @@ export async function requestContact(db: Firestore, actor: Actor, challengeId: s
 /** La persona acepta, declina o revoca. Solo sobre sus propias solicitudes; una ajena responde como inexistente. */
 export async function answerContactRequest(db: Firestore, actor: Actor, requestId: string, rawBody: unknown, now: Date): Promise<ContactView> {
   const ref = db.collection(CONTACT_REQUESTS).doc(requestId);
-  const snapshot = await ref.get();
-  const data = snapshot.data();
-  if (!snapshot.exists || !data || data.userId !== actor.uid) throw notFound("No encontramos esa solicitud.");
   const body = asObject(rawBody);
   if (typeof body.to !== "string" || !PARTICIPANT_ACTIONS.includes(body.to as ContactStatus)) {
     throw new ValidationFailure([{ field: "to", message: "Elegí aceptar, declinar o revocar el permiso." }]);
   }
-  const next = nextContactStatus(data.status as ContactStatus, "participant", body.to as ContactStatus);
+  const to = body.to as ContactStatus;
   const stamp = now.toISOString();
-  const batch = db.batch();
-  batch.update(ref, { status: next, lastChangedBy: "participant", updatedAt: stamp });
-  recordAudit(db, batch, actor, now, { action: `contacto.${next}`, target: { type: "contactRequest", id: requestId } });
-  await batch.commit();
-  return contactViewOf(requestId, { ...data, status: next, updatedAt: stamp });
+  // Lectura y escritura en una transacción: dos respuestas simultáneas no pisan el estado.
+  const updated = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const data = snapshot.data();
+    if (!snapshot.exists || !data || data.userId !== actor.uid) throw notFound("No encontramos esa solicitud.");
+    const next = nextContactStatus(data.status as ContactStatus, "participant", to);
+    transaction.update(ref, { status: next, lastChangedBy: "participant", updatedAt: stamp });
+    recordAudit(db, transaction, actor, now, { action: `contacto.${next}`, target: { type: "contactRequest", id: requestId } });
+    return { ...data, status: next, updatedAt: stamp };
+  });
+  return contactViewOf(requestId, updated);
 }
 
 /** La empresa registra contacto o seguimiento tras la aceptación. No implica contratación. */
 export async function advanceContactRequest(db: Firestore, actor: Actor, requestId: string, rawBody: unknown, now: Date): Promise<ContactView> {
   const ref = db.collection(CONTACT_REQUESTS).doc(requestId);
-  const snapshot = await ref.get();
-  const data = snapshot.data();
-  if (!snapshot.exists || !data) throw notFound("No encontramos esa solicitud.");
-  if (!actor.isAdmin) await requireOrganizationMember(db, actor, (data.organizationId as string | null) ?? null);
   const body = asObject(rawBody);
   if (typeof body.to !== "string" || !COMPANY_ACTIONS.includes(body.to as ContactStatus)) {
     throw new ValidationFailure([{ field: "to", message: "Elegí registrar el contacto o el seguimiento." }]);
   }
-  if (!canTransitionContact(data.status as ContactStatus, "company", body.to as ContactStatus)) {
-    throw new ValidationFailure([{ field: "to", message: "Esa acción no está disponible para el estado actual de la solicitud." }]);
-  }
-  const next = body.to as ContactStatus;
+  const to = body.to as ContactStatus;
   const stamp = now.toISOString();
-  const batch = db.batch();
-  batch.update(ref, { status: next, lastChangedBy: "company", updatedAt: stamp });
-  recordAudit(db, batch, actor, now, { action: `contacto.${next}`, target: { type: "contactRequest", id: requestId } });
-  await batch.commit();
-  return contactViewOf(requestId, { ...data, status: next, updatedAt: stamp });
+  // La transacción vuelve a leer el estado antes de escribir: una respuesta de la persona no se pierde ni se pisa.
+  const updated = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const data = snapshot.data();
+    if (!snapshot.exists || !data) throw notFound("No encontramos esa solicitud.");
+    if (!actor.isAdmin) await requireOrganizationMember(db, actor, (data.organizationId as string | null) ?? null);
+    if (!canTransitionContact(data.status as ContactStatus, "company", to)) {
+      throw new ValidationFailure([{ field: "to", message: "Esa acción no está disponible para el estado actual de la solicitud." }]);
+    }
+    transaction.update(ref, { status: to, lastChangedBy: "company", updatedAt: stamp });
+    recordAudit(db, transaction, actor, now, { action: `contacto.${to}`, target: { type: "contactRequest", id: requestId } });
+    return { ...data, status: to, updatedAt: stamp };
+  });
+  return contactViewOf(requestId, updated);
 }
 
 /** Solicitudes que la persona recibió, con las acciones que puede tomar. Nunca datos de la empresa más allá del nombre. */

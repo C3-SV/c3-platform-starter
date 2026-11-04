@@ -7,6 +7,15 @@ import { formatDateTime } from "@/lib/domain/format";
 import { CONTACT_MESSAGE_MAX, SHORTLIST_REASON_LIMITS } from "@/lib/domain/contact";
 import type { TalentBoard, TalentRow } from "@/lib/server/talent";
 
+/** Estados de evaluación visibles para la empresa. Los puntajes solo aparecen cuando C3 publicó con puntajes visibles. */
+const EVALUATION_LABEL: Record<string, string> = {
+  sin_evaluar: "Sin evaluar",
+  en_evaluacion: "En evaluación",
+  lista_para_publicar: "Lista para publicar",
+  publicada: "Publicada",
+  sin_completar: "Sin completar",
+};
+
 /**
  * E3–E8 · Talento de un challenge: entregas enviadas con su evidencia separada (entregable, proceso y defensa),
  * lista corta con motivo y solicitud de contacto que queda esperando el consentimiento de la persona.
@@ -78,6 +87,7 @@ export function TalentoPanel({ challengeId }: { challengeId: string }) {
                 <th scope="col" style={{ padding: "8px 12px" }}>Entrega</th>
                 <th scope="col" style={{ padding: "8px 12px" }}>Defensa</th>
                 <th scope="col" style={{ padding: "8px 12px" }}>Lista corta</th>
+                <th scope="col" style={{ padding: "8px 12px" }}>Evaluación</th>
                 <th scope="col" style={{ padding: "8px 12px" }}>Contacto</th>
               </tr>
             </thead>
@@ -93,7 +103,39 @@ export function TalentoPanel({ challengeId }: { challengeId: string }) {
                   </td>
                   <td style={{ padding: "8px 12px" }}>{row.defense ? "Registrada" : "Pendiente"}</td>
                   <td style={{ padding: "8px 12px" }}>{row.shortlist ? "Sí" : "No"}</td>
+                  <td style={{ padding: "8px 12px" }}>
+                    {EVALUATION_LABEL[row.evaluation.state] ?? row.evaluation.state}
+                    {row.evaluation.average !== null ? ` · promedio ${row.evaluation.average.toFixed(1)}` : ""}
+                  </td>
                   <td style={{ padding: "8px 12px" }}>{row.contact ? row.contact.state.label : row.canRequestContact ? "Disponible" : row.mode === "team" ? "No disponible para equipos" : "No disponible"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {board.rows.some((row) => row.evaluation.criteria !== null) ? (
+        <div style={{ overflowX: "auto" }}>
+          <table aria-label="Matriz por criterio" style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+            <caption style={{ textAlign: "left", fontSize: 14, color: "var(--c3-texto-suave)", paddingBottom: 8 }}>
+              Matriz por criterio: promedio de los jurados finalizados. Visible porque C3 publicó los resultados con puntajes.
+            </caption>
+            <thead>
+              <tr style={{ textAlign: "left", borderBottom: "1px solid var(--c3-borde-fuerte)" }}>
+                <th scope="col" style={{ padding: "8px 12px" }}>Participante</th>
+                {board.challenge.rubric.map((criterion) => (
+                  <th key={criterion.id} scope="col" style={{ padding: "8px 12px" }}>{criterion.label} (máx. {criterion.maxScore})</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {board.rows.filter((row) => row.evaluation.criteria !== null).map((row) => (
+                <tr key={row.submissionId} style={{ borderBottom: "1px solid var(--c3-borde)" }}>
+                  <td style={{ padding: "8px 12px" }}>{row.name ?? "Sin nombre"}</td>
+                  {board.challenge.rubric.map((criterion) => (
+                    <td key={criterion.id} style={{ padding: "8px 12px" }}>{row.evaluation.criteria?.[criterion.id]?.toFixed(1) ?? "—"}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>

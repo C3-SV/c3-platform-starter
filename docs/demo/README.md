@@ -51,8 +51,18 @@ Firebase Auth no envía correos en la demo: la recuperación de contraseña no e
 - [ ] Ensayar el recorrido de empresa cronometrado (objetivo: 60 segundos).
 - [ ] Tener las capturas de respaldo listas.
 
+## Reset de datos demo
+
+`scripts/demo-reset.mjs` lista, por defecto, los documentos de demostración del seed que borraría. No escribe nada en simulación. Con `--apply`, `--confirm-project` y `--backup-file` (ruta fuera del repo), guarda un respaldo JSON y después borra. Nunca toca cuentas de Auth, perfiles de personas reales ni experiencias históricas con procedencia (la Copa 2026 y las ediciones anteriores de C3).
+
+## Estado de la evaluación en la demo
+
+- Dos jurados asignados: la administradora demo y un jurado externo sin cuenta.
+- Ana y Luis tienen dos evaluaciones finalizadas; Sofía tiene un borrador.
+- El resultado está publicado con puntajes visibles **solo para esta demostración**; no muestra ganadores públicos. La empresa ve el promedio y la matriz por criterio.
+
 ## Pendiente antes de presentar
 
-- Reset de datos demo: no implementado. Hasta entonces, no se borra nada del proyecto remoto.
-- Evaluaciones con puntajes y matriz por criterios: no implementadas. La cifra «En evaluación» no aparece.
-- Revisión visual completa y pruebas E2E de los paneles nuevos.
+- Revisión visual a 390 px y 1280 px de las páginas nuevas (ver resultados de capturas en la sesión).
+- Pruebas E2E de los paneles nuevos: cubiertas en `e2e/zz-demo-talento.spec.ts` (escritorio).
+- Los recorridos móviles de sesión y consola de administración fallan de forma intermitente en esta máquina; no se confirma que sea regresión (falta corrida de referencia en `dev`).

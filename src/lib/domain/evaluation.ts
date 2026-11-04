@@ -56,3 +56,25 @@ export function parseRecognition(input: unknown): Recognition | null {
   if (typeof input === "string" && (RECOGNITIONS as readonly string[]).includes(input)) return input as Recognition;
   throw new ValidationFailure([{ field: "recognition", message: "Elegí un reconocimiento válido o ninguno." }]);
 }
+
+/** Promedio por criterio de las evaluaciones finalizadas de una solución. Null por criterio si no hay puntajes. */
+export function criterionAverages(scoresList: Record<string, number>[], rubric: RubricCriterion[]): Record<string, number | null> {
+  const averages: Record<string, number | null> = {};
+  for (const criterion of rubric) {
+    const values = scoresList.map((scores) => scores[criterion.id]).filter((value): value is number => typeof value === "number");
+    averages[criterion.id] = values.length === 0
+      ? null
+      : Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10;
+  }
+  return averages;
+}
+
+/**
+ * Estado de una solución para la empresa. Sin resultados publicados, la empresa solo ve si la solución está en evaluación
+ * o lista para publicar; los puntajes aparecen cuando C3 publica con puntajes visibles.
+ */
+export function evaluationStateOf(input: { evaluations: number; finalizedJudges: number; published: boolean }): "sin_evaluar" | "en_evaluacion" | "lista_para_publicar" | "publicada" | "sin_completar" {
+  if (input.evaluations === 0) return "sin_evaluar";
+  if (input.published) return solutionReady(input.finalizedJudges) ? "publicada" : "sin_completar";
+  return solutionReady(input.finalizedJudges) ? "lista_para_publicar" : "en_evaluacion";
+}

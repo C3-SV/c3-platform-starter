@@ -1,5 +1,6 @@
 import type { ExperienceKind, ExperienceLine, ExperienceStatus } from "../domain/types.ts";
 import { contactRequestDocId, enrollmentDocId, participationDocId } from "../server/ids.ts";
+import { assignmentDocId, evaluationDocId } from "../server/evaluation.ts";
 import { DEMO_ACCOUNTS } from "./demo-accounts.ts";
 
 /** Colecciones que escribe el seed. El orden importa: las organizaciones van primero. */
@@ -17,6 +18,9 @@ export const SEED_COLLECTIONS = [
   "companyProposals",
   "checkpoints",
   "feedbacks",
+  "judgeAssignments",
+  "evaluations",
+  "results",
 ] as const;
 
 export interface SeedRecord {
@@ -481,7 +485,86 @@ const demoProposals: SeedRecord[] = [
   },
 ];
 
+/**
+ * Evaluación de demostración: dos jurados asignados (la administradora demo y un jurado externo sin cuenta).
+ * Ana y Luis tienen dos evaluaciones finalizadas; Sofía tiene un borrador. El resultado queda publicado con puntajes
+ * visibles SOLO para esta demostración; no hay ganadores públicos (showWinners false).
+ */
+function evaluationRecords(): SeedRecord[] {
+  const externalJudge = seedId("user", "jurado-externo");
+  const judges = [
+    { uid: DEMO_UID.admin, email: DEMO_ACCOUNTS.find((account) => account.key === "admin")?.email ?? "", kind: "externo" },
+    { uid: externalJudge, email: "jurado.externo@example.test", kind: "externo" },
+  ];
+  const assignments: SeedRecord[] = judges.map((judge) => ({
+    collection: "judgeAssignments",
+    id: assignmentDocId(demoChallengeId, judge.uid),
+    data: {
+      challengeId: demoChallengeId,
+      experienceId: demoExperienceId,
+      userId: judge.uid,
+      email: judge.email,
+      kind: judge.kind,
+      status: "active",
+      assignedAt: DEMO_TIMES.created,
+      assignedByUid: DEMO_UID.admin,
+      revokedAt: null,
+      ...demoMeta,
+    },
+  }));
+
+  const scoresBy: Record<string, { judge: string; scores: Record<string, number>; finalized: boolean }[]> = {
+    "ana-martinez": [
+      { judge: DEMO_UID.admin, scores: { c1: 9, c2: 8, c3: 9, c4: 8 }, finalized: true },
+      { judge: externalJudge, scores: { c1: 8, c2: 9, c3: 8, c4: 9 }, finalized: true },
+    ],
+    "luis-herrera": [
+      { judge: DEMO_UID.admin, scores: { c1: 7, c2: 6, c3: 7, c4: 6 }, finalized: true },
+      { judge: externalJudge, scores: { c1: 6, c2: 7, c3: 6, c4: 7 }, finalized: true },
+    ],
+    "sofia-ramirez": [
+      { judge: DEMO_UID.admin, scores: { c1: 8, c2: 7, c3: 7, c4: 8 }, finalized: false },
+    ],
+  };
+  const evaluations: SeedRecord[] = Object.entries(scoresBy).flatMap(([key, entries]) => {
+    const submissionId = participationDocId(demoChallengeId, seedId("user", key));
+    return entries.map((entry) => ({
+      collection: "evaluations",
+      id: evaluationDocId(submissionId, entry.judge),
+      data: {
+        submissionId,
+        challengeId: demoChallengeId,
+        judgeUserId: entry.judge,
+        kind: "externo",
+        scores: entry.scores,
+        total: Object.values(entry.scores).reduce((sum, value) => sum + value, 0),
+        status: entry.finalized ? "finalized" : "draft",
+        createdAt: DEMO_TIMES.changed,
+        updatedAt: DEMO_TIMES.changed,
+        finalizedAt: entry.finalized ? DEMO_TIMES.changed : null,
+        ...demoMeta,
+      },
+    }));
+  });
+
+  const results: SeedRecord[] = [{
+    collection: "results",
+    id: demoChallengeId,
+    data: {
+      challengeId: demoChallengeId,
+      status: "published",
+      showWinners: false,
+      showScores: true,
+      publishedAt: DEMO_TIMES.changed,
+      publishedByUid: DEMO_UID.admin,
+      ...demoMeta,
+    },
+  }];
+  return [...assignments, ...evaluations, ...results];
+}
+
 const demoRecords: SeedRecord[] = [
+  ...evaluationRecords(),
   ...participantRecords(demoJoven, DEMO_UID.joven, false),
   ...demoParticipants.flatMap((person) => participantRecords(person, seedId("user", person.key), true)),
   ...demoProposals,
@@ -502,6 +585,9 @@ export const SEED_RECORDS = {
   companyProposals: demoOf("companyProposals"),
   checkpoints: demoOf("checkpoints"),
   feedbacks: demoOf("feedbacks"),
+  judgeAssignments: demoOf("judgeAssignments"),
+  evaluations: demoOf("evaluations"),
+  results: demoOf("results"),
 } as const;
 
 export function validateSeedRecords(records: readonly SeedRecord[]): void {

@@ -115,10 +115,11 @@ function EmpresaContenido() {
                     <StatePill state={challenge.state} />
                   </div>
                   <span className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{challenge.title}</span>
-                  <dl aria-label="Cifras del challenge" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, margin: 0 }}>
+                  <dl aria-label="Cifras del challenge" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 8, margin: 0 }}>
                     {[
                       ["Inscritas", challenge.metrics.enrolled],
                       ["Entregas recibidas", challenge.metrics.submitted],
+                      ["En evaluación", challenge.metrics.evaluating],
                       ["En lista corta", challenge.metrics.shortlisted],
                     ].map(([label, value]) => (
                       <div key={label} style={{ background: "var(--c3-superficie-sutil)", borderRadius: 8, padding: "8px 10px" }}>
@@ -127,7 +128,6 @@ function EmpresaContenido() {
                       </div>
                     ))}
                   </dl>
-                  <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>«En evaluación» llega con la matriz de evaluación (próximamente).</span>
                   <div style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--c3-borde)", display: "flex", flexDirection: "column", gap: 10 }}>
                     <span style={{ fontSize: 14 }}>
                       {challenge.submissions.length === 0 ? "Todavía no hay soluciones enviadas" : `${challenge.submissions.length} ${challenge.submissions.length === 1 ? "solución recibida" : "soluciones recibidas"}`}

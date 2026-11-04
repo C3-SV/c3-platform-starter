@@ -78,5 +78,23 @@ test("las cifras del tablero de empresa son conteos reales: inscritas aprobadas,
   const space = await getCompanySpace(db, { uid: empresaUid, email: `empresa@${DEMO_EMAIL_DOMAIN}`, isAdmin: false }, now);
   const challenge = space.challenges.find((item) => item.id === challengeId);
   assert.ok(challenge, "el challenge demo aparece en el espacio de la empresa");
-  assert.deepEqual(challenge.metrics, { enrolled: 5, submitted: 4, shortlisted: 2 });
+  assert.deepEqual(challenge.metrics, { enrolled: 5, submitted: 4, shortlisted: 2, evaluating: 3 });
+});
+
+test("la matriz por criterio aparece porque C3 publicó con puntajes; los estados reflejan las evaluaciones", async () => {
+  await writeAllSeed();
+  const db = testDb();
+  await provisionDemoAccounts({ db, auth: testAuth(), organizationId: DEMO_ORGANIZATION_ID, apply: true, now, writeCredentials: () => {} });
+
+  const board = await getTalentBoard(db, { uid: empresaUid, email: `empresa@${DEMO_EMAIL_DOMAIN}`, isAdmin: false }, challengeId);
+  assert.equal(board.challenge.rubric.length, 4);
+  const ana = board.rows.find((row) => row.name === "Ana Martínez");
+  const sofia = board.rows.find((row) => row.name === "Sofía Ramírez");
+  const joven = board.rows.find((row) => row.userId === jovenUid);
+  assert.equal(ana?.evaluation.state, "publicada");
+  assert.equal(ana?.evaluation.average, 34);
+  assert.deepEqual(ana?.evaluation.criteria, { c1: 8.5, c2: 8.5, c3: 8.5, c4: 8.5 });
+  assert.equal(sofia?.evaluation.state, "sin_completar", "Sofía tiene un borrador: sin dos jurados finalizados");
+  assert.equal(sofia?.evaluation.criteria, null, "un borrador no se muestra como puntaje");
+  assert.equal(joven?.evaluation.state, "sin_evaluar");
 });

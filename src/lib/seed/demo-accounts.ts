@@ -107,6 +107,8 @@ export interface ProvisionOptions {
   now: Date;
   /** Recibe las contraseñas de las cuentas que se van a crear, antes de crearlas. Nunca se llama en dry-run. */
   writeCredentials: (credentials: { email: string; password: string }[]) => void;
+  /** Solo para emulador: contraseña fija de prueba. En remoto se omite y la contraseña se genera al azar. */
+  passwordFor?: () => string;
 }
 
 export interface ProvisionSummary {
@@ -141,7 +143,10 @@ export async function provisionDemoAccounts(options: ProvisionOptions): Promise<
 
   if (options.apply) {
     const toCreate = plan.filter((item) => item.action === "crear");
-    const credentials = toCreate.map((item) => ({ email: item.account.email, password: generateDemoPassword() }));
+    const credentials = toCreate.map((item) => ({
+      email: item.account.email,
+      password: options.passwordFor ? options.passwordFor() : generateDemoPassword(),
+    }));
     if (credentials.length > 0) options.writeCredentials(credentials);
     for (const credential of credentials) {
       const account = DEMO_ACCOUNTS.find((item) => item.email === credential.email);

@@ -141,6 +141,13 @@ Artifact «C3» de tipo **Design System** (`https://claude.ai/artifact/8fjePTGra
 - Narrativa de la home y del `<title>` por defecto según la matriz §0.B. Filtros de `/explorar` (tipo, línea, estado y demo). Cifras por challenge en `/empresa` (inscritas, entregas, lista corta). Tabla de comparación de evidencia en el tablero de talento.
 - Verificación: typecheck y lint limpios. Unitarias 156/156. Emulador 120/120. `next build` compila (el primer intento se detiene con el aviso de seguridad de Next.js, ya registrado). E2E: ver el resultado en el registro de la sesión.
 
+**Bloque final (en esta sesión, probado en grupo):**
+- E1: desde una propuesta aceptada con organización, un enlace lleva a la consola con la organización ya elegida para el challenge (`src/app/admin/PropuestasPanel.tsx`, `ExperienciasPanel.tsx`, `forms.tsx`).
+- Evaluación y matriz: dos jurados, evaluaciones y resultado publicado de demostración. La empresa ve estado de evaluación, promedio y matriz por criterio solo con resultados publicados con puntajes (`src/lib/domain/evaluation.ts`, `talent.ts`, `TalentoPanel.tsx`). La cifra «En evaluación» del espacio de empresa ya se muestra.
+- Reset de demo: selección pura y dry-run por defecto (`src/lib/seed/demo-reset.ts`, `scripts/demo-reset.mjs`). No se ejecutó en remoto.
+- Pruebas: unitarias 168/168, emulador 124/124 antes del E2E final; E2E agrupado en `e2e/zz-demo-talento.spec.ts`: 5/5 en escritorio.
+- Provisión en emulador usa la contraseña de prueba de la suite; en remoto, contraseñas aleatorias en archivo fuera del repo.
+
 **Sigue pendiente del update (no implementado):** bitácora de proceso (J5), retroalimentación publicable (J8), flujo de admin de propuestas a challenge (E1), E0 con la opción de intención, evaluaciones y matriz por criterios, revisión visual a 390 y 1280 px, pruebas E2E de los paneles nuevos, la skill Impeccable, y la eliminación de `c3-challenges-demo`.
 
 **Revisión adversarial de los caminos de escritura (workflow `wf_b053ae95-cc8`, 9 agentes):** se verificaron 5 hallazgos y 4 resultaron reales. Corregidos:
