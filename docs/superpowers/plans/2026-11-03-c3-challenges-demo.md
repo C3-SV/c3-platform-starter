@@ -91,10 +91,10 @@ Artifact «C3» de tipo **Design System** (`https://claude.ai/artifact/8fjePTGra
    - **Carga remota de v3 (ejecutada el 4-nov-2026, con autorización del responsable):** `demo-reset --apply` con respaldo fuera del repo y después `seed` en modo `update` con respaldo. Detalle en §8. Verificada en solo lectura.
    - Dominio de correo: `demo.c3.com.sv` (cuentas `joven@`, `empresa@`, `admin@`). Firebase Auth no envía correos en la demo; la recuperación de contraseña no está disponible.
 2. **Actualización del seed:** resuelta en código con `update` (con respaldo y `--allow-update`), y `apply` se niega ante versiones anteriores. v3 ya está aplicada en remoto (§8).
-3. **Rúbrica con pesos:** el update pide 20 / 30 / 25 / 25 %. El modelo valida puntajes enteros de **0 hasta el máximo de cada criterio** (la rúbrica admite máximos de 1 a 10), sin pesos. Se usaron cuatro criterios de 10 puntos. Decidir si se añade ponderación al modelo.
-4. **Canal de contacto:** sin correo ni teléfono visibles. Falta definir cómo se comparten datos tras «aceptado» (¿correo en la plataforma, mensaje interno, o solo C3 como facilitador?).
-5. **Contacto con equipos:** hoy solo entregas individuales. Falta definir a quién se contacta de un equipo.
-6. **Resultados y plazo de la defensa:** la defensa se bloquea cuando el challenge concluye, pero no hay fecha de congelación de la evaluación. Los jurados pueden cambiar evaluaciones después de publicar, y el tablero recalcula promedios desde las evaluaciones vivas. Decidir si se congela al publicar y si se guarda una instantánea (hallazgo de la revisión final, §9).
+3. **Rúbrica con pesos (decidido el 4-nov-2026: repartido 20/30/25/25):** la rúbrica admite pesos opcionales por criterio (enteros de 1 a 100 que suman 100). Sin pesos, cada punto cuenta igual. La demo usa 20/30/25/25 (`SEED_VERSION = 4`).
+4. **Canal de contacto (decidido el 4-nov-2026: simulado):** tras «aceptado», la empresa y la persona ven un canal simulado de la demo (mensaje interno facilitado por C3). Ningún correo ni teléfono se muestra. El canal real se decide antes de datos reales.
+5. **Contacto con equipos (decidido el 4-nov-2026: simulado):** la solicitud va a la líder del equipo, con el mismo consentimiento.
+6. **Resultados congelados (decidido el 4-nov-2026):** al publicar, las evaluaciones quedan congeladas (409 `resultados_publicados`). La defensa se congela al cerrar el plazo de entregas (409 `plazo_cerrado`). Queda pendiente decidir si se guarda una instantánea aparte (hallazgo de la revisión final, §9).
 7. **Impeccable:** plugin de usuario `impeccable` (skill v4.8.0, CLI 0.1.18 instalada fuera del repo). Ejecutados: `impeccable context` (sin `PRODUCT.md`: el trabajo es un refinamiento de la vista existente, no un rediseño) e `impeccable detect` sobre `src/app` y `src/components` (4 avisos en `globals.css` y `layout.tsx`, archivos previos a esta rama y no modificados). `npx impeccable install` no se ejecutó: escribe configuración en el repo.
 8. **Cuentas de prueba de la plataforma:** las contraseñas de `e2e/` y `tests/` son de emulador. Las cuentas demo reales nunca se escriben en el repo.
 9. **Sal de la conexión (`RATE_LIMIT_SALT`):** en producción es obligatoria. Sin ella, `POST /api/propuestas` responde error. Configurarla en Vercel antes de recibir propuestas; no se versiona.
@@ -139,6 +139,13 @@ Artifact «C3» de tipo **Design System** (`https://claude.ai/artifact/8fjePTGra
 - Simulación del seed tras el reset: sin conflictos y 55 escrituras previstas (51 creaciones y 4 actualizaciones). Después, `seed --mode update --allow-update` con respaldo `C:\Users\chris\.c3-demo\backup-seed-update-v3-2026-11-04.json` (4 documentos: el challenge demo y 3 experiencias históricas que solo cambian `seedVersion`). Código de salida 0.
 - Verificación en solo lectura: `crear 0, actualizar 0, existentes 55, conflictos 0`.
 - Pendiente: comprobar que `demo.plat.c3.com.sv` lee `c3-platform-demo` y muestra v3. No se ha hecho en el navegador.
+
+**Cierre del update (4-nov-2026, un solo PR, con las decisiones del responsable):**
+- Decisiones: congelación de resultados al publicar; canal de contacto simulado tras la aceptación; contacto con equipos a través de la líder; rúbrica ponderada 20/30/25/25; terminología «challenge»; bitácora solo agrega; correo visible solo para administración; recuperación de contraseña «Próximamente»; reglas por servidor con pruebas de reglas.
+- Privacidad: el tablero entrega un token por fila (el id interno no sale); los jurados no ven el contenido de las soluciones antes del cierre; `RATE_LIMIT_SALT` se valida en el check de Vercel.
+- Retroalimentación solo con el challenge publicado; defensa congelada al cerrar entregas.
+- `SEED_VERSION = 4` (rúbrica ponderada). **Pendiente:** cargar la v4 en `c3-platform-demo` (dry-run, respaldo y `update`) con autorización. Hasta entonces, el remoto tiene la v3, sin pesos.
+- Lo que no entra en este PR está en [PENDIENTES-REALES](../../PENDIENTES-REALES.md): dashboard de empresa, configuración del challenge, consentimientos de la inscripción, challenges demo adicionales, auditoría de admin, banner de entorno, revisión visual y E2E pendientes.
 
 **Código y pruebas (3-nov-2026, sin commits en ese momento):**
 - Corregido: `fail()` del seed no cortaba la ejecución, y un `apply` con conflictos o versiones anteriores escribía igual. Ahora `fail()` sale con código 1, y se comprobó en emulador que no hay escrituras.
