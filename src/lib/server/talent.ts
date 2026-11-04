@@ -138,7 +138,7 @@ function forbidden(message: string): HttpError {
 }
 
 /** Organización del challenge. Solo admin y representantes vinculadas por C3 pasan. Los borradores no existen para la empresa. */
-async function requireCompanyChallenge(db: Firestore, actor: Actor, challengeId: string): Promise<Challenge & { organizationId: string | null }> {
+export async function requireCompanyChallenge(db: Firestore, actor: Actor, challengeId: string): Promise<Challenge & { organizationId: string | null }> {
   const challenge = await loadChallenge(db, challengeId);
   const raw = (await db.collection(CHALLENGES).doc(challengeId).get()).data() as DocumentData;
   const organizationId = typeof raw.organizationId === "string" ? raw.organizationId : null;
