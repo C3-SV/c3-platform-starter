@@ -3,7 +3,7 @@
  * campo trampa y límite por conexión. C3 revisa; la empresa solo ve sus propias propuestas vinculadas.
  */
 import type { DocumentData, Firestore } from "firebase-admin/firestore";
-import { isHoneypotFilled, parseProposalInput, parseReviewInput, type ProposalStatus } from "../domain/proposals.ts";
+import { isHoneypotFilled, parseProposalInput, parseReviewInput, type ProposalIntent, type ProposalStatus } from "../domain/proposals.ts";
 import { requireAdmin, type Actor } from "./auth.ts";
 import { ORGANIZATIONS } from "./catalog.ts";
 import { HttpError, notFound } from "./errors.ts";
@@ -22,6 +22,7 @@ export interface ProposalView {
   problem: string;
   desiredOutcome: string;
   constraints: string;
+  intent: ProposalIntent | null;
   status: ProposalStatus;
   reviewNote: string | null;
   organizationId: string | null;
@@ -43,6 +44,7 @@ export function toProposalView(id: string, data: DocumentData): ProposalView {
     problem: data.problem,
     desiredOutcome: data.desiredOutcome ?? "",
     constraints: data.constraints ?? "",
+    intent: data.intent ?? null,
     status: data.status,
     reviewNote: data.reviewNote ?? null,
     organizationId: data.organizationId ?? null,

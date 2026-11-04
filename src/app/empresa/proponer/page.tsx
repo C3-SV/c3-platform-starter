@@ -12,9 +12,9 @@ export default function ProponerPage() {
         <div style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: 28 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Para empresas</span>
-            <h1 className="c3-titulo" style={{ fontSize: 40, lineHeight: 1.1, fontWeight: 700 }}>Contanos el problema técnico de tu equipo</h1>
+            <h1 className="c3-titulo" style={{ fontSize: 40, lineHeight: 1.1, fontWeight: 700 }}>Contanos qué querés descubrir en tu próximo challenge</h1>
             <p style={{ maxWidth: 640, fontSize: 18, lineHeight: 1.6, color: "var(--c3-texto-suave)" }}>
-              No necesitás un brief perfecto. Describí la situación con tus palabras y C3 te ayuda a convertirla en un challenge que equipos jóvenes puedan resolver.
+              No necesitás un brief perfecto. Contanos qué necesita explorar tu equipo —un problema técnico, una iniciativa propia o una forma de identificar talento— y C3 te ayuda a convertirlo en un reto evaluable. No enviés datos personales sensibles ni información confidencial de clientes.
             </p>
           </div>
           <ProponerForm />

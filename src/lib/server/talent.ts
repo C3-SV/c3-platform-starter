@@ -18,6 +18,7 @@ import {
   type ContactStatus,
 } from "../domain/contact.ts";
 import { canRecordDefense, parseDefenseInput, type DefenseInput } from "../domain/defense.ts";
+import { canViewFeedback, parseCheckpointInput, parseFeedbackInput } from "../domain/process.ts";
 import type { PresentedState } from "../domain/presentation.ts";
 import type { Challenge } from "../domain/types.ts";
 import { ValidationFailure } from "../domain/validation.ts";
@@ -27,8 +28,10 @@ import { CHALLENGES, ORGANIZATIONS, loadChallenge, loadExperience } from "./cata
 import { ORGANIZATION_MEMBERS } from "./companies.ts";
 import { HttpError, notFound } from "./errors.ts";
 import {
+  CHECKPOINTS,
   CONTACT_REQUESTS,
   DEFENSES,
+  FEEDBACKS,
   ENROLLMENTS,
   SHORTLISTS,
   SUBMISSIONS,
@@ -67,8 +70,25 @@ export interface TalentRow {
   defense: DefenseView | null;
   shortlist: { reason: string; addedAt: string } | null;
   contact: ContactView | null;
+  /** Bitácora de la persona, en orden de creación. */
+  checkpoints: CheckpointView[];
+  /** Retroalimentación de la empresa, incluido el borrador no publicado (la empresa la ve siempre). */
+  feedback: FeedbackView | null;
   /** Ya se puede pedir contacto: lista corta, inscripción aprobada, entrega individual y sin solicitud activa. */
   canRequestContact: boolean;
+}
+
+export interface CheckpointView {
+  id: string;
+  text: string;
+  link: string | null;
+  createdAt: string;
+}
+
+export interface FeedbackView {
+  text: string;
+  publishedAt: string | null;
+  updatedAt: string;
 }
 
 export interface TalentBoard {
@@ -198,6 +218,8 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
       defense: defenseById.get(doc.id) ?? null,
       shortlist: entry ? { reason: entry.reason, addedAt: entry.createdAt } : null,
       contact: request && userId ? contactViewOf(request.id, request.data) : null,
+      checkpoints: [],
+      feedback: null,
       canRequestContact: contactEligibilityIssue({
         isLinkedRepresentative: true,
         hasShortlistEntry: Boolean(entry),
@@ -206,6 +228,21 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
       }) === null && !request,
     };
   });
+
+  const [checkpointDocs, feedbackDocs] = await Promise.all([
+    db.collection(CHECKPOINTS).where("challengeId", "==", challengeId).get(),
+    db.collection(FEEDBACKS).where("challengeId", "==", challengeId).get(),
+  ]);
+  const checkpointsBySubmission = new Map<string, CheckpointView[]>();
+  for (const doc of checkpointDocs.docs) {
+    const data = doc.data();
+    checkpointsBySubmission.set(data.submissionId, [...(checkpointsBySubmission.get(data.submissionId) ?? []), checkpointOf(doc.id, data)]);
+  }
+  const feedbackBySubmission = new Map(feedbackDocs.docs.map((doc) => [doc.id, feedbackOf(doc.data())]));
+  for (const row of rows) {
+    row.checkpoints = (checkpointsBySubmission.get(row.submissionId) ?? []).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    row.feedback = feedbackBySubmission.get(row.submissionId) ?? null;
+  }
 
   const experience = await loadExperience(db, challenge.experienceId);
   return {
@@ -443,4 +480,78 @@ export async function saveDefense(db: Firestore, actor: Actor, challengeId: stri
   recordAudit(db, batch, actor, now, { action: "defensa.registrar", target: { type: "submission", id: own.submissionId }, details: { challengeId } });
   await batch.commit();
   return defenseOf(own.submissionId, data);
+}
+
+function checkpointOf(id: string, data: DocumentData): CheckpointView {
+  return { id, text: data.text, link: data.link ?? null, createdAt: data.createdAt };
+}
+
+function feedbackOf(data: DocumentData): FeedbackView {
+  return { text: data.text, publishedAt: data.publishedAt ?? null, updatedAt: data.updatedAt };
+}
+
+/** Una entrada de la bitácora. Solo con inscripción aprobada y hasta el cierre de entregas. */
+export async function addCheckpoint(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<CheckpointView> {
+  const input = parseCheckpointInput(rawBody);
+  const own = await ownSubmissionOf(db, actor, challengeId);
+  if (!own) throw forbidden("Tu inscripción todavía no está aprobada para este challenge.");
+  const challenge = await loadChallenge(db, challengeId);
+  if (challenge.submissionClosesAt && Date.parse(challenge.submissionClosesAt) <= now.getTime()) {
+    throw new HttpError(409, "plazo_cerrado", "La bitácora se cierra con el plazo de entregas.");
+  }
+  const ref = db.collection(CHECKPOINTS).doc();
+  const data = {
+    challengeId,
+    submissionId: own.submissionId,
+    authorUid: actor.uid,
+    text: input.text,
+    link: input.link,
+    createdAt: now.toISOString(),
+  };
+  await ref.set(data);
+  return checkpointOf(ref.id, data);
+}
+
+/** Mi bitácora en el challenge (la de mi equipo, si soy integrante). */
+export async function listMyCheckpoints(db: Firestore, actor: Actor, challengeId: string): Promise<CheckpointView[]> {
+  const own = await ownSubmissionOf(db, actor, challengeId);
+  if (!own) return [];
+  const snapshot = await db.collection(CHECKPOINTS).where("submissionId", "==", own.submissionId).get();
+  return snapshot.docs.map((doc) => checkpointOf(doc.id, doc.data())).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+/** La empresa redacta la retroalimentación de una entrega enviada; «publicar» la hace visible para la persona. */
+export async function saveFeedback(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<FeedbackView> {
+  const challenge = await requireCompanyChallenge(db, actor, challengeId);
+  const body = asObject(rawBody);
+  const submissionId = submissionIdOf(body);
+  const input = parseFeedbackInput(body);
+  await submittedSubmissionOf(db, challengeId, submissionId);
+  const ref = db.collection(FEEDBACKS).doc(submissionId);
+  const existing = (await ref.get()).data();
+  const stamp = now.toISOString();
+  const data = {
+    challengeId,
+    submissionId,
+    organizationId: challenge.organizationId,
+    text: input.text,
+    publishedAt: input.publish ? (existing?.publishedAt ?? stamp) : null,
+    updatedAt: stamp,
+    writtenByUid: actor.uid,
+  };
+  const batch = db.batch();
+  batch.set(ref, data);
+  recordAudit(db, batch, actor, now, { action: "retroalimentacion.guardar", target: { type: "submission", id: submissionId }, details: { challengeId, publicada: input.publish } });
+  await batch.commit();
+  return feedbackOf(data);
+}
+
+/** Mi retroalimentación: solo la publicada. Un borrador de la empresa nunca llega a la persona. */
+export async function getMyFeedback(db: Firestore, actor: Actor, challengeId: string): Promise<FeedbackView | null> {
+  const own = await ownSubmissionOf(db, actor, challengeId);
+  if (!own) return null;
+  const snapshot = await db.collection(FEEDBACKS).doc(own.submissionId).get();
+  const data = snapshot.data();
+  if (!data || !canViewFeedback(data.publishedAt ?? null, "participant")) return null;
+  return feedbackOf(data);
 }

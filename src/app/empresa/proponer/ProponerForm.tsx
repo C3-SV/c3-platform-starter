@@ -23,6 +23,7 @@ export function ProponerForm() {
     problem: "",
     desiredOutcome: "",
     constraints: "",
+    intent: "",
     website: "",
   });
   const [consent, setConsent] = useState(false);
@@ -101,6 +102,15 @@ export function ProponerForm() {
 
       <Campo id="p-objetivo" label="¿Qué resultado les gustaría explorar?" error={issueFor(issues, "desiredOutcome")}>
         <textarea id="p-objetivo" rows={3} className="c3-campo" value={values.desiredOutcome} onChange={(event) => update("desiredOutcome", event.target.value)} />
+      </Campo>
+
+      <Campo id="p-intencion" label="¿Qué querés lograr? (opcional)" error={issueFor(issues, "intent")} help="Elegí una sola opción; podés explicarlo en el campo anterior.">
+        <select id="p-intencion" className="c3-campo" value={values.intent} onChange={(event) => update("intent", event.target.value)}>
+          <option value="">Sin elegir</option>
+          <option value="talento">Identificar talento</option>
+          <option value="solucion">Explorar una solución</option>
+          <option value="ambos">Ambos</option>
+        </select>
       </Campo>
 
       <Campo id="p-limites" label="Datos disponibles y límites de confidencialidad" error={issueFor(issues, "constraints")} help="Opcional, pero ayuda a definir qué se puede publicar.">

@@ -6,11 +6,15 @@ import { ValidationFailure } from "../../src/lib/domain/validation.ts";
 import { createOrganization, linkRepresentative } from "../../src/lib/server/companies.ts";
 import { enrollInChallenge, reviewEnrollment, saveDelivery } from "../../src/lib/server/participation.ts";
 import {
+  addCheckpoint,
   addToShortlist,
   advanceContactRequest,
   answerContactRequest,
   getMyDefense,
+  getMyFeedback,
   getTalentBoard,
+  listMyCheckpoints,
+  saveFeedback,
   listMyContactRequests,
   removeFromShortlist,
   requestContact,
@@ -232,4 +236,30 @@ test("una solicitud declinada es final: la empresa no vuelve a pedir contacto ni
   const row = (await getTalentBoard(db, representante, challenge.id)).rows[0];
   assert.equal(row.contact?.status, "declinado", "la respuesta de la persona se conserva");
   assert.equal(row.canRequestContact, false, "el tablero no ofrece volver a pedir contacto");
+});
+
+test("la bitácora la escribe solo la persona inscrita; la retroalimentación solo llega publicada", async () => {
+  const { db, challenge, submissionId } = await scenario();
+  const checkpoint = await addCheckpoint(db, joven, challenge.id, {
+    text: "Probé la heurística con 40 instancias y comparé kilómetros contra la búsqueda exacta.",
+    link: "https://example.test/rama-heuristica",
+  }, duringDeadline);
+  assert.equal(checkpoint.link, "https://example.test/rama-heuristica");
+  assert.equal((await listMyCheckpoints(db, joven, challenge.id)).length, 1);
+  await assert.rejects(addCheckpoint(db, otra, challenge.id, { text: "Intento de escribir sin inscripción." }, duringDeadline), expectHttp(403));
+  await assert.rejects(addCheckpoint(db, joven, challenge.id, { text: "corto" }, duringDeadline), ValidationFailure);
+  await assert.rejects(addCheckpoint(db, joven, challenge.id, { text: "Avance con enlace inseguro.", link: "http://example.test" }, duringDeadline), ValidationFailure);
+  assert.equal((await listMyCheckpoints(db, otra, challenge.id)).length, 0, "otra persona no ve la bitácora ajena");
+
+  const feedbackText = "Buena comparación con la búsqueda exacta. Falta medir el costo de cambiar de ruta.";
+  await assert.rejects(saveFeedback(db, joven, challenge.id, { submissionId, text: feedbackText, publish: true }, duringDeadline), expectHttp(403));
+  await saveFeedback(db, representante, challenge.id, { submissionId, text: feedbackText, publish: false }, duringDeadline);
+  assert.equal(await getMyFeedback(db, joven, challenge.id), null, "un borrador no llega a la persona");
+  const draftRow = (await getTalentBoard(db, representante, challenge.id)).rows[0];
+  assert.equal(draftRow.feedback?.text, feedbackText, "la empresa ve su borrador");
+  assert.equal(draftRow.checkpoints.length, 1);
+
+  await saveFeedback(db, representante, challenge.id, { submissionId, text: feedbackText, publish: true }, duringDeadline);
+  assert.equal((await getMyFeedback(db, joven, challenge.id))?.text, feedbackText, "publicada, la persona la ve");
+  assert.equal(await getMyFeedback(db, otra, challenge.id), null, "otra persona no ve la retroalimentación");
 });

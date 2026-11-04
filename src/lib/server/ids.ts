@@ -42,6 +42,10 @@ export const SHORTLISTS = "shortlists";
 export const CONTACT_REQUESTS = "contactRequests";
 /** Defensa de una entrega enviada: un documento por entrega (id = submissionId). */
 export const DEFENSES = "defenses";
+/** Bitácora de la persona: checkpoints con texto y enlace opcional, en orden de creación. */
+export const CHECKPOINTS = "checkpoints";
+/** Retroalimentación de la empresa por entrega (id = submissionId). Solo la ve la persona cuando está publicada. */
+export const FEEDBACKS = "feedbacks";
 
 /** Solicitud de contacto: como máximo una por persona y challenge; la empresa solo puede tener una activa. */
 export function contactRequestDocId(challengeId: string, userId: string): string {

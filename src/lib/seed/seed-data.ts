@@ -15,6 +15,8 @@ export const SEED_COLLECTIONS = [
   "shortlists",
   "contactRequests",
   "companyProposals",
+  "checkpoints",
+  "feedbacks",
 ] as const;
 
 export interface SeedRecord {
@@ -225,6 +227,8 @@ interface DemoParticipant {
   defense?: { summary: string; decisions: string; testing?: string; tradeoffs?: string; aiUse?: string };
   shortlist?: string;
   contact?: { status: "esperando_consentimiento" | "aceptado"; message: string };
+  checkpoints?: { text: string; link?: string }[];
+  feedback?: { text: string; publish: boolean };
 }
 
 /** Registros de una persona en el challenge demo: perfil (si no es cuenta demo), inscripción, participación, entrega, defensa, lista corta y contacto. */
@@ -268,6 +272,38 @@ function participantRecords(person: DemoParticipant, uid: string, withProfile: b
     },
   });
   if (!submitted) return records;
+
+  (person.checkpoints ?? []).forEach((checkpoint, index) => {
+    records.push({
+      collection: "checkpoints",
+      id: seedId("checkpoint", `${uid}-${index + 1}`),
+      data: {
+        challengeId: demoChallengeId,
+        submissionId,
+        authorUid: uid,
+        text: checkpoint.text,
+        link: checkpoint.link ?? null,
+        createdAt: `2026-10-${String(25 + index).padStart(2, "0")}T16:00:00.000Z`,
+        ...demoMeta,
+      },
+    });
+  });
+  if (person.feedback) {
+    records.push({
+      collection: "feedbacks",
+      id: submissionId,
+      data: {
+        challengeId: demoChallengeId,
+        submissionId,
+        organizationId: DEMO_ORGANIZATION_ID,
+        text: person.feedback.text,
+        publishedAt: person.feedback.publish ? DEMO_TIMES.changed : null,
+        updatedAt: DEMO_TIMES.changed,
+        writtenByUid: DEMO_UID.empresa,
+        ...demoMeta,
+      },
+    });
+  }
 
   if (person.defense) {
     records.push({
@@ -333,6 +369,11 @@ const demoJoven: DemoParticipant = {
   },
   shortlist: "Justifica la heurística con datos y reconoce sus límites en instancias grandes.",
   contact: { status: "esperando_consentimiento", message: "Nos gustaría conocer mejor tu propuesta de rutas y cómo tratás las ventanas horarias." },
+  checkpoints: [
+    { text: "Comparé la heurística de inserción contra la búsqueda exhaustiva en 40 instancias pequeñas. La diferencia de kilómetros fue menor al 5 %." },
+    { text: "Decidí mantener la inserción secuencial: con 300 pedidos responde en menos de un segundo. Lo dejo registrado con la medición.", link: DEMO_LINK },
+  ],
+  feedback: { text: "Buena comparación con la búsqueda exhaustiva. Falta medir el costo de cambiar de ruta después de cumplir las ventanas.", publish: false },
 };
 
 const demoParticipants: DemoParticipant[] = [
@@ -350,6 +391,7 @@ const demoParticipants: DemoParticipant[] = [
     },
     shortlist: "Explica con datos por qué elige las tolerancias y muestra cómo se auditan las decisiones.",
     contact: { status: "aceptado", message: "Nos gustaría conversar sobre cómo justificaste las tolerancias de las ventanas." },
+    feedback: { text: "Justificás las tolerancias con datos y dejás trazabilidad de cada inserción. Falta una prueba con demoras reales de tráfico.", publish: true },
   },
   {
     key: "luis-herrera",
@@ -458,6 +500,8 @@ export const SEED_RECORDS = {
   shortlists: demoOf("shortlists"),
   contactRequests: demoOf("contactRequests"),
   companyProposals: demoOf("companyProposals"),
+  checkpoints: demoOf("checkpoints"),
+  feedbacks: demoOf("feedbacks"),
 } as const;
 
 export function validateSeedRecords(records: readonly SeedRecord[]): void {
