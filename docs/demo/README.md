@@ -6,7 +6,7 @@ Esta carpeta reúne lo necesario para presentar la demo: el relato, las cuentas,
 
 ## Dónde corre
 
-- Proyecto Firebase: `c3-platform-demo`, el mismo que usa la aplicación. Decisión del responsable (3-nov-2026), registrada en [AGENTS §15](../../AGENTS.md).
+- Proyecto Firebase: `c3-platform-demo`, el mismo que usa la aplicación. Decisión del responsable (3-nov-2026), registrada en [AGENTS §13](../../AGENTS.md).
 - Dataset: `docs/demo/seed-manifest.json` (generado con `scripts/seed-manifest.mjs`). Versión 5 del seed: rúbrica ponderada y cuatro challenges (rutas, retail, fintech y conciliación). Cargada en `c3-platform-demo` el 4-nov-2026 (92 documentos). No contiene credenciales.
 
 ## Cuentas
@@ -60,10 +60,8 @@ Firebase Auth no envía correos en la demo: la recuperación de contraseña no e
 - Dos jurados asignados: la administradora demo y un jurado externo sin cuenta.
 - Ana, Luis y Sofía tienen dos evaluaciones finalizadas cada una (de jurados distintos), así que las tres soluciones están completas. Diego tiene un borrador de entrega que no es visible para la empresa.
 - El resultado está publicado con puntajes visibles **solo para esta demostración**; no muestra ganadores públicos. La empresa ve el promedio sobre 100 y la matriz por criterio. Con la rúbrica ponderada 20/30/25/25, Sofía promedia 72,5 y Ana, 85.
-- Estos datos están en el seed (`src/lib/seed/seed-data.ts`). En `c3-platform-demo` están desde la v4, con la rúbrica ponderada 20/30/25/25 (plan §8).
+- Estos datos están en el seed (`src/lib/seed/seed-data.ts`). En `c3-platform-demo` están desde la v4, con la rúbrica ponderada 20/30/25/25 ([plan](../superpowers/plans/2026-11-03-c3-challenges-demo.md)).
 
 ## Pendiente antes de presentar
 
-- Revisión visual a 390 px y 1280 px de las páginas nuevas (ver resultados de capturas en la sesión).
-- Pruebas E2E: `e2e/zz-demo-talento.spec.ts` cubre en escritorio el tablero de talento, la bitácora, la solicitud de contacto, los filtros del catálogo y la intención de la propuesta con el enlace E1. No cubre la defensa ni la retroalimentación.
-- E2E final de esta rama (escritorio y móvil): 217 pasan, 0 fallan y 23 se saltan porque cada prueba declara su proyecto. Antes se fallaba de forma intermitente en «Salir» de administración y en el recorrido de desbordes móviles. Causa: el menú de la cuenta se cierra al cambiar de ruta (la consola redirige de `/admin` a `/admin/resumen`), y la espera de red inactiva no era fiable con datos en vivo. Se corrigieron las pruebas, no la interfaz.
+Ver [PENDIENTES-REALES](../PENDIENTES-REALES.md): revisión visual a 390 y 1280 px, recorrido del sitio con las tres cuentas, ensayo cronometrado y capturas de respaldo. `e2e/zz-demo-talento.spec.ts` cubre el tablero de talento, la bitácora, la solicitud de contacto, los filtros del catálogo y la propuesta con el enlace E1; no cubre la defensa ni la retroalimentación.

@@ -15,11 +15,10 @@
 
 ## Prioridad de trabajo
 
-1. **Corregir estabilidad comprobada:** fallo E2E de Cuenta, permisos y enlaces/retornos de sesión. No declarar CI verde sin nueva ejecución.
-2. **Auditoría de navegación:** medir cuántos pasos requieren tareas principales, acceso desde menús, retorno, estados vacíos y diferencias entre móvil y escritorio. Crear propuesta de arquitectura de información y probarla antes de editar rutas.
-3. **Resolver fricción de los recorridos:** formularios, continuidad inscripción → Mi C3 → entrega, empresa → propuestas → evaluación, admin → acciones pendientes.
-4. **Probar verticales completos:** datos reales solo mediante piloto autorizado, emuladores para desarrollo; cubrir errores y autorizaciones negativas.
-5. **Preparar piloto:** legal, datos, seguridad, permisos, operaciones y métricas acordadas.
+1. **Estabilidad:** no declarar CI verde sin una ejecución nueva; repetir el CI en `dev` y `main` en cada promoción.
+2. **Validar con personas:** la arquitectura de navegación ([PRODUCTO-Y-NAVEGACION](PRODUCTO-Y-NAVEGACION.md)) está aprobada e implementada, pero solo verificada con pruebas técnicas. Medir pasos, retorno, estados vacíos y diferencias entre móvil y escritorio con tareas guiadas por rol.
+3. **Probar verticales completos:** recorridos de empresa, defensa, retroalimentación y contacto en E2E; datos reales solo mediante piloto autorizado y emuladores para desarrollo, con casos negativos de autorización.
+4. **Preparar piloto:** legal, datos, seguridad, permisos, operaciones y métricas acordadas ([PENDIENTES-REALES](PENDIENTES-REALES.md)).
 
 ## Prueba funcional de aceptación
 

@@ -2,115 +2,61 @@
 
 > C3: Compite · Crea · Conecta. Producto en desarrollo: C3 Challenges (nombre provisional).
 
-Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. La referencia visual está en `diseno-claude/` y se integra según flujos y validaciones; la lógica, la persistencia y los permisos viven en este repositorio.
+Aplicación Next.js (App Router) con Firebase Authentication y Cloud Firestore. La referencia visual está en `diseno-claude/`; la lógica, la persistencia y los permisos viven en este repositorio. Las reglas de negocio y de seguridad están en [AGENTS.md](AGENTS.md); la navegación por rol, en [docs/PRODUCTO-Y-NAVEGACION.md](docs/PRODUCTO-Y-NAVEGACION.md); lo abierto, en [docs/PENDIENTES-REALES.md](docs/PENDIENTES-REALES.md).
 
-## Capacidades implementadas en el código
+## Capacidades
 
-El inventario siguiente describe funciones presentes en el repositorio recibido. **No significa que todas estén validadas en el último CI o que la navegación esté aprobada.** La validación vigente requiere pruebas reproducibles, revisión por rol y recorrido real de la demo:
+Inventario de lo que existe en el código. No acredita que cada flujo esté validado en el último CI: ver [Validación](#validación).
 
-- **Acceso** (V04): entrar, crear cuenta con nombre, recuperar contraseña y sesión persistente al recargar. Sin destino previo se llega a **Mi C3**; con `?next=` (solo rutas internas) se vuelve a donde estaba la persona.
-- **Talento para empresas (demo del 3-nov-2026)**: tablero de entregas enviadas por challenge con entregable, proceso y defensa separados (`/empresa` → «Ver talento y lista corta»); lista corta con motivo; solicitud de contacto que la persona acepta, declina o revoca desde «Solicitudes de contacto» en Mi C3; defensa de la entrega desde Mi challenge. Sin datos de contacto ni envío de correos. Detalle y pendientes en [PRODUCTO §10](docs/PRODUCTO-Y-NAVEGACION.md) y [plan 2026-11-03](docs/superpowers/plans/2026-11-03-c3-challenges-demo.md).
-- **Navegación unificada**: tres zonas con una cabecera cada una (sitio, app y consola de administración), menú de la cuenta común y accesos según las **capacidades** de la cuenta (`GET /api/me`: administración, organizaciones vinculadas, challenges que evalúa; solo datos propios). Detalle en [docs/PRODUCTO-Y-NAVEGACION.md](docs/PRODUCTO-Y-NAVEGACION.md).
-- **Perfil público compartible** (opt-in, desactivado por defecto): la persona lo activa en Cuenta, elige qué muestra (nombre siempre; centro de estudio, presentación, enlaces y trayectoria a elección) y comparte `/personas/[slug]`. Nunca expone correo, entregas, notas ni inscripciones sin aprobar; se puede cambiar el enlace o desactivarlo. Tratamiento de menores y permisos de imagen y nombre: pendiente legal.
-- **Experiencias y challenges** (V12, sección «Experiencias y challenges»): crear, editar y gestionar el ciclo de vida de cada experiencia sin tocar Firebase. Se guarda en borrador y solo aparece en el sitio público al publicarla. El listado busca por nombre, filtra por estado y línea, muestra las próximas acciones, los challenges, las inscripciones y los cupos de cada experiencia, y abre cada una para editarla.
-- **Experiencias sin challenge** (talleres, charlas, encuentros): una experiencia tiene cero o más challenges. Sin challenges publicados, las personas se inscriben a la experiencia misma (`/experiencias/[id]/inscripcion`), de forma individual y con revisión de C3. Con challenges publicados, la inscripción sigue entrando por el challenge. Es la misma inscripción por persona y experiencia: nunca se duplica entre experiencia y challenge.
-- **Ciclo de vida** (V12): borrador → publicada → inscripciones abiertas → inscripciones cerradas → en desarrollo → concluida, o cancelada. Las inscripciones se abren y cierran desde la tarjeta (ajustan la ventana de fechas); reabrir tras un cierre exige una nueva fecha de cierre. Una experiencia concluida es histórica: no se reabre ni vuelve a publicarse y no recibe challenges ni revisiones. Una publicada con inscripciones no vuelve a borrador. Publicar un taller, charla o encuentro exige inicio, modalidad y sede o enlace; publicar con la ventana de inscripción vencida se rechaza (una experiencia histórica se registra directamente como concluida).
-- **Edición segura**: solo se escriben los campos que cambian; el estado, la autoría, la marca de demostración y los datos de seed se conservan. Con challenges o inscripciones el tipo queda bloqueado; los cupos no pueden bajar de las inscripciones activas; una concluida o cancelada conserva su calendario y cupos. Cada operación sensible (crear, editar, cambiar de estado, abrir o cerrar inscripciones, revisar una inscripción, crear o cambiar el estado de un challenge) queda en la colección `auditLog`, escrita en la misma transacción que el cambio y sin datos personales.
-- **Visitante**: home (V01), catálogo (V02) y detalle de challenge (V03) leídos de Firestore.
-- **Inscripción individual** (V06): una inscripción por experiencia, en estado pendiente hasta que C3 la apruebe o rechace. Cancelable antes del cierre y sin entrega enviada. Si la experiencia define cupos, solo ocupan lugar las inscripciones pendientes y aprobadas; rechazar o cancelar lo libera, y el servidor lo verifica dentro de la transacción.
-- **Revisión de C3** (V12, «Inscripciones y equipos»): por challenge, o por experiencia cuando no tiene challenges, con el resumen de cupos. Aprobar habilita la participación (y, en un challenge, la entrega); rechazar cierra la inscripción.
-- **Equipos** (V06): la inscripción puede ser individual o por equipo. Una líder crea el equipo con un código `C3-XXXX`; las demás se unen con ese código y una inscripción por equipo aprobada. El equipo queda habilitado al llegar al mínimo. Cada persona tiene un solo equipo por experiencia; la líder quita, transfiere el liderazgo o disuelve el equipo, y cualquier integrante puede salir. Todo cambio se cierra al cierre de inscripciones o cuando el equipo envía la entrega.
-- **Mi C3** (V05): lo que toca ahora, las inscripciones en espera, las confirmadas a experiencias sin challenge, las entregadas y las cerradas.
-- **Mi challenge y entrega** (V07): borrador, envío y enlaces https, con plazo. Una entrega enviada queda estable al cerrar; un borrador sin enviar pasa a «Fuera de plazo».
-- **Permisos en servidor**: cada ruta verifica el token de Firebase, el claim `c3Admin` y la propiedad del recurso. Firestore deniega todo acceso directo desde el cliente.
-- **Errores**: validación con motivos por campo y mensajes claros de sesión y de permisos. Ninguna operación fallida muestra confirmación.
-- **Propuesta pública** (V10): cualquier empresa propone sin cuenta. El servidor valida, descarta en silencio las altas del campo trampa y limita a 5 propuestas por hora y conexión (solo se guarda un hash). La confirmación muestra una referencia y solo aparece cuando la propuesta quedó guardada.
-- **Revisión de C3** (V12, «Propuestas»): pedir ajustes con una nota para la empresa, aceptar (con la organización que la representará) o no priorizar. Crear organizaciones y vincular representantes por correo: la cuenta debe existir y es C3 quien la vincula.
-- **Espacio de empresa** (V09): la representante ve solo los challenges publicados de sus organizaciones, las soluciones ya enviadas (nunca borradores) y las propuestas vinculadas con su siguiente paso. Sin vínculo, la vista no muestra datos de nadie.
-- Challenges con organización vinculada: al crear un challenge en V12 se elige la organización que tendrá su espacio de empresa.
-- **Perfil y trayectoria** (V08): la persona declara su nombre, centro de estudio, una presentación y enlaces https (GitHub, LinkedIn). La trayectoria —inscripciones, entregas, reconocimientos y puesto— la registra C3 y no se edita; la pantalla separa ambas cosas con la etiqueta «Registrada por C3».
-- **Cuenta**: consulta correo y verificación, edita los datos personales del perfil, gestiona el perfil público, solicita verificación del correo, cambia la contraseña con reautenticación de Firebase y cierra sesión. Los resultados oficiales no se modifican desde Cuenta; la eliminación queda pendiente de una política de retención.
-- **Accesibilidad:** existe auditoría automática con axe-core (WCAG 2.x A y AA) para vistas públicas, acceso y usuario registrado. Su resultado debe comprobarse en la ejecución actual antes de aprobar cambios.
+- **Visitante:** home, catálogo con filtros (tipo, línea, estado), detalle de challenge y de experiencia, landings `/compite`, `/crea` y `/conecta`, propuesta de challenge sin cuenta y perfiles públicos opt-in.
+- **Acceso y cuenta:** entrar, crear cuenta, sesión persistente y retorno con `?next=` (solo rutas internas). Cuenta edita datos personales, perfil público, verificación de correo y contraseña. La recuperación de contraseña y la eliminación de cuenta quedan «Próximamente».
+- **Participante:** Mi C3 (atención, en espera, en curso, finalizadas), inscripción individual o por equipo con confirmación de elegibilidad y reglas, equipos con código `C3-XXXX`, Mi challenge con progreso, bitácora (solo agrega), entrega (borrador, envío, enlaces https), defensa, retroalimentación publicada, solicitudes de contacto (aceptar, declinar, revocar) y trayectoria registrada por C3.
+- **Empresa:** propuesta pública con límites anti-spam; espacio con sus challenges, hito y paquete de referencia, configuración del challenge, tablero de talento (entregable, proceso y defensa, con filtros y matriz por criterio), lista corta con motivo, solicitud de contacto y seguimiento, retroalimentación y resultados publicados.
+- **Jurado:** evaluación anónima tras el cierre, con rúbrica (pesos opcionales), borrador y finalización única. Comentarios internos.
+- **Administración:** consola `/admin/[seccion]` con resumen, propuestas (ajustes, aceptar, no priorizar; organizaciones y representantes), experiencias (ciclo de vida, cupos, challenges), inscripciones, entregas (solo lectura), jurados y rúbricas, resultados oficiales y auditoría.
+- **Experiencias sin challenge** (talleres, charlas, encuentros): inscripción a la experiencia, individual y con revisión de C3.
+- **Ciclo de vida:** borrador → publicada → inscripciones abiertas/cerradas → en desarrollo → concluida, o cancelada. Cada operación sensible queda en `auditLog`, en la misma transacción y sin datos personales.
+- **Permisos:** cada ruta verifica el token, el claim `c3Admin` y la propiedad; Firestore deniega todo acceso directo del cliente. `GET /api/me` devuelve capacidades propias solo para mostrar accesos.
+- **Accesibilidad:** auditoría automática con axe-core (WCAG 2.x A y AA) en vistas públicas, acceso y usuario registrado.
 
-- **Jurados** (V12, «Jurados y rúbricas»): C3 asigna jurados por correo —externos o representantes de la empresa—, revoca accesos sin borrar evaluaciones finalizadas, y ve la rúbrica de cada challenge.
-- **Evaluación** (Mi C3 «Como jurado» y V11): las soluciones se muestran anónimas («Solución 1», «Solución 2»…) y solo se pueden evaluar cuando cierran las entregas. Cada criterio recibe un entero dentro de su máximo. Se guarda un borrador y se finaliza una sola vez.
-- **Resultados** (V12, «Resultados oficiales»): promedio simple de los jurados con un decimal; reconocimientos (ganador, finalista, mención); publicación por C3 bloqueada hasta que cada solución tenga dos evaluaciones finalizadas de jurados distintos.
-- **Publicación**: los ganadores aparecen en la página pública del challenge si C3 lo autoriza; cada participante ve su reconocimiento y, si C3 lo autoriza, su promedio y puesto; la empresa ve los resultados publicados de sus challenges.
-- **Ecosistema**: /compite, /crea y /conecta comparten el catálogo de experiencias, clasificación por línea, estados visibles y marcadores de demostración/fuente.
-- **Admin**: resumen operativo y consulta de entregas con challenge, estado, participantes/equipo y autorización; las entregas no se modifican desde esta vista.
+**No implementado:** respuesta de la empresa a ajustes pedidos (se responde por correo), canal de contacto real, textos legales, y todo lo listado como fuera de alcance en [AGENTS §1](AGENTS.md).
 
-**No implementado o pendiente de preparación para uso real** (los controles pendientes deben declararse sin simular funcionalidad):
+## Rutas
 
-- Respuesta de la empresa a los ajustes pedidos (V10 «Responder a C3»): hoy la empresa lee la nota y responde por correo.
-- Comentarios de jurados: desactivados por defecto y sin implementar en el MVP.
-- Textos legales (términos y privacidad), reglas/índices del proyecto real y variables privadas de Vercel: ver `docs/PENDIENTES-REALES.md`.
+Las vistas V01–V12 del diseño son capacidades, no 12 rutas.
 
-### Validación y CI
+| Vista | Ruta | Acceso |
+| --- | --- | --- |
+| V01 Home | `/` | Público |
+| V02 Explorar | `/explorar` | Público |
+| V03 Detalle de challenge | `/retos/[challengeId]` | Público |
+| Detalle de experiencia | `/experiencias/[experienceId]` | Público |
+| Compite · Crea · Conecta | `/compite`, `/crea`, `/conecta` | Público |
+| V04 Acceso | `/acceso` | Público |
+| V10 Proponer challenge | `/empresa/proponer` | Público, sin cuenta |
+| Perfil público | `/personas/[slug]` | Público si la persona lo activó; `noindex`; 404 si no existe |
+| V05 Mi C3 | `/mi-c3` | Participante |
+| V06 Inscripción | `/retos/[challengeId]/inscripcion` | Participante |
+| Inscripción a experiencia | `/experiencias/[experienceId]/inscripcion` | Participante |
+| V07 Mi challenge y entrega | `/mi-c3/retos/[challengeId]` | Participante |
+| V08 Trayectoria | `/trayectoria` | Participante |
+| Cuenta | `/cuenta` | Participante |
+| V09 Espacio de empresa | `/empresa` | Representante vinculada |
+| V11 Evaluación | `/mi-c3/evaluar/[challengeId]` | Jurado asignado. Única dirección canónica: `/evaluar/[id]` y `/empresa/retos/[id]/evaluacion` redirigen (`next.config.ts`) |
+| V12 Admin | `/admin` → `/admin/[seccion]` | Administradora: `resumen`, `propuestas`, `experiencias`, `inscripciones` (`?reto=` o `?experiencia=`), `entregas`, `jurados`, `resultados`; una sección desconocida es 404 |
 
-Los comandos `npm run check`, `npm run test:rules` y `npm run test:e2e` verifican compilación/tipos, calidad, permisos y recorridos. **No se declara una suite completa en verde solo por conteos de ejecuciones anteriores**: leer el resultado del CI del PR o del push concreto (`.github/workflows/ci.yml` corre en cada PR y en cada push a `main` y `dev`). El fallo de `e2e/cuenta.spec.ts` que mostró el CI de `main` el 26-10-2026 era de la prueba (navegaba antes de que terminara «Salir») y se corrigió. `next build` puede detenerse una vez con el aviso de seguridad de Next.js; repetirlo continúa (ver [PENDIENTES-REALES](docs/PENDIENTES-REALES.md)).
+Las rutas de servidor están en `src/app/api/`. Las privadas exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos; `/api/health` es la única pública que no toca datos (y `POST /api/propuestas`, con sus defensas).
 
-La revisión de navegación por rol y UX está definida en [PRODUCTO-Y-NAVEGACION](docs/PRODUCTO-Y-NAVEGACION.md). No confundir validación técnica con facilidad de uso.
+## Requisitos e instalación
 
-### Verificación visual
-
-Comparadas con capturas del diseño de Claude en el mismo tamaño: V01, V02, V03 y V04 en escritorio; V10 y V09 en escritorio; V05 (estado vacío en el marco móvil de 390 px), V06 y V07 en el marco móvil. Diferencias conocidas y aceptadas: la entrega no tiene campo de título (solo descripción y enlaces, según el modelo aprobado); las acciones de líder y el botón «Salir» se añadieron por función; las propuestas de V09 son una lista de tarjetas y no una tabla; V09 no muestra el contador «Tenés N por evaluar»; V10 tiene un consentimiento obligatorio. El llamado a empresas de V01 y de V03 lleva a V10. **Por validar con la referencia y recorridos reales:** V08, V11 y V12, además de las secciones administrativas no dibujadas en el diseño.
-
-## Recursos de Claude
-
-- `diseno-claude/` contiene el paquete exportado: `vistas/` (V01–V12 y fundamentos en HTML), `tokens/` (`tokens.json` y `tokens.css`), `fuente-canvas/` y su README.
-- `src/app/globals.css` importa `tokens.css` directamente desde esa carpeta; no hay copia de los tokens.
-- Los fondos suaves de estado (`--c3-info-fondo`, `--c3-exito-fondo`, etc.) no están en `tokens.json`; se definen en `globals.css` como indica la guía de estilo.
-
-### Cómo se transformaron los diseños
-
-- Cada vista HTML se convirtió en componentes React/TypeScript conservando su estructura, textos y jerarquía. Los estilos repetidos (botones, etiquetas, tarjetas, campos, pastillas de estado) son clases en `globals.css`; el resto del layout queda en estilos en línea, como en el original.
-- Las vistas móviles (V05–V07) se diseñaron en un marco fijo de 390 × 844 px. En la aplicación usan el ancho del teléfono y se centran en escritorio (`MovilShell`), con la misma cabecera navy, el avatar y la barra inferior. **Mi C3 (V05) y Trayectoria (V08) son la excepción:** usan `MovilShell layout="panel"`, que en móvil y tablet conserva la barra superior e inferior (una columna) y desde 1024 px pasa a un panel de escritorio con cabecera superior y dos columnas, con los mismos datos. Los estados de Mi C3 son «Requiere tu atención», «En espera», «En curso» y «Finalizadas» (`src/lib/domain/mi-c3.ts`). Trayectoria separa lo que escribió la persona (a la derecha en escritorio) del registro de C3, ordenado en «Participaciones», «En revisión por C3» y «Sin participación», con medalla de oro, plata o bronce solo para los tres primeros puestos publicados (`src/lib/domain/trayectoria.ts`).
-- Los elementos que solo simulaban interactividad se conectaron a acciones reales o se marcaron como pendientes.
-- Se quitaron los rótulos «Datos de demostración» y los datos de ejemplo: la aplicación muestra solo datos reales de Firestore.
-- Materiales del challenge (datasets, contexto, formato) y el enlace «Comunidad» de V03 no se implementaron: no existen en el modelo ni en el alcance del MVP.
-
-## Rutas y vistas
-
-| Vista | Ruta | Acceso | Estado |
-| --- | --- | --- | --- |
-| V01 Home | `/` | Público | Implementada (destacados reales) |
-| V02 Explorar | `/explorar` | Público | Implementada, con filtros de tipo, línea, estado y «solo demo» (en el cliente) |
-| V03 Detalle de challenge | `/retos/[challengeId]` | Público | Implementada; el llamado lleva a V04 o a V06 |
-| Detalle de experiencia | `/experiencias/[experienceId]` | Público | Sesión, modalidad, sede, cupos, challenges asociados e inscripción cuando no tiene challenges |
-| V04 Acceso | `/acceso` | Público | Implementada |
-| V05 Mi C3 | `/mi-c3` | Joven | Implementada |
-| V06 Inscripción | `/retos/[challengeId]/inscripcion` | Joven | Individual y por equipo implementadas |
-| Inscripción a experiencia | `/experiencias/[experienceId]/inscripcion` | Joven | Individual, para experiencias sin challenges publicados |
-| V07 Mi challenge y entrega | `/mi-c3/retos/[challengeId]` | Joven | Implementada |
-| V08 Trayectoria | `/trayectoria` | Joven | Implementada |
-| Cuenta | `/cuenta` | Joven | Perfil, perfil público, correo, seguridad y sesión |
-| Perfil público | `/personas/[slug]` | Público | Solo existe si la persona lo activó; `noindex`; 404 si no existe, se cambió o se desactivó |
-| V09 Espacio de empresa | `/empresa` | Empresa | Implementada (challenges, soluciones, resultados y propuestas) |
-| V10 Proponer challenge | `/empresa/proponer` | Público | Implementada, sin cuenta |
-| V11 Evaluación | `/mi-c3/evaluar/[challengeId]` | Jurado asignado (externo o representante de la empresa) | Implementada. Es la **única dirección canónica** de la evaluación; `/evaluar/[challengeId]` y `/empresa/retos/[challengeId]/evaluacion` redirigen aquí (`next.config.ts`) |
-| Compite | `/compite` | Público | Landing institucional conectada al catálogo |
-| Crea | `/crea` | Público | Landing institucional conectada al catálogo |
-| Conecta | `/conecta` | Público | Landing institucional conectada al catálogo |
-| V12 Admin | `/admin` → `/admin/[seccion]` | Administrador | Una URL por sección: `resumen` (entrada, con pendientes enlazados), `propuestas`, `experiencias` (crear, editar, ciclo de vida, cupos, challenges), `inscripciones` (`?reto=` / `?experiencia=`), `entregas`, `jurados` y `resultados`. Una sección desconocida es un 404 |
-
-Las rutas de servidor están en `src/app/api/`. Las que leen o escriben datos privados (`/api/me`, `/api/perfil/*`, `/api/mi-c3`, `/api/retos/*`, `/api/experiencias/*`, `/api/inscripciones/*`, `/api/admin/*`, `/api/empresa/*`, `/api/contactos`) exigen `Authorization: Bearer <token>` verificado con el Admin SDK y comprueban permisos antes de tocar datos. `/api/health` es pública y no toca datos.
-
-> **Desarrollo:** un solo checkout local. `dev` integra y prueba; `main` es producción. Leer `AGENTS.md`, `docs/FLUJO-AGENTES.md` y `docs/PRODUCTO-Y-NAVEGACION.md`. Verificar el entorno con `npm run doctor`.
-
-## Requisitos
-
-- Node.js 22 o superior.
-- Java 21 o superior (lo usa el emulador de Firestore). En Windows: `winget install Microsoft.OpenJDK.21`.
-- Firebase CLI se instala como dependencia del proyecto (`firebase-tools`).
-
-## Instalación y primer arranque local
+Node.js 22 o superior; Java 21 o superior para el emulador de Firestore (Windows: `winget install Microsoft.OpenJDK.21`); `firebase-tools` es dependencia del proyecto.
 
 ```bash
 npm ci
 cp .env.example .env.local
 ```
 
-Para trabajar con los emuladores, completa `.env.local` así:
+Para trabajar con emuladores, completá `.env.local`:
 
 ```bash
 NEXT_PUBLIC_FIREBASE_API_KEY=demo-api-key
@@ -123,138 +69,123 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
 ```
 
-En una terminal, arranca los emuladores; en otra, la aplicación:
+En una terminal, los emuladores; en otra, la aplicación:
 
 ```bash
-npm run emulators   # Auth en 9099, Firestore en 8080, interfaz en http://127.0.0.1:4000
+npm run emulators   # Auth 9099, Firestore 8080, interfaz http://127.0.0.1:4000
 npm run dev         # http://localhost:3000
 ```
 
-Las variables `NEXT_PUBLIC_*` se incrustan en el build: si cambian, reconstruí.
+Las variables `NEXT_PUBLIC_*` se incrustan en el build: si cambian, reconstruí. Verificá el entorno con `npm run doctor`.
 
 ## Variables de entorno
 
-Ver `.env.example`. Resumen:
+Ver `.env.example`.
 
-- `NEXT_PUBLIC_FIREBASE_*`: configuración pública del SDK del navegador. No son secretos.
-- `NEXT_PUBLIC_USE_FIREBASE_EMULATORS`: `true` conecta el navegador al emulador de Auth.
-- `GOOGLE_CLOUD_PROJECT`: proyecto usado por el Admin SDK en el servidor.
-- `FIREBASE_SERVICE_ACCOUNT_JSON` (privada) o `FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY` (privadas): credenciales del Admin SDK cuando Vercel no tiene ADC de Google. Nunca se suben al repositorio ni se usan como `NEXT_PUBLIC_*`.
-- `RATE_LIMIT_SALT` (privada): sal del hash de conexión del formulario de propuestas. Obligatoria en producción; sin ella `POST /api/propuestas` falla. Valor aleatorio largo, nunca versionado.
-- `FIRESTORE_EMULATOR_HOST` y `FIREBASE_AUTH_EMULATOR_HOST`: solo en desarrollo. Las define `firebase emulators:exec` cuando corren las pruebas.
-- Las credenciales privadas nunca van en `NEXT_PUBLIC_*`. En producción el Admin SDK usa Application Default Credentials o la identidad administrada del hosting.
+- `NEXT_PUBLIC_FIREBASE_*`: configuración pública del SDK del navegador (no son secretos). `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true` conecta el navegador al emulador de Auth.
+- `GOOGLE_CLOUD_PROJECT`: proyecto del Admin SDK.
+- `FIREBASE_SERVICE_ACCOUNT_JSON`, o `FIREBASE_ADMIN_PROJECT_ID` + `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY` (privadas): credenciales del Admin SDK cuando el hosting no tiene ADC. Nunca al repositorio ni como `NEXT_PUBLIC_*`.
+- `RATE_LIMIT_SALT` (privada): sal del hash de conexión de las propuestas. Obligatoria en producción; sin ella `POST /api/propuestas` falla.
+- `FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST`: solo desarrollo; `firebase emulators:exec` las define en las pruebas.
 
-### Configuración de Vercel
-
-En Vercel configura las variables públicas del proyecto Firebase de producción:
-`NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`,
-`NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` y
-`NEXT_PUBLIC_USE_FIREBASE_EMULATORS=false`.
-
-Para el Admin SDK configura como variables privadas `GOOGLE_CLOUD_PROJECT` y
-`FIREBASE_SERVICE_ACCOUNT_JSON`, o el conjunto separado
-`FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY`.
-El comando `vercel-build` valida esta configuración antes de compilar y nunca imprime
-los valores secretos. Después de cambiar variables, crea un nuevo deploy para que
-sean tomadas por el build.
+**Vercel:** configurá las cuatro `NEXT_PUBLIC_FIREBASE_*` del proyecto, `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=false` y las privadas del Admin SDK más `RATE_LIMIT_SALT`. `vercel-build` valida la configuración sin imprimir secretos. Tras cambiar variables, hacé un deploy nuevo.
 
 ## Primer administrador
 
-Un administrador es una cuenta con el claim `c3Admin`. Los claims solo se asignan desde el servidor, nunca desde el navegador.
+Una administradora es una cuenta con el claim `c3Admin`, que solo se asigna desde el servidor.
 
-1. Crea la cuenta desde `/acceso` (o en la interfaz del emulador).
-2. Otorga el permiso:
+1. Creá la cuenta desde `/acceso` (o en la interfaz del emulador).
+2. Otorgá el permiso:
 
 ```bash
 node --env-file-if-exists=.env.local scripts/grant-admin.mjs correo@dominio
 ```
 
-3. Cierra sesión y vuelve a entrar para que el token incluya el permiso. Después, `/admin` está disponible.
+3. Cerrá sesión y volvé a entrar para que el token lo incluya.
 
-En producción, ejecuta el mismo script con credenciales de servicio autorizadas (ADC). No hay un endpoint público para asignar administradores.
+En producción, el mismo script con credenciales de servicio autorizadas. No hay endpoint público para esto.
 
 ## Comandos
 
 | Comando | Qué hace |
 | --- | --- |
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Build de producción |
-| `npm run test:e2e` (escritorio y móvil, incluye el build de producción) | 223 superadas, 0 fallidas, 23 omitidas: cada prueba declara su proyecto (escritorio o móvil) |
-| `npm run check:vercel-env` | Valida las variables requeridas para un deploy de Vercel |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` | ESLint (configuración de Next.js) |
-| `npm test` | Pruebas unitarias del dominio (sin emuladores) |
-| `npm run test:rules` | Reglas de Firestore, servicios y entregas contra el emulador |
-| `npm run test:e2e` | Recorridos con Playwright: inicia los emuladores, prepara la cuenta administradora, construye la aplicación y la sirve |
-| `npm run seed:dry-run -- --project <id> --emulator` | Lee el catálogo seed, muestra existentes/conflictos/escrituras y no modifica datos |
-| `npm run seed:apply -- --project <id> --confirm-project <id> --allow-write --emulator` | Crea solo documentos determinísticos del seed; exige identidad repetida y autorización |
-| `node --env-file-if-exists=.env.local --experimental-strip-types scripts/seed.mjs --mode update --project <id> --confirm-project <id> --allow-write --allow-update --backup-file "<ruta fuera del repo>"` | Actualiza los documentos del seed con versión anterior (los demás campos se conservan) y crea los nuevos. Escribe primero un respaldo JSON del estado anterior. `apply` se niega si hay versiones anteriores. Requiere credenciales de Admin SDK, no `FIREBASE_CLI_ACCESS_TOKEN` |
-| `FIREBASE_CLI_ACCESS_TOKEN=<token> npm run seed:dry-run -- --project <id>` | Dry-run contra Firebase real usando una sesion local autenticada de Firebase CLI; el token no se guarda |
-| `node --experimental-strip-types scripts/provision-demo-accounts.mjs --project <id>` | Simulación de las cuentas demo (joven, empresa, administración) y sus vínculos; no escribe nada. Solo admite `c3-platform-demo` (decisión del responsable, 3-nov-2026) y el emulador |
-| `node --experimental-strip-types scripts/provision-demo-accounts.mjs --project <id> --apply --confirm-project <id> --credentials-file "<ruta fuera del repo>"` | Crea las cuentas que faltan, asigna el permiso de administración y vincula la representante. Escribe las contraseñas nuevas una sola vez en la ruta indicada; no las imprime ni las guarda en el repositorio. Requiere autorización y credenciales de Admin SDK (`FIREBASE_SERVICE_ACCOUNT_JSON` o ADC) |
-| `npm run emulators` | Solo emuladores |
-| `npm run doctor` | Diagnóstico del entorno (Node, Java, dependencias, proyecto Firebase activo, puertos, Git); no modifica nada ni muestra secretos |
-| `npm run test:capturas` | Capturas de las páginas públicas (escritorio y móvil) en `capturas/actual/`; falla ante errores de consola |
-
+| `npm run dev` · `npm run build` | Desarrollo y build de producción |
 | `npm run check` | Typecheck, lint y pruebas unitarias |
+| `npm run typecheck` · `npm run lint` | `tsc --noEmit` y ESLint |
+| `npm test` | Pruebas unitarias del dominio (sin emuladores) |
+| `npm run test:rules` | Reglas, servicios y entregas contra el emulador |
+| `npm run test:e2e` | Playwright en escritorio y móvil: inicia emuladores, prepara la administradora, construye y sirve la app. En Windows con Edge: `PW_CHANNEL=msedge`; sin `PW_CHANNEL` usa `npx playwright install chromium` |
+| `npm run test:capturas` | Capturas públicas en `capturas/actual/`; falla ante errores de consola |
+| `npm run emulators` | Solo emuladores |
+| `npm run doctor` | Diagnóstico del entorno (Node, Java, proyecto, puertos, Git); no muestra secretos |
+| `npm run check:vercel-env` | Valida las variables de un deploy en Vercel |
 
-Para las pruebas de navegador en Windows con Microsoft Edge instalado: `PW_CHANNEL=msedge npm run test:e2e`. Si no defines `PW_CHANNEL`, Playwright usa su Chromium (`npx playwright install chromium`).
+**Seed y cuentas demo** (detalle y reglas en [AGENTS §13](AGENTS.md) y [docs/demo](docs/demo/README.md)). Cualquier escritura remota necesita autorización expresa y `--dry-run` previo:
+
+```bash
+# Simulación (no escribe)
+npm run seed:dry-run -- --project <id> --emulator
+# Crear lo que falta (emulador o proyecto autorizado)
+npm run seed:apply -- --project <id> --confirm-project <id> --allow-write --emulator
+# Actualizar documentos con versión anterior, con respaldo fuera del repo
+node --env-file-if-exists=.env.local --experimental-strip-types scripts/seed.mjs --mode update --project <id> --confirm-project <id> --allow-write --allow-update --backup-file "<ruta fuera del repo>"
+# Cuentas demo: simulación y aplicación (contraseñas a un archivo fuera del repo)
+node --experimental-strip-types scripts/provision-demo-accounts.mjs --project <id>
+node --experimental-strip-types scripts/provision-demo-accounts.mjs --project <id> --apply --confirm-project <id> --credentials-file "<ruta fuera del repo>"
+```
+
+`update` requiere credenciales del Admin SDK (no `FIREBASE_CLI_ACCESS_TOKEN`); `FIREBASE_CLI_ACCESS_TOKEN=<token> npm run seed:dry-run -- --project <id>` sirve solo para el dry-run remoto. `provision-demo-accounts` solo admite `c3-platform-demo` y el emulador. `scripts/demo-reset.mjs` lista por defecto lo que borraría y exige `--apply`, `--confirm-project` y `--backup-file`.
+
+## Validación
+
+`npm run check`, `npm run test:rules` y `npm run test:e2e` verifican compilación, calidad, permisos y recorridos. **No se declara una suite en verde por conteos de ejecuciones anteriores:** leer el CI del PR o push concreto (`.github/workflows/ci.yml`). Última ejecución completa local (4-nov-2026): 175 unitarias, 139 de emulador y reglas, y E2E de 223 superadas, 0 fallidas y 23 omitidas (cada prueba declara su proyecto, escritorio o móvil). Las pruebas E2E usan el build de producción. `next build` puede detenerse una vez por el aviso de seguridad de Next.js; repetirlo continúa ([PENDIENTES](docs/PENDIENTES-REALES.md)).
+
+## Diseño
+
+- `diseno-claude/` es el paquete exportado: `vistas/` (V01–V12), `tokens/` (`tokens.json`, `tokens.css`), `fuente-canvas/`. `src/app/globals.css` importa `tokens.css`; los fondos suaves de estado se definen allí.
+- Las vistas se convirtieron en componentes conservando estructura, textos y jerarquía; los estilos repetidos son clases de `globals.css`. Las vistas móviles usan `MovilShell` (marco de 390 px centrado en escritorio); **Mi C3 y Trayectoria** usan `layout="panel"`: una columna en móvil y tablet, y desde 1024 px un panel de dos columnas. Estados de Mi C3 en `src/lib/domain/mi-c3.ts`; trayectoria en `src/lib/domain/trayectoria.ts`.
+- Diferencias aceptadas frente al diseño: la entrega no tiene campo de título; hay acciones de líder y «Salir»; V09 lista propuestas como tarjetas y no muestra el contador «por evaluar»; V10 pide un consentimiento. No existen materiales del challenge ni el enlace «Comunidad» de V03 en el modelo.
+- Los elementos que solo simulaban interactividad se conectaron a acciones reales o se marcaron «Próximamente». Los datos de ejemplo se marcan **DEMO**.
 
 ## Arquitectura
 
 ```
 src/
-  app/                   Rutas (App Router): páginas, API de servidor y estilos globales
-  components/            Componentes compartidos (cabecera, marco móvil, pastillas de estado, pie, CTA de inscripción)
+  app/            Rutas (App Router), API de servidor y estilos globales
+  components/     Componentes compartidos
   lib/
-    domain/              Entidades, validaciones y estados de presentación (sin Firebase)
-    server/              Servicios de catálogo, participación, autenticación, perfil, Admin y errores (reciben la base por parámetro)
-    firebase/            Admin SDK (solo servidor) y SDK del navegador
-    auth/                Proveedor de sesión del navegador
-    client/              Cliente de API que adjunta el token
-tests/unit/              Pruebas del dominio
-tests/emulator/          Reglas, catálogo, inscripciones y entregas contra el emulador
-e2e/                     Recorridos de navegador (escritorio y móvil)
-scripts/                 Administración, seed y preparación de emuladores
-diseno-claude/           Referencia del diseño exportado por Claude (no se duplica)
+    domain/       Entidades, validaciones y presentación (sin Firebase)
+    server/       Servicios de datos y reglas transaccionales (reciben la base por parámetro)
+    firebase/     Admin SDK (solo servidor) y SDK del navegador
+    auth/         Proveedor de sesión del navegador
+    client/       Cliente de API que adjunta el token
+    seed/         Dataset de demostración
+tests/unit/       Dominio
+tests/emulator/   Reglas y servicios contra el emulador
+e2e/              Recorridos de navegador (escritorio y móvil)
+scripts/          Administración, seed y emuladores
+diseno-claude/    Referencia del diseño (no se duplica)
 ```
 
-Firestore deniega todo acceso desde el cliente (`firestore.rules`). Las lecturas públicas se hacen en el servidor, que filtra campos internos (autor, borradores). Esto es intencional: abrir lecturas directas exigiría reglas por campo.
+`firestore.rules` deniega todo acceso del cliente. Las lecturas públicas pasan por el servidor, que filtra campos internos; abrir lecturas directas exigiría reglas por campo y pruebas en emulador.
 
 ## Modelo de datos
 
-- `experiences/{id}`: título, tipo (`competencia`, `hackathon`, `challenge_empresarial`, `taller`, `charla`, `encuentro`), resumen, estado (`draft`, `published`, `closed`, `cancelled`), ventana de inscripción. Que las inscripciones estén abiertas o cerradas no es un estado guardado: sale de la ventana y de la hora.
-- `experiences/{id}` también puede declarar `primaryLine`, `secondaryLines`, `isDemo`, `demoNote`, `sourceUrl` y `sourceLabel`; los registros legacy usan el tipo como fallback. Los datos de sesión son opcionales: `startsAt`, `endsAt`, `modality` (`presencial`, `virtual`, `hibrida`), `location` (pública) y `capacity` (cupos; vacío es sin límite). Las experiencias anteriores sin estos campos se leen y se editan sin migración.
-- `auditLog/{id}`: bitácora de operaciones administrativas (`action`, `actorUid`, `targetType`, `targetId`, `at`, `details`). Solo la escribe el servidor.
-- `challenges/{id}`: `experienceId`, problema, entregables, rúbrica (criterios con puntaje máximo de 1 a 10), organización responsable, modalidades (`individual`, `team` con tamaño mínimo y máximo), cierre de entregas, estado.
-- `users/{uid}`: correo, nombre, datos autodeclarados y, si la persona lo configuró, `publicProfile` (`enabled`, `slug`, qué se muestra). Se crea la primera vez que la persona entra (transacción).
-- `publicProfiles/{slug}`: dirección pública de un perfil (`userId`). Solo la escribe el servidor; cambiar el enlace borra la anterior.
-- `enrollments/{experienceId}__{uid}`: una inscripción por persona y experiencia. Estados `pending`, `approved`, `rejected`, `cancelled`. `challengeId` es el challenge por el que entró la persona, o `null` si se inscribió a la experiencia sin challenge.
-- `participations/{challengeId}__{uid}`: se crea al aprobar la inscripción. Estado `active` o `cancelled`.
-- `companyProposals/{id}`: propuesta pública (empresa, contacto, problema, resultado buscado, límites), estado (`received`, `needs_changes`, `accepted`, `not_prioritized`), nota de C3 y organización vinculada. Su referencia son los 6 primeros caracteres del id.
-- `rateLimits/{hash}`: contador por conexión (sal + hash, nunca la IP en claro). Ventana de una hora.
-- `organizations/{id}` y `organizationMembers/{orgId}__{uid}`: organizaciones y su representante, vinculado por C3 por correo.
-- `submissions/{challengeId}__{uid}`: una entrega vigente por participación, en `draft` o `submitted`, con descripción y enlaces. En equipo, la clave es `{challengeId}__team__{teamId}` y solo la líder la guarda o envía.
-- `teams/{id}`: nombre, código `C3-XXXX`, líder, integrantes, estado (`incompleto` o `habilitado`), mínimo y máximo de integrantes.
-- `teamCodes/{code}`: índice que garantiza que cada código sea único.
-- `teamMemberships/{experienceId}__{uid}`: un equipo por persona y experiencia.
-- `challenges/{id}` puede declarar `commercialPackage` (`esencial`, `completo`, `destacado` o `null`): tarifa de referencia en `src/lib/domain/commercial.ts`, sin cobro en la demo.
-- `shortlists/{submissionId}`: lista corta de una entrega enviada, con motivo obligatorio y quién la agregó. La escribe el servidor.
-- `contactRequests/{challengeId}__{hash}`: solicitud de contacto con consentimiento (`esperando_consentimiento`, `aceptado`, `declinado`, `contactado`, `seguimiento`, `revocado`). El `hash` es un resumen del uid de la persona, así que el id no revela el uid. Sin datos de contacto; la escribe el servidor.
-- `defenses/{submissionId}`: defensa de una entrega enviada (enlace https opcional, resumen, decisiones y campos opcionales). La escribe el servidor.
-- `checkpoints/{id}`: entrada de la bitácora de proceso de una entrega (`challengeId`, `submissionId`, `authorUid`, texto y enlace opcional). Solo con inscripción aprobada y hasta el cierre de entregas. La escribe el servidor.
-- `feedbacks/{submissionId}`: retroalimentación de la empresa sobre una entrega enviada. `publishedAt` nulo es un borrador que solo ve la empresa; la persona la lee cuando está publicada. La escribe el servidor.
+Los identificadores compuestos usan `__`. Todas las colecciones sensibles las escribe y lee solo el servidor.
 
-Un challenge publicado solo es público si su experiencia también está publicada. Una inscripción solo se crea mientras la ventana de inscripción está abierta y queden cupos, y la entrega solo se acepta con la inscripción aprobada y antes del cierre de entregas. Una inscripción a la experiencia (sin challenge) es individual y no habilita challenges que se juegan solo por equipo.
+- **Catálogo:** `experiences/{id}` (título, tipo `competencia | hackathon | challenge_empresarial | taller | charla | encuentro`, estado `draft | published | closed | cancelled`, ventana de inscripción —abierta o cerrada se calcula, no se guarda—, línea principal y secundarias, `isDemo`, procedencia, y opcionales de sesión: `startsAt`, `endsAt`, `modality`, `location`, `capacity`). `challenges/{id}` (`experienceId`, problema, entregables, rúbrica con criterios de 1 a 10 y pesos opcionales, organización, modalidades `individual | team` con tamaños, cierre de entregas, `commercialPackage`).
+- **Personas:** `users/{uid}` (perfil autodeclarado y `publicProfile`), `publicProfiles/{slug}` (→ uid; cambiar el enlace borra el anterior).
+- **Participación:** `enrollments/{experienceId}__{uid}` (`pending | approved | rejected | cancelled`; `challengeId` o `null`, confirmaciones de elegibilidad y reglas), `participations/{challengeId}__{uid}` (al aprobar), `teams/{id}`, `teamCodes/{code}`, `teamMemberships/{experienceId}__{uid}`.
+- **Entrega y proceso:** `submissions/{challengeId}__{uid}` (en equipo `{challengeId}__team__{teamId}`; `draft | submitted`), `checkpoints/{id}` (bitácora), `defenses/{submissionId}`, `feedbacks/{submissionId}` (`publishedAt` nulo = borrador de la empresa).
+- **Evaluación y resultados:** `judgeAssignments/{challengeId}__{uid}` (jurados asignados por C3), `evaluations/{submissionId}__{uid}` (borrador o finalizada) y `results/{challengeId}` (resultados oficiales).
+- **Empresas:** `organizations/{id}`, `organizationMembers/{orgId}__{uid}`, `companyProposals/{id}` (`received | needs_changes | accepted | not_prioritized`; la referencia son los 6 primeros caracteres del id), `rateLimits/{hash}` (sal + hash, nunca la IP).
+- **Talento:** `shortlists/{submissionId}` (motivo obligatorio), `contactRequests/{challengeId}__{hash}` (`esperando_consentimiento | aceptado | declinado | contactado | seguimiento | revocado`; el hash oculta el uid; sin datos de contacto).
+- **Operación:** `auditLog/{id}` (`action`, `actorUid`, `targetType`, `targetId`, `at`, `details`).
 
-## Ramas, despliegue y prioridades
+Reglas de acceso y de negocio: [AGENTS §5](AGENTS.md).
 
-- **`dev`** es el espacio de integración y pruebas; `main` representa producción. Las ramas de tarea parten de `dev` y se integran por PR a `dev`; la promoción validada va por PR de `dev` hacia `main`. Se trabaja en una sola carpeta, cambiando de rama con `git switch`.
-- El repositorio canónico se identificó como `C3-SV/c3-platform-starter` y actualmente es público. **La intención es hacerlo privado**, sujeta a resolver la relación con el despliegue de Vercel y sus condiciones. No cambiar visibilidad ni desplegar sin autorización.
-- Prioridades verificables: probar con personas de cada rol los recorridos de [PRODUCTO-Y-NAVEGACION](docs/PRODUCTO-Y-NAVEGACION.md) §6, validar el tratamiento legal del perfil público y de los menores, decidir la actualización de Next.js y preparar reglas, privacidad e infraestructura para un piloto autorizado. Ver [PLAN-CONSTRUCCION](docs/PLAN-CONSTRUCCION.md) y [PENDIENTES-REALES](docs/PENDIENTES-REALES.md).
+## Ramas
 
-## Notas
+`dev` integra y prueba; `main` es producción. Las ramas de tarea parten de `dev`, van por PR a `dev` y la promoción es por PR `dev` → `main`. Un solo checkout, con `git switch`. El repositorio `C3-SV/c3-platform-starter` es público y la meta es hacerlo privado, decisión del responsable según su relación con Vercel. Detalle: [AGENTS §8](AGENTS.md) y [FLUJO-AGENTES](docs/FLUJO-AGENTES.md).
 
-- Si surgen avisos `EBADENGINE`, comprobar las versiones instaladas y los requisitos reales de dependencias antes de cambiar Node o ignorar el aviso.
-- `AGENTS.md` contiene un bloque de advertencia sobre documentación local de Next.js 16 para agentes.
-- Las pruebas de navegador usan el build de producción (`next build` y `next start`) para no depender de la compilación bajo demanda de `next dev`.
+Si aparecen avisos `EBADENGINE`, comprobá las versiones instaladas antes de cambiar Node.
