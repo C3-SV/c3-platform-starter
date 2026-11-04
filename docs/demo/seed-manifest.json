@@ -1,0 +1,133 @@
+{
+  "description": "Manifiesto del seed de demostración C3 Challenges. Generado por scripts/seed-manifest.mjs; no contiene credenciales.",
+  "seedVersions": [
+    2
+  ],
+  "total": 46,
+  "collections": [
+    {
+      "collection": "organizations",
+      "count": 1,
+      "ids": [
+        "seed_organization_empresa-demostracion"
+      ]
+    },
+    {
+      "collection": "experiences",
+      "count": 7,
+      "ids": [
+        "seed_experience_copa-salvadorena-2026",
+        "seed_experience_hackathon-turismo-creativo-vol-1",
+        "seed_experience_duelo-programacion-c3-software-week-esen-2025",
+        "seed_experience_taller-programacion-competitiva-instituto-retos",
+        "seed_experience_hackathon-turismo-creativo-vol-2",
+        "seed_experience_challenge-empresarial-demo",
+        "seed_experience_encuentro-c3-talento-industria"
+      ]
+    },
+    {
+      "collection": "challenges",
+      "count": 1,
+      "ids": [
+        "seed_challenge_empresa-demostracion-rutas"
+      ]
+    },
+    {
+      "collection": "users",
+      "count": 6,
+      "ids": [
+        "seed_user_ana-martinez",
+        "seed_user_luis-herrera",
+        "seed_user_sofia-ramirez",
+        "seed_user_diego-castillo",
+        "seed_user_fernanda-lopez",
+        "seed_user_javier-mendez"
+      ]
+    },
+    {
+      "collection": "enrollments",
+      "count": 7,
+      "ids": [
+        "seed_experience_challenge-empresarial-demo__c3-demo-joven",
+        "seed_experience_challenge-empresarial-demo__seed_user_ana-martinez",
+        "seed_experience_challenge-empresarial-demo__seed_user_luis-herrera",
+        "seed_experience_challenge-empresarial-demo__seed_user_sofia-ramirez",
+        "seed_experience_challenge-empresarial-demo__seed_user_diego-castillo",
+        "seed_experience_challenge-empresarial-demo__seed_user_fernanda-lopez",
+        "seed_experience_challenge-empresarial-demo__seed_user_javier-mendez"
+      ]
+    },
+    {
+      "collection": "participations",
+      "count": 5,
+      "ids": [
+        "seed_challenge_empresa-demostracion-rutas__c3-demo-joven",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_luis-herrera",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_sofia-ramirez",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_diego-castillo"
+      ]
+    },
+    {
+      "collection": "submissions",
+      "count": 5,
+      "ids": [
+        "seed_challenge_empresa-demostracion-rutas__c3-demo-joven",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_luis-herrera",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_sofia-ramirez",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_diego-castillo"
+      ]
+    },
+    {
+      "collection": "defenses",
+      "count": 3,
+      "ids": [
+        "seed_challenge_empresa-demostracion-rutas__c3-demo-joven",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_luis-herrera"
+      ]
+    },
+    {
+      "collection": "shortlists",
+      "count": 2,
+      "ids": [
+        "seed_challenge_empresa-demostracion-rutas__c3-demo-joven",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez"
+      ]
+    },
+    {
+      "collection": "contactRequests",
+      "count": 2,
+      "ids": [
+        "seed_challenge_empresa-demostracion-rutas__c3-demo-joven",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez"
+      ]
+    },
+    {
+      "collection": "companyProposals",
+      "count": 3,
+      "ids": [
+        "seed_proposal_logistica-ficticia",
+        "seed_proposal_retail-ficticio",
+        "seed_proposal_banca-ficticia"
+      ]
+    },
+    {
+      "collection": "checkpoints",
+      "count": 2,
+      "ids": [
+        "seed_checkpoint_c3-demo-joven-1",
+        "seed_checkpoint_c3-demo-joven-2"
+      ]
+    },
+    {
+      "collection": "feedbacks",
+      "count": 2,
+      "ids": [
+        "seed_challenge_empresa-demostracion-rutas__c3-demo-joven",
+        "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez"
+      ]
+    }
+  ]
+}

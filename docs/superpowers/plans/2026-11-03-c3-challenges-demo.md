@@ -34,17 +34,17 @@ Reglas de dominio cubiertas por pruebas unitarias: `tests/unit/commercial.test.t
 | J2 Acceso con retorno al reto | Hecho | `safeNext` y `next` (PRODUCTO §4) |
 | J3 Inscripción idempotente | Hecho | ID determinista `experienceId__userId`; pruebas de participación |
 | J4 Mi challenge | Parcial | Existe `/mi-c3/retos/[id]`. Faltan progreso y checklist de documentos |
-| J5 Bitácora / checkpoints | Pendiente | No hay modelo de checkpoints |
+| J5 Bitácora / checkpoints | **Hecho:** bitácora de avances con texto y enlace https en Mi challenge (`BitacoraPanel`), hasta el cierre de entregas; la empresa la ve en el tablero. Dos avances en el seed | Ninguno |
 | J6 Entrega (texto y enlaces, borrador y envío) | Hecho | `saveDelivery`, pruebas de entregas |
 | J7 Defensa | **Hecho en servidor y UI** | `DefensaPanel.tsx` dentro de Mi challenge; API `/api/retos/[id]/defensa`. Falta prueba E2E |
-| J8 Estado y retroalimentación publicada | Parcial | Resultados públicos existen; **falta retroalimentación al participante** (no hay campo publicable) |
+| J8 Estado y retroalimentación publicada | **Hecho:** la empresa redacta la retroalimentación por entrega y decide si la publica (`RetroalimentacionCard` en Mi challenge). Un borrador nunca llega a la persona. **Pendiente:** estado de evaluación con puntajes (no implementado) |
 | J9 Solicitud de contacto y consentimiento | **Hecho en servidor y UI** | `ContactosPanel.tsx` en Mi C3; API `/api/contactos` |
 
 ### Empresa (E0–E10)
 
 | Paso | Estado | Evidencia / faltante |
 | --- | --- | --- |
-| E0 Propuesta sin cuenta | Parcial | Formulario, campo trampa y límite de propuestas existen. **Falta** el copy nuevo y la opción «identificar talento / explorar / ambos» |
+| E0 Propuesta sin cuenta | **Hecho:** copy nuevo del update, aviso de datos sensibles y selección opcional de intención (identificar talento, explorar una solución o ambos). Campo trampa y límite de propuestas se conservan | Ninguno |
 | E1 Admin: propuesta → challenge | Parcial | Revisión de propuestas existe; **falta** el paso directo a challenge con estados `En revisión → Aprobado → Publicado` |
 | E2 Cuenta empresa + dashboard | Parcial | `/empresa` con challenges y propuestas. **Faltan** contadores operativos (inscritos, entregas, en evaluación, perfiles de interés) |
 | E3 Configuración del reto | Parcial | Solo admin (`ExperienciasPanel`). Paquete visible en el tablero pendiente |
