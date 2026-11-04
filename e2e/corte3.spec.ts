@@ -45,6 +45,8 @@ async function openInscripcion(page: Page) {
 async function enrollAsTeam(page: Page) {
   await openInscripcion(page);
   await expect(page.getByText("Este challenge se inscribe por equipo.")).toBeVisible();
+  await page.getByLabel("Confirmo que cumplo los requisitos de elegibilidad").check();
+  await page.getByLabel("Acepto las reglas del challenge y el uso de mis datos para la evaluación").check();
   await page.getByRole("button", { name: "Inscribirme", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Inscripción enviada" })).toBeVisible();
 }

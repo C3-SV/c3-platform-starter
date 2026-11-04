@@ -7,6 +7,7 @@ import type { Auth } from "firebase-admin/auth";
 import type { DocumentData, Firestore } from "firebase-admin/firestore";
 import {
   consolidatedAverage,
+  criterionAverages,
   maxTotal,
   parseRecognition,
   parseScores,
@@ -352,11 +353,21 @@ export async function resultForSubmission(db: Firestore, challengeId: string, su
   if (!row) return null;
   const ranked = [...board.rows].filter((item) => item.average !== null).sort((a, b) => (b.average ?? 0) - (a.average ?? 0));
   const place = row.average === null ? null : ranked.findIndex((item) => item.submissionId === submissionId) + 1;
+  // Puntaje por criterio: solo cuando C3 publicó con puntajes visibles, y solo de las evaluaciones finalizadas de esta solución.
+  const challenge = await loadChallenge(db, challengeId);
+  const finalized = results.showScores
+    ? (await db.collection(EVALUATIONS).where("challengeId", "==", challengeId).get()).docs
+        .map((doc) => doc.data())
+        .filter((data) => data.submissionId === submissionId && data.status === "finalized")
+    : [];
+  const averages = finalized.length > 0 ? criterionAverages(finalized.map((data) => data.scores as Record<string, number>), challenge.rubric) : null;
   return {
     recognition: row.recognition ? RECOGNITION_LABEL[row.recognition] : null,
     average: results.showScores ? row.average : null,
     place: results.showScores ? place : null,
     of: results.showScores ? ranked.length : null,
+    maxTotal: results.showScores ? maxTotal(challenge.rubric) : null,
+    criteria: averages ? challenge.rubric.map((criterion) => ({ label: criterion.label, maxScore: criterion.maxScore, average: averages[criterion.id] ?? null })) : null,
   };
 }
 
