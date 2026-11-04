@@ -1,6 +1,8 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { createChallenge, createExperience, setChallengeStatus, setExperienceStatus } from "../../src/lib/server/catalog.ts";
+import { getCapabilities } from "../../src/lib/server/capabilities.ts";
+import { createOrganization, linkRepresentative } from "../../src/lib/server/companies.ts";
 import { HttpError } from "../../src/lib/server/errors.ts";
 import { ValidationFailure } from "../../src/lib/domain/validation.ts";
 import { enrollInChallenge, getDelivery, reviewEnrollment, saveDelivery } from "../../src/lib/server/participation.ts";
@@ -128,6 +130,44 @@ test("después del cierre el jurado ve soluciones anónimas, guarda borradores y
   await saveEvaluation(db, juez1, challengeId, first.id, { scores: { c1: 8, c2: 7 }, finalize: true }, afterDeadline);
   await assert.rejects(saveEvaluation(db, juez1, challengeId, first.id, { scores: { c1: 1, c2: 1 } }, afterDeadline), expectHttp(409, "ya_finalizada"));
   await saveEvaluation(db, juez1, challengeId, second.id, { scores: { c1: 6, c2: 6 }, finalize: true }, afterDeadline);
+});
+
+test("la representante vinculada evalúa los challenges de su organización sin asignación; otra empresa o una asignación revocada no", async () => {
+  const db = testDb();
+  const auth = testAuth();
+  const organization = await createOrganization(db, admin, "Distribuidora Atlas", now);
+  const experience = await createExperience(db, admin, experienceInput, now);
+  const challenge = await createChallenge(db, admin, { ...challengeInput(experience.id), organizationId: organization.id }, now);
+  await setExperienceStatus(db, admin, experience.id, { status: "published" }, now);
+  await setChallengeStatus(db, admin, challenge.id, { status: "published" }, now);
+  const enrollment = await enrollInChallenge(db, joven, challenge.id, "individual", now);
+  await reviewEnrollment(db, admin, enrollment.id, "approved", now);
+  await saveDelivery(db, joven, challenge.id, delivery, duringDeadline);
+
+  const representante = { uid: "rep-1", email: "rep@atlas.test", isAdmin: false };
+  const ajena = { uid: "rep-ajena", email: "ajena@otra.test", isAdmin: false };
+  await createAuthUser(representante.email, representante.uid);
+  await createAuthUser(ajena.email, ajena.uid);
+  await linkRepresentative(db, auth, admin, organization.id, representante.email, now);
+  const otraOrganizacion = await createOrganization(db, admin, "Otra empresa", now);
+  await linkRepresentative(db, auth, admin, otraOrganizacion.id, ajena.email, now);
+
+  const workspace = await evaluationWorkspace(db, representante, challenge.id, afterDeadline);
+  assert.equal(workspace.kind, "empresa");
+  assert.equal(JSON.stringify(workspace).includes(joven.uid), false, "la evaluación no muestra quién entregó");
+  await saveEvaluation(db, representante, challenge.id, workspace.solutions[0].id, { scores: { c1: 8, c2: 7 }, finalize: true }, afterDeadline);
+  assert.equal((await myAssignments(db, representante, afterDeadline)).length, 1);
+  assert.equal(((await getCapabilities(db, representante)).judge.challenges), 1);
+
+  await assert.rejects(evaluationWorkspace(db, ajena, challenge.id, afterDeadline), expectHttp(403, "sin_asignacion"));
+  await assert.rejects(saveEvaluation(db, ajena, challenge.id, "s1", { scores: { c1: 8, c2: 7 } }, afterDeadline), expectHttp(403, "sin_asignacion"));
+
+  // Si C3 la asignó y luego revocó, el vínculo con la empresa no reabre el acceso.
+  await assignJudge(db, auth, admin, challenge.id, representante.email, "empresa", now);
+  const [assignment] = await listJudges(db, admin, challenge.id);
+  await revokeJudge(db, admin, assignment.id, now);
+  await assert.rejects(evaluationWorkspace(db, representante, challenge.id, afterDeadline), expectHttp(403, "sin_asignacion"));
+  assert.equal((await getCapabilities(db, representante)).judge.challenges, 0);
 });
 
 test("la publicación queda bloqueada hasta que cada solución tenga dos evaluaciones finalizadas", async () => {
