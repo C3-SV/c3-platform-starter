@@ -27,6 +27,9 @@ const REGISTER_ERRORS: Record<string, string> = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** La recuperación por correo no está disponible en la demo: el update pide que no se envíen correos desde ella. Se activa con un buzón controlado. */
+const PASSWORD_RECOVERY_ENABLED = false;
+
 function errorCode(error: unknown): string {
   return typeof error === "object" && error !== null && "code" in error ? String((error as { code: unknown }).code) : "";
 }
@@ -179,10 +182,15 @@ export function AccesoPanel() {
               <button type="submit" className="c3-btn c3-btn--primario" disabled={loginBusy} style={{ padding: "0 24px" }}>
                 {loginBusy ? "Entrando…" : "Entrar"}
               </button>
-              <a href="#recuperar" style={{ fontSize: 14, fontWeight: 500 }}>Olvidé mi contraseña</a>
+              {PASSWORD_RECOVERY_ENABLED ? (
+                <a href="#recuperar" style={{ fontSize: 14, fontWeight: 500 }}>Olvidé mi contraseña</a>
+              ) : (
+                <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Recuperar contraseña: próximamente</span>
+              )}
             </div>
           </form>
 
+          {PASSWORD_RECOVERY_ENABLED ? (
           <form id="recuperar" onSubmit={handleRecover} noValidate style={{ display: "flex", flexDirection: "column", gap: 12, borderTop: "1px solid var(--c3-borde)", paddingTop: 20 }}>
             <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Recuperar contraseña</span>
             <label htmlFor="rec-correo" className="c3-etiqueta-campo">Correo de tu cuenta</label>
@@ -193,6 +201,7 @@ export function AccesoPanel() {
               {recoverBusy ? "Enviando…" : "Enviar enlace"}
             </button>
           </form>
+          ) : null}
         </section>
 
         <section className="c3-card" style={{ flex: "1 1 400px", minWidth: 0, padding: 32, display: "flex", flexDirection: "column", gap: 20 }} aria-labelledby="titulo-crear">

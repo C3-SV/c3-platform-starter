@@ -24,7 +24,7 @@ function issueFor(issues: FieldIssue[], field: string): string | null {
  * Defensa de mi entrega: un recurso separado y visible. Se registra sobre la entrega enviada;
  * el uso de herramientas de IA se explica sin juzgarlo. En equipo, el servidor reserva el registro a la líder.
  */
-export function DefensaPanel({ challengeId, submitted }: { challengeId: string; submitted: boolean }) {
+export function DefensaPanel({ challengeId, submitted, canRecord }: { challengeId: string; submitted: boolean; canRecord: boolean }) {
   const [campos, setCampos] = useState<Campos>(VACIO);
   const [saved, setSaved] = useState<DefenseView | null>(null);
   const [issues, setIssues] = useState<FieldIssue[]>([]);
@@ -96,7 +96,7 @@ export function DefensaPanel({ challengeId, submitted }: { challengeId: string; 
           rows={filas}
           maxLength={limite}
           value={campos[name]}
-          disabled={!submitted || busy}
+          disabled={!submitted || !canRecord || busy}
           onChange={(event) => cambiar(name, event.target.value)}
           aria-invalid={mensaje ? true : undefined}
           aria-describedby={mensaje ? `${id}-error` : undefined}
@@ -117,6 +117,9 @@ export function DefensaPanel({ challengeId, submitted }: { challengeId: string; 
         {!submitted ? (
           <div className="c3-alerta c3-alerta--info" role="note"><span>La defensa se registra sobre tu entrega enviada. Enviala primero para habilitar este formulario.</span></div>
         ) : null}
+        {!canRecord ? (
+          <div className="c3-alerta c3-alerta--info" role="note"><span>Solo la líder del equipo registra la defensa. Como integrante, podés leerla cuando la líder la guarde.</span></div>
+        ) : null}
       </div>
 
       {notice ? <div className="c3-alerta c3-alerta--exito" role="status">{notice}</div> : null}
@@ -132,7 +135,7 @@ export function DefensaPanel({ challengeId, submitted }: { challengeId: string; 
             className={`c3-campo${issueFor(issues, "videoUrl") ? " c3-campo--error" : ""}`}
             maxLength={DEFENSE_LIMITS.videoUrl}
             value={campos.videoUrl}
-            disabled={!submitted || busy}
+            disabled={!submitted || !canRecord || busy}
             onChange={(event) => cambiar("videoUrl", event.target.value)}
             aria-invalid={issueFor(issues, "videoUrl") ? true : undefined}
           />
@@ -145,7 +148,7 @@ export function DefensaPanel({ challengeId, submitted }: { challengeId: string; 
         {campo("aiUse", "Uso de herramientas de IA", "Para qué las usaste y qué revisaste vos.", DEFENSE_LIMITS.optional, false)}
 
         <div>
-          <button type="submit" className="c3-btn c3-btn--primario" disabled={!submitted || busy}>
+          <button type="submit" className="c3-btn c3-btn--primario" disabled={!submitted || !canRecord || busy}>
             {busy ? "Guardando…" : saved ? "Actualizar defensa" : "Guardar defensa"}
           </button>
         </div>

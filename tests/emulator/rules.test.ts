@@ -44,6 +44,21 @@ test("usuario autenticado no lee ni escribe ni siquiera su propio perfil directa
   await assertFails(db.collection("users").doc("joven-1").set({ displayName: "Cambio" }));
 });
 
+const sensibles = ["contactRequests", "shortlists", "defenses", "checkpoints", "feedbacks", "results", "judgeAssignments", "companyProposals", "rateLimits"];
+
+test("ninguna colección sensible se lee ni se escribe desde el cliente, con o sin sesión", async () => {
+  const anonima = env.unauthenticatedContext().firestore();
+  const persona = env.authenticatedContext("joven-1", { email: "joven@correo.test" }).firestore();
+  const administradora = env.authenticatedContext("admin-1", { c3Admin: true }).firestore();
+  for (const name of sensibles) {
+    for (const db of [anonima, persona, administradora]) {
+      await assertFails(db.collection(name).doc("x").get());
+      await assertFails(db.collection(name).get());
+      await assertFails(db.collection(name).doc("x").set({ status: "x" }));
+    }
+  }
+});
+
 test("administrador con claim c3Admin tampoco escribe directo: pasa por el servidor", async () => {
   const db = env.authenticatedContext("admin-1", { c3Admin: true }).firestore();
   await assertFails(db.collection("experiences").doc("x").set({ status: "published" }));

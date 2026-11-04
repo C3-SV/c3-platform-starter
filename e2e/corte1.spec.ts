@@ -113,11 +113,10 @@ test.describe.serial("Corte 1: primer challenge", () => {
     await expect(page.getByText("El correo o la contraseña no coinciden.")).toBeVisible();
   });
 
-  test("recuperar contraseña confirma el envío sin revelar si el correo está registrado", async ({ page }) => {
+  test("la recuperación de contraseña figura como próximamente y no envía correos desde la demo", async ({ page }) => {
     await page.goto("/acceso");
-    await page.locator("#rec-correo").fill(`no.registrado.${stamp}@correo.test`);
-    await page.getByRole("button", { name: "Enviar enlace", exact: true }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Si el correo está registrado" })).toBeVisible();
+    await expect(page.getByText("Recuperar contraseña: próximamente")).toBeVisible();
+    await expect(page.locator("#rec-correo")).toHaveCount(0);
   });
 
   test("las páginas públicas no desbordan horizontalmente", async ({ page }) => {
