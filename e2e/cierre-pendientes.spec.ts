@@ -34,6 +34,19 @@ test("el espacio de empresa ofrece subnavegación y la cifra de perfiles de inte
   await expect(page.getByText("Perfiles de interés").first()).toBeVisible();
 });
 
+test("la empresa configura su challenge desde su espacio", async ({ page }) => {
+  const admin = await adminToken();
+  const representante = await createAccount("rep-config");
+  const organizationId = await linkRepresentative(admin, "Empresa de configuración E2E", representante.email);
+  await createPublishedChallenge(admin, { organizationId });
+  await loginAt(page, representante, "/empresa");
+
+  await page.getByRole("button", { name: "Configurar challenge" }).first().click();
+  await page.getByLabel("Resumen", { exact: true }).fill("Resumen ajustado por la empresa desde su espacio de trabajo.");
+  await page.getByRole("button", { name: "Guardar configuración" }).click();
+  await expect(page.getByText("Configuración guardada")).toBeVisible();
+});
+
 test("la consola de administración tiene una sección de auditoría", async ({ page }) => {
   await loginAt(page, { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }, "/admin/resumen");
   await openAdminSection(page, "Auditoría");
