@@ -537,8 +537,13 @@ export async function saveDefense(db: Firestore, actor: Actor, challengeId: stri
   const own = await ownSubmissionOf(db, actor, challengeId);
   if (!own) throw forbidden("Tu inscripción todavía no está aprobada para este challenge.");
   if (!own.isLeader) throw new HttpError(403, "solo_lider", "Solo la líder del equipo registra la defensa.");
-  if ((await loadChallenge(db, challengeId)).status !== "published") {
+  const challenge = await loadChallenge(db, challengeId);
+  if (challenge.status !== "published") {
     throw new HttpError(409, "reto_concluido", "El challenge ya concluyó: la defensa ya no se puede modificar.");
+  }
+  // La defensa se congela al cerrar el plazo de entregas (update, bloque de defensa).
+  if (challenge.submissionClosesAt && Date.parse(challenge.submissionClosesAt) <= now.getTime()) {
+    throw new HttpError(409, "plazo_cerrado", "La defensa se cierra con el plazo de entregas.");
   }
   const submission = (await db.collection(SUBMISSIONS).doc(own.submissionId).get()).data();
   if (!canRecordDefense(submission?.status ?? null)) {
@@ -606,6 +611,10 @@ export async function listMyCheckpoints(db: Firestore, actor: Actor, challengeId
 /** La empresa redacta la retroalimentación de una entrega enviada; «publicar» la hace visible para la persona. */
 export async function saveFeedback(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<FeedbackView> {
   const challenge = await requireCompanyChallenge(db, actor, challengeId);
+  // La retroalimentación se escribe solo mientras el challenge está publicado: ni en borrador ni después de concluir.
+  if (challenge.status !== "published") {
+    throw new HttpError(409, "reto_concluido", "El challenge ya concluyó: la retroalimentación ya no se puede modificar.");
+  }
   const body = asObject(rawBody);
   const submissionId = await submissionIdFromRow(db, challengeId, submissionIdOf(body));
   const input = parseFeedbackInput(body);
