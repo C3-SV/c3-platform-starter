@@ -208,22 +208,25 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
   }
 
   const ref = db.collection(EVALUATIONS).doc(evaluationDocId(submissionId, actor.uid));
-  const existing = (await ref.get()).data();
-  if (existing?.status === "finalized") throw new HttpError(409, "ya_finalizada", "Esta evaluación ya está finalizada.");
   const scores = parseScores(body.scores, challenge.rubric);
   const finalize = body.finalize === true;
   const stamp = now.toISOString();
-  await ref.set({
-    submissionId,
-    challengeId,
-    judgeUserId: actor.uid,
-    kind: assignment.kind,
-    scores,
-    total: totalOf(scores),
-    status: finalize ? "finalized" : "draft",
-    createdAt: existing?.createdAt ?? stamp,
-    updatedAt: stamp,
-    finalizedAt: finalize ? stamp : null,
+  // La lectura del estado y la escritura van en una transacción: un guardado simultáneo no reabre una evaluación finalizada.
+  await db.runTransaction(async (transaction) => {
+    const existing = (await transaction.get(ref)).data();
+    if (existing?.status === "finalized") throw new HttpError(409, "ya_finalizada", "Esta evaluación ya está finalizada.");
+    transaction.set(ref, {
+      submissionId,
+      challengeId,
+      judgeUserId: actor.uid,
+      kind: assignment.kind,
+      scores,
+      total: totalOf(scores),
+      status: finalize ? "finalized" : "draft",
+      createdAt: existing?.createdAt ?? stamp,
+      updatedAt: stamp,
+      finalizedAt: finalize ? stamp : null,
+    });
   });
 }
 

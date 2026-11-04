@@ -90,7 +90,8 @@ test.describe("Salir", () => {
   }
 
   test("cierra la sesión de administración y vuelve a la Home", async ({ page }) => {
-    await loginAt(page, { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }, "/admin");
+    // Se espera el destino real: /admin redirige al resumen y el menú de la cuenta se cierra al cambiar de ruta.
+    await loginAt(page, { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }, "/admin/resumen");
     await signOutUi(page);
   });
 });

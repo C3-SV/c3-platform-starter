@@ -2,9 +2,9 @@
 // Provisiona las cuentas demo (joven, empresa, administración) y sus vínculos. Simulación por defecto.
 //
 // Simulación (no escribe nada):
-//   node --experimental-strip-types scripts/provision-demo-accounts.mjs --project c3-challenges-demo
+//   node --experimental-strip-types scripts/provision-demo-accounts.mjs --project c3-platform-demo
 // Aplicar (remoto, con autorización):
-//   node --experimental-strip-types scripts/provision-demo-accounts.mjs --project c3-challenges-demo --apply --confirm-project c3-challenges-demo --credentials-file "<ruta FUERA del repositorio>"
+//   node --experimental-strip-types scripts/provision-demo-accounts.mjs --project c3-platform-demo --apply --confirm-project c3-platform-demo --credentials-file "<ruta FUERA del repositorio>"
 // Emulador (pruebas locales):
 //   firebase emulators:exec --only auth,firestore --project demo-c3-platform "node --experimental-strip-types scripts/provision-demo-accounts.mjs --emulator --project demo-c3-platform --apply --credentials-file <ruta>"
 //
@@ -48,18 +48,31 @@ try {
 if (emulator && !process.env.FIRESTORE_EMULATOR_HOST) fail("--emulator requiere FIRESTORE_EMULATOR_HOST: ejecutá el comando dentro de firebase emulators:exec.");
 if (apply && !emulator && confirmProject !== project) fail("--apply exige --confirm-project con el mismo ID del proyecto.");
 
+// En emulador, las cuentas usan la contraseña de prueba de la suite (solo emulador): no hay archivo de credenciales.
+const EMULATOR_PASSWORD = "clave-prueba-123";
 let credentialsTarget = null;
-if (apply) {
+if (apply && !emulator) {
   if (!credentialsPath) fail("--apply exige --credentials-file con una ruta fuera del repositorio.");
   credentialsTarget = resolve(credentialsPath);
   if (!isOutsideDirectory(repoRoot, credentialsTarget)) fail("las credenciales no pueden guardarse dentro del repositorio.");
   if (existsSync(credentialsTarget)) fail("el archivo de credenciales ya existe; elegí otra ruta para no sobrescribirlo.");
 }
 
+// Como en seed.mjs: .env.local puede apuntar al emulador; una provisión remota nunca debe heredar ese endpoint.
+if (!emulator) {
+  delete process.env.FIRESTORE_EMULATOR_HOST;
+  delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
+}
+
 if (!getApps().length) {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (serviceAccountJson && !emulator) {
-    const serviceAccount = JSON.parse(serviceAccountJson);
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+    } catch {
+      fail("FIREBASE_SERVICE_ACCOUNT_JSON no contiene un JSON válido.");
+    }
     if (serviceAccount.project_id !== project) fail("FIREBASE_SERVICE_ACCOUNT_JSON no pertenece al proyecto indicado.");
     initializeApp({ projectId: project, credential: cert(serviceAccount) });
   } else {
@@ -88,7 +101,8 @@ const summary = await provisionDemoAccounts({
   organizationId: DEMO_ORGANIZATION_ID,
   apply,
   now: new Date(),
-  writeCredentials,
+  writeCredentials: emulator ? () => {} : writeCredentials,
+  passwordFor: emulator ? () => EMULATOR_PASSWORD : undefined,
 }).catch((error) => fail(error.message));
 
 console.log(`Destino: ${project}${emulator ? " (emulador)" : ""} · ${summary.dryRun ? "simulación" : "aplicado"}`);

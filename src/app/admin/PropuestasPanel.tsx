@@ -133,6 +133,14 @@ export function PropuestasPanel({ organizations, onChanged }: { organizations: O
           {proposal.desiredOutcome ? <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Resultado buscado: {proposal.desiredOutcome}</p> : null}
           {proposal.constraints ? <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Límites: {proposal.constraints}</p> : null}
           {proposal.reviewNote ? <p style={{ fontSize: 14, lineHeight: 1.5 }}>Nota enviada: {proposal.reviewNote}</p> : null}
+          {proposal.status === "accepted" && proposal.organizationId ? (
+            <Link href={`/admin/experiencias?organizacion=${encodeURIComponent(proposal.organizationId)}`} className="c3-btn c3-btn--primario" style={{ alignSelf: "flex-start" }}>
+              Crear challenge para esta organización
+            </Link>
+          ) : null}
+          {proposal.status === "accepted" && !proposal.organizationId ? (
+            <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Vinculá una organización antes de crear el challenge.</p>
+          ) : null}
 
           {proposal.status === "accepted" ? (
             <div className="c3-alerta c3-alerta--info" style={{ marginTop: 2 }}>

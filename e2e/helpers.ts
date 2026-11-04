@@ -168,10 +168,14 @@ export function escapeForRegExp(value: string): string {
  */
 export async function signOutUi(page: Page): Promise<void> {
   const salir = page.getByRole("button", { name: "Salir", exact: true });
-  if (!(await salir.first().isVisible())) {
-    await page.getByRole("button", { name: /^Menú de la cuenta/ }).first().click();
-  }
-  await salir.first().click();
+  // El menú puede abrirse antes de que la página termine de hidratarse, o cerrarse si la página cambia de ruta
+  // justo después (por ejemplo, una redirección). Se reintenta abrirlo y pulsar «Salir» hasta que la pulsación entre.
+  await expect(async () => {
+    if (!(await salir.first().isVisible())) {
+      await page.getByRole("button", { name: /^Menú de la cuenta/ }).first().click();
+    }
+    await salir.first().click({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
 }

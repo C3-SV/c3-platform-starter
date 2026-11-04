@@ -18,6 +18,10 @@ import {
   type ContactStatus,
 } from "../domain/contact.ts";
 import { canRecordDefense, parseDefenseInput, type DefenseInput } from "../domain/defense.ts";
+import { canViewFeedback, parseCheckpointInput, parseFeedbackInput } from "../domain/process.ts";
+import { consolidatedAverage, criterionAverages, evaluationStateOf } from "../domain/evaluation.ts";
+import type { RubricCriterion } from "../domain/types.ts";
+import { EVALUATIONS } from "./evaluation.ts";
 import type { PresentedState } from "../domain/presentation.ts";
 import type { Challenge } from "../domain/types.ts";
 import { ValidationFailure } from "../domain/validation.ts";
@@ -27,8 +31,11 @@ import { CHALLENGES, ORGANIZATIONS, loadChallenge, loadExperience } from "./cata
 import { ORGANIZATION_MEMBERS } from "./companies.ts";
 import { HttpError, notFound } from "./errors.ts";
 import {
+  CHECKPOINTS,
   CONTACT_REQUESTS,
   DEFENSES,
+  FEEDBACKS,
+  RESULTS,
   ENROLLMENTS,
   SHORTLISTS,
   SUBMISSIONS,
@@ -58,8 +65,6 @@ export interface ContactView {
 export interface TalentRow {
   submissionId: string;
   mode: "individual" | "team";
-  /** Solo en entregas individuales: el contacto se solicita a una persona concreta. */
-  userId: string | null;
   name: string | null;
   submittedAt: string | null;
   text: string;
@@ -67,8 +72,27 @@ export interface TalentRow {
   defense: DefenseView | null;
   shortlist: { reason: string; addedAt: string } | null;
   contact: ContactView | null;
+  /** Estado de evaluación de la entrega. Promedio y criterios solo cuando C3 publicó con puntajes visibles. */
+  evaluation: { state: string; average: number | null; criteria: Record<string, number | null> | null };
+  /** Bitácora de la persona, en orden de creación. */
+  checkpoints: CheckpointView[];
+  /** Retroalimentación de la empresa, incluido el borrador no publicado (la empresa la ve siempre). */
+  feedback: FeedbackView | null;
   /** Ya se puede pedir contacto: lista corta, inscripción aprobada, entrega individual y sin solicitud activa. */
   canRequestContact: boolean;
+}
+
+export interface CheckpointView {
+  id: string;
+  text: string;
+  link: string | null;
+  createdAt: string;
+}
+
+export interface FeedbackView {
+  text: string;
+  publishedAt: string | null;
+  updatedAt: string;
 }
 
 export interface TalentBoard {
@@ -79,6 +103,7 @@ export interface TalentBoard {
     status: string;
     isDemo: boolean;
     commercialPackage: CommercialPackageId | null;
+    rubric: RubricCriterion[];
   };
   rows: TalentRow[];
 }
@@ -92,6 +117,8 @@ export interface ContactForMe {
   state: PresentedState;
   message: string | null;
   updatedAt: string;
+  /** Datos inventados de la demostración: se marcan como tales en la interfaz. */
+  isDemo: boolean;
   /** Acciones que la persona puede tomar ahora sobre esta solicitud. */
   actions: ContactStatus[];
 }
@@ -120,8 +147,12 @@ async function requireCompanyChallenge(db: Firestore, actor: Actor, challengeId:
 
 async function requireOrganizationMember(db: Firestore, actor: Actor, organizationId: string | null): Promise<void> {
   if (!organizationId) throw forbidden("Este challenge no tiene una empresa vinculada.");
-  const membership = await db.collection(ORGANIZATION_MEMBERS).doc(`${organizationId}__${actor.uid}`).get();
-  if (!membership.exists) throw forbidden("Solo la representante de la empresa de este challenge puede hacer esto.");
+  if (!(await isOrganizationMember(db, actor, organizationId))) throw forbidden("Solo la representante de la empresa de este challenge puede hacer esto.");
+}
+
+async function isOrganizationMember(db: Firestore, actor: Actor, organizationId: string | null): Promise<boolean> {
+  if (!organizationId) return false;
+  return (await db.collection(ORGANIZATION_MEMBERS).doc(`${organizationId}__${actor.uid}`).get()).exists;
 }
 
 async function displayNamesOf(db: Firestore, userIds: string[]): Promise<Map<string, string | null>> {
@@ -190,7 +221,6 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
     return {
       submissionId: doc.id,
       mode: isTeam ? "team" : "individual",
-      userId,
       name: isTeam ? (teamNames.get(doc.id.split("__team__")[1]) ?? null) : (names.get(userId as string) ?? null),
       submittedAt: data.submittedAt ?? null,
       text: data.text ?? "",
@@ -198,6 +228,9 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
       defense: defenseById.get(doc.id) ?? null,
       shortlist: entry ? { reason: entry.reason, addedAt: entry.createdAt } : null,
       contact: request && userId ? contactViewOf(request.id, request.data) : null,
+      evaluation: { state: "sin_evaluar", average: null, criteria: null },
+      checkpoints: [],
+      feedback: null,
       canRequestContact: contactEligibilityIssue({
         isLinkedRepresentative: true,
         hasShortlistEntry: Boolean(entry),
@@ -206,6 +239,41 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
       }) === null && !request,
     };
   });
+
+  const [checkpointDocs, feedbackDocs] = await Promise.all([
+    db.collection(CHECKPOINTS).where("challengeId", "==", challengeId).get(),
+    db.collection(FEEDBACKS).where("challengeId", "==", challengeId).get(),
+  ]);
+  const checkpointsBySubmission = new Map<string, CheckpointView[]>();
+  for (const doc of checkpointDocs.docs) {
+    const data = doc.data();
+    checkpointsBySubmission.set(data.submissionId, [...(checkpointsBySubmission.get(data.submissionId) ?? []), checkpointOf(doc.id, data)]);
+  }
+  const feedbackBySubmission = new Map(feedbackDocs.docs.map((doc) => [doc.id, feedbackOf(doc.data())]));
+  for (const row of rows) {
+    row.checkpoints = (checkpointsBySubmission.get(row.submissionId) ?? []).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    row.feedback = feedbackBySubmission.get(row.submissionId) ?? null;
+  }
+
+  const [evaluationDocs, resultsSnapshot] = await Promise.all([
+    db.collection(EVALUATIONS).where("challengeId", "==", challengeId).get(),
+    db.collection(RESULTS).doc(challengeId).get(),
+  ]);
+  const resultsData = resultsSnapshot.data();
+  const published = resultsData?.status === "published";
+  const showScores = published && resultsData?.showScores === true;
+  for (const row of rows) {
+    const mine = evaluationDocs.docs.map((doc) => doc.data()).filter((data) => data.submissionId === row.submissionId);
+    const finalized = mine.filter((data) => data.status === "finalized");
+    const finalizedJudges = new Set(finalized.map((data) => data.judgeUserId)).size;
+    row.evaluation = {
+      state: evaluationStateOf({ evaluations: mine.length, finalizedJudges, published }),
+      average: showScores ? consolidatedAverage(finalized.map((data) => data.total as number)) : null,
+      criteria: showScores && finalized.length > 0
+        ? criterionAverages(finalized.map((data) => data.scores as Record<string, number>), challenge.rubric)
+        : null,
+    };
+  }
 
   const experience = await loadExperience(db, challenge.experienceId);
   return {
@@ -216,6 +284,7 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
       status: challenge.status,
       isDemo: experience.isDemo === true,
       commercialPackage: challenge.commercialPackage ?? null,
+      rubric: challenge.rubric,
     },
     rows: rows.sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? "")),
   };
@@ -293,23 +362,6 @@ export async function requestContact(db: Firestore, actor: Actor, challengeId: s
   }
   const userId = submission.userId as string;
 
-  const [shortlistEntry, enrollment, existing] = await Promise.all([
-    db.collection(SHORTLISTS).doc(submissionId).get(),
-    db.collection(ENROLLMENTS).doc(enrollmentDocId(challenge.experienceId, userId)).get(),
-    db.collection(CONTACT_REQUESTS).doc(contactRequestDocId(challengeId, userId)).get(),
-  ]);
-  const issue = contactEligibilityIssue({
-    isLinkedRepresentative: true,
-    hasShortlistEntry: shortlistEntry.exists,
-    hasApprovedEnrollment: enrollment.data()?.status === "approved",
-    hasActiveRequest: existing.exists && ACTIVE_CONTACT_STATUSES.includes(existing.data()?.status as ContactStatus),
-  });
-  // Declinada o revocada son respuestas finales: no se vuelve a pedir contacto ni se reemplaza la solicitud cerrada.
-  if (existing.exists && !ACTIVE_CONTACT_STATUSES.includes(existing.data()?.status as ContactStatus)) {
-    throw new HttpError(409, "contacto_cerrado", "La persona ya respondió a una solicitud anterior: declinó o revocó el permiso. No se vuelve a pedir contacto.");
-  }
-  if (issue) throw new HttpError(409, "contacto_no_disponible", issue);
-
   const id = contactRequestDocId(challengeId, userId);
   const stamp = now.toISOString();
   const status = nextContactStatus(null, "company", "esperando_consentimiento");
@@ -324,53 +376,79 @@ export async function requestContact(db: Firestore, actor: Actor, challengeId: s
     createdAt: stamp,
     updatedAt: stamp,
   };
-  const batch = db.batch();
-  batch.set(db.collection(CONTACT_REQUESTS).doc(id), data);
-  recordAudit(db, batch, actor, now, { action: "contacto.solicitar", target: { type: "contactRequest", id }, details: { challengeId } });
-  await batch.commit();
+  // Comprobaciones y escritura en una transacción: dos solicitudes simultáneas no se pisan y una solicitud
+  // declinada o revocada no vuelve a abrirse.
+  await db.runTransaction(async (transaction) => {
+    const shortlistEntry = await transaction.get(db.collection(SHORTLISTS).doc(submissionId));
+    const enrollment = await transaction.get(db.collection(ENROLLMENTS).doc(enrollmentDocId(challenge.experienceId, userId)));
+    const existing = await transaction.get(db.collection(CONTACT_REQUESTS).doc(id));
+    const active = existing.exists && ACTIVE_CONTACT_STATUSES.includes(existing.data()?.status as ContactStatus);
+    // Declinada o revocada son respuestas finales: no se vuelve a pedir contacto ni se reemplaza la solicitud cerrada.
+    if (existing.exists && !active) {
+      throw new HttpError(409, "contacto_cerrado", "La persona ya respondió a una solicitud anterior: declinó o revocó el permiso. No se vuelve a pedir contacto.");
+    }
+    const issue = contactEligibilityIssue({
+      isLinkedRepresentative: true,
+      hasShortlistEntry: shortlistEntry.exists,
+      // La inscripción aprobada debe ser la de este challenge: una de otro challenge de la misma experiencia no cuenta.
+      hasApprovedEnrollment: enrollment.data()?.status === "approved" && enrollment.data()?.challengeId === challengeId,
+      hasActiveRequest: active,
+    });
+    if (issue) throw new HttpError(409, "contacto_no_disponible", issue);
+    transaction.set(db.collection(CONTACT_REQUESTS).doc(id), data);
+    recordAudit(db, transaction, actor, now, { action: "contacto.solicitar", target: { type: "contactRequest", id }, details: { challengeId } });
+  });
   return contactViewOf(id, data);
 }
 
 /** La persona acepta, declina o revoca. Solo sobre sus propias solicitudes; una ajena responde como inexistente. */
 export async function answerContactRequest(db: Firestore, actor: Actor, requestId: string, rawBody: unknown, now: Date): Promise<ContactView> {
   const ref = db.collection(CONTACT_REQUESTS).doc(requestId);
-  const snapshot = await ref.get();
-  const data = snapshot.data();
-  if (!snapshot.exists || !data || data.userId !== actor.uid) throw notFound("No encontramos esa solicitud.");
   const body = asObject(rawBody);
   if (typeof body.to !== "string" || !PARTICIPANT_ACTIONS.includes(body.to as ContactStatus)) {
     throw new ValidationFailure([{ field: "to", message: "Elegí aceptar, declinar o revocar el permiso." }]);
   }
-  const next = nextContactStatus(data.status as ContactStatus, "participant", body.to as ContactStatus);
+  const to = body.to as ContactStatus;
   const stamp = now.toISOString();
-  const batch = db.batch();
-  batch.update(ref, { status: next, lastChangedBy: "participant", updatedAt: stamp });
-  recordAudit(db, batch, actor, now, { action: `contacto.${next}`, target: { type: "contactRequest", id: requestId } });
-  await batch.commit();
-  return contactViewOf(requestId, { ...data, status: next, updatedAt: stamp });
+  // Lectura y escritura en una transacción: dos respuestas simultáneas no pisan el estado.
+  const updated = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const data = snapshot.data();
+    if (!snapshot.exists || !data || data.userId !== actor.uid) throw notFound("No encontramos esa solicitud.");
+    const next = nextContactStatus(data.status as ContactStatus, "participant", to);
+    transaction.update(ref, { status: next, lastChangedBy: "participant", updatedAt: stamp });
+    recordAudit(db, transaction, actor, now, { action: `contacto.${next}`, target: { type: "contactRequest", id: requestId } });
+    return { ...data, status: next, updatedAt: stamp };
+  });
+  return contactViewOf(requestId, updated);
 }
 
 /** La empresa registra contacto o seguimiento tras la aceptación. No implica contratación. */
 export async function advanceContactRequest(db: Firestore, actor: Actor, requestId: string, rawBody: unknown, now: Date): Promise<ContactView> {
   const ref = db.collection(CONTACT_REQUESTS).doc(requestId);
-  const snapshot = await ref.get();
-  const data = snapshot.data();
-  if (!snapshot.exists || !data) throw notFound("No encontramos esa solicitud.");
-  if (!actor.isAdmin) await requireOrganizationMember(db, actor, (data.organizationId as string | null) ?? null);
   const body = asObject(rawBody);
   if (typeof body.to !== "string" || !COMPANY_ACTIONS.includes(body.to as ContactStatus)) {
     throw new ValidationFailure([{ field: "to", message: "Elegí registrar el contacto o el seguimiento." }]);
   }
-  if (!canTransitionContact(data.status as ContactStatus, "company", body.to as ContactStatus)) {
-    throw new ValidationFailure([{ field: "to", message: "Esa acción no está disponible para el estado actual de la solicitud." }]);
-  }
-  const next = body.to as ContactStatus;
+  const to = body.to as ContactStatus;
   const stamp = now.toISOString();
-  const batch = db.batch();
-  batch.update(ref, { status: next, lastChangedBy: "company", updatedAt: stamp });
-  recordAudit(db, batch, actor, now, { action: `contacto.${next}`, target: { type: "contactRequest", id: requestId } });
-  await batch.commit();
-  return contactViewOf(requestId, { ...data, status: next, updatedAt: stamp });
+  // La transacción vuelve a leer el estado antes de escribir: una respuesta de la persona no se pierde ni se pisa.
+  const updated = await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const data = snapshot.data();
+    if (!snapshot.exists || !data) throw notFound("No encontramos esa solicitud.");
+    // Una solicitud ajena responde como inexistente: no se revela si existe para otra empresa.
+    if (!actor.isAdmin && !(await isOrganizationMember(db, actor, (data.organizationId as string | null) ?? null))) {
+      throw notFound("No encontramos esa solicitud.");
+    }
+    if (!canTransitionContact(data.status as ContactStatus, "company", to)) {
+      throw new ValidationFailure([{ field: "to", message: "Esa acción no está disponible para el estado actual de la solicitud." }]);
+    }
+    transaction.update(ref, { status: to, lastChangedBy: "company", updatedAt: stamp });
+    recordAudit(db, transaction, actor, now, { action: `contacto.${to}`, target: { type: "contactRequest", id: requestId } });
+    return { ...data, status: to, updatedAt: stamp };
+  });
+  return contactViewOf(requestId, updated);
 }
 
 /** Solicitudes que la persona recibió, con las acciones que puede tomar. Nunca datos de la empresa más allá del nombre. */
@@ -391,16 +469,20 @@ export async function listMyContactRequests(db: Firestore, actor: Actor): Promis
       state: contactStatePresentation(status, "participant"),
       message: (data.message as string | null) ?? null,
       updatedAt: data.updatedAt as string,
+      isDemo: challenge?.demo === true,
       actions: candidates.filter((to) => canTransitionContact(status, "participant", to)),
     };
   }));
   return rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
-/** Entrega propia de la persona en el challenge: la submission individual, o la del equipo si ella es integrante. */
+/**
+ * Entrega propia de la persona en el challenge: la submission individual, o la del equipo si ella es integrante.
+ * Un challenge concluido sigue mostrando lo que la empresa publicó; las escrituras se cierran aparte.
+ */
 async function ownSubmissionOf(db: Firestore, actor: Actor, challengeId: string): Promise<{ submissionId: string; isLeader: boolean } | null> {
   const challenge = await loadChallenge(db, challengeId);
-  if (challenge.status !== "published") throw notFound();
+  if (challenge.status !== "published" && challenge.status !== "closed") throw notFound();
   const experience = await loadExperience(db, challenge.experienceId);
   const enrollment = (await db.collection(ENROLLMENTS).doc(enrollmentDocId(experience.id, actor.uid)).get()).data();
   if (!enrollment || enrollment.status !== "approved" || enrollment.challengeId !== challengeId) return null;
@@ -423,6 +505,9 @@ export async function saveDefense(db: Firestore, actor: Actor, challengeId: stri
   const own = await ownSubmissionOf(db, actor, challengeId);
   if (!own) throw forbidden("Tu inscripción todavía no está aprobada para este challenge.");
   if (!own.isLeader) throw new HttpError(403, "solo_lider", "Solo la líder del equipo registra la defensa.");
+  if ((await loadChallenge(db, challengeId)).status !== "published") {
+    throw new HttpError(409, "reto_concluido", "El challenge ya concluyó: la defensa ya no se puede modificar.");
+  }
   const submission = (await db.collection(SUBMISSIONS).doc(own.submissionId).get()).data();
   if (!canRecordDefense(submission?.status ?? null)) {
     throw new HttpError(409, "entrega_no_enviada", "Enviá tu entrega antes de registrar la defensa.");
@@ -443,4 +528,81 @@ export async function saveDefense(db: Firestore, actor: Actor, challengeId: stri
   recordAudit(db, batch, actor, now, { action: "defensa.registrar", target: { type: "submission", id: own.submissionId }, details: { challengeId } });
   await batch.commit();
   return defenseOf(own.submissionId, data);
+}
+
+function checkpointOf(id: string, data: DocumentData): CheckpointView {
+  return { id, text: data.text, link: data.link ?? null, createdAt: data.createdAt };
+}
+
+function feedbackOf(data: DocumentData): FeedbackView {
+  return { text: data.text, publishedAt: data.publishedAt ?? null, updatedAt: data.updatedAt };
+}
+
+/** Una entrada de la bitácora. Solo con inscripción aprobada y hasta el cierre de entregas. */
+export async function addCheckpoint(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<CheckpointView> {
+  const input = parseCheckpointInput(rawBody);
+  const own = await ownSubmissionOf(db, actor, challengeId);
+  if (!own) throw forbidden("Tu inscripción todavía no está aprobada para este challenge.");
+  const challenge = await loadChallenge(db, challengeId);
+  if (challenge.status !== "published") {
+    throw new HttpError(409, "reto_concluido", "El challenge ya concluyó: la bitácora ya no se puede modificar.");
+  }
+  if (challenge.submissionClosesAt && Date.parse(challenge.submissionClosesAt) <= now.getTime()) {
+    throw new HttpError(409, "plazo_cerrado", "La bitácora se cierra con el plazo de entregas.");
+  }
+  const ref = db.collection(CHECKPOINTS).doc();
+  const data = {
+    challengeId,
+    submissionId: own.submissionId,
+    authorUid: actor.uid,
+    text: input.text,
+    link: input.link,
+    createdAt: now.toISOString(),
+  };
+  await ref.set(data);
+  return checkpointOf(ref.id, data);
+}
+
+/** Mi bitácora en el challenge (la de mi equipo, si soy integrante). */
+export async function listMyCheckpoints(db: Firestore, actor: Actor, challengeId: string): Promise<CheckpointView[]> {
+  const own = await ownSubmissionOf(db, actor, challengeId);
+  if (!own) return [];
+  const snapshot = await db.collection(CHECKPOINTS).where("submissionId", "==", own.submissionId).get();
+  return snapshot.docs.map((doc) => checkpointOf(doc.id, doc.data())).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+/** La empresa redacta la retroalimentación de una entrega enviada; «publicar» la hace visible para la persona. */
+export async function saveFeedback(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<FeedbackView> {
+  const challenge = await requireCompanyChallenge(db, actor, challengeId);
+  const body = asObject(rawBody);
+  const submissionId = submissionIdOf(body);
+  const input = parseFeedbackInput(body);
+  await submittedSubmissionOf(db, challengeId, submissionId);
+  const ref = db.collection(FEEDBACKS).doc(submissionId);
+  const existing = (await ref.get()).data();
+  const stamp = now.toISOString();
+  const data = {
+    challengeId,
+    submissionId,
+    organizationId: challenge.organizationId,
+    text: input.text,
+    publishedAt: input.publish ? (existing?.publishedAt ?? stamp) : null,
+    updatedAt: stamp,
+    writtenByUid: actor.uid,
+  };
+  const batch = db.batch();
+  batch.set(ref, data);
+  recordAudit(db, batch, actor, now, { action: "retroalimentacion.guardar", target: { type: "submission", id: submissionId }, details: { challengeId, publicada: input.publish } });
+  await batch.commit();
+  return feedbackOf(data);
+}
+
+/** Mi retroalimentación: solo la publicada. Un borrador de la empresa nunca llega a la persona. */
+export async function getMyFeedback(db: Firestore, actor: Actor, challengeId: string): Promise<FeedbackView | null> {
+  const own = await ownSubmissionOf(db, actor, challengeId);
+  if (!own) return null;
+  const snapshot = await db.collection(FEEDBACKS).doc(own.submissionId).get();
+  const data = snapshot.data();
+  if (!data || !canViewFeedback(data.publishedAt ?? null, "participant")) return null;
+  return feedbackOf(data);
 }

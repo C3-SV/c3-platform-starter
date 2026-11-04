@@ -7,7 +7,6 @@ import type { FieldIssue } from "@/lib/client/api";
 interface Confirmation {
   reference: string;
   email: string;
-  stored: boolean;
 }
 
 function issueFor(issues: FieldIssue[], field: string): string | null {
@@ -23,6 +22,7 @@ export function ProponerForm() {
     problem: "",
     desiredOutcome: "",
     constraints: "",
+    intent: "",
     website: "",
   });
   const [consent, setConsent] = useState(false);
@@ -47,8 +47,13 @@ export function ProponerForm() {
         body: JSON.stringify({ ...values, consent }),
       });
       const payload = await response.json().catch(() => ({}));
+      // La confirmación aparece solo si la propuesta quedó guardada; una respuesta sin guardar no se presenta como recibida.
+      if (response.status === 201 && payload.proposal?.stored === true) {
+        setConfirmation({ reference: payload.proposal.reference, email: values.contactEmail.trim() });
+        return;
+      }
       if (response.status === 201) {
-        setConfirmation({ reference: payload.proposal?.reference ?? "", email: values.contactEmail.trim(), stored: payload.proposal?.stored !== false });
+        setFormError("No pudimos registrar tu propuesta. Revisá los datos e intentá de nuevo.");
         return;
       }
       setIssues(payload?.error?.issues ?? []);
@@ -101,6 +106,15 @@ export function ProponerForm() {
 
       <Campo id="p-objetivo" label="¿Qué resultado les gustaría explorar?" error={issueFor(issues, "desiredOutcome")}>
         <textarea id="p-objetivo" rows={3} className="c3-campo" value={values.desiredOutcome} onChange={(event) => update("desiredOutcome", event.target.value)} />
+      </Campo>
+
+      <Campo id="p-intencion" label="¿Qué querés lograr? (opcional)" error={issueFor(issues, "intent")} help="Elegí una sola opción; podés explicarlo en el campo anterior.">
+        <select id="p-intencion" className="c3-campo" value={values.intent} onChange={(event) => update("intent", event.target.value)}>
+          <option value="">Sin elegir</option>
+          <option value="talento">Identificar talento</option>
+          <option value="solucion">Explorar una solución</option>
+          <option value="ambos">Ambos</option>
+        </select>
       </Campo>
 
       <Campo id="p-limites" label="Datos disponibles y límites de confidencialidad" error={issueFor(issues, "constraints")} help="Opcional, pero ayuda a definir qué se puede publicar.">

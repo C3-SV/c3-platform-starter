@@ -11,7 +11,7 @@ import { requireAdmin, type Actor } from "./auth.ts";
 import { CHALLENGES, ORGANIZATIONS, loadExperience, windowOf } from "./catalog.ts";
 import { notFound } from "./errors.ts";
 import { PROPOSALS, toProposalView, type ProposalView } from "./proposals.ts";
-import { JUDGE_ASSIGNMENTS, companyResults } from "./evaluation.ts";
+import { EVALUATIONS, JUDGE_ASSIGNMENTS, companyResults } from "./evaluation.ts";
 import { ENROLLMENTS, SHORTLISTS, SUBMISSIONS, TEAMS, USERS } from "./ids.ts";
 
 export const ORGANIZATION_MEMBERS = "organizationMembers";
@@ -37,8 +37,10 @@ export interface CompanyChallenge {
   id: string;
   title: string;
   organizationId: string;
+  /** Datos inventados de la demostración: la interfaz los marca como tales. */
+  isDemo: boolean;
   /** Cifras operativas del challenge. Son conteos reales de registros; no hay métricas inventadas. */
-  metrics: { enrolled: number; submitted: number; shortlisted: number };
+  metrics: { enrolled: number; submitted: number; shortlisted: number; evaluating: number };
   state: PresentedState;
   submissions: CompanySubmission[];
   results: Awaited<ReturnType<typeof companyResults>>;
@@ -128,12 +130,24 @@ export async function getCompanySpace(db: Firestore, actor: Actor, now: Date): P
       const state = presentState(data.status, experience ? windowOf(experience) : {}, now);
       const submissions = await submittedSolutions(db, doc.id);
       const results = await companyResults(db, doc.id);
-      const [enrolled, shortlisted] = await Promise.all([
+      const [enrolled, shortlisted, evaluations] = await Promise.all([
         db.collection(ENROLLMENTS).where("challengeId", "==", doc.id).where("status", "==", "approved").count().get(),
         db.collection(SHORTLISTS).where("challengeId", "==", doc.id).count().get(),
+        db.collection(EVALUATIONS).where("challengeId", "==", doc.id).get(),
       ]);
-      const metrics = { enrolled: enrolled.data().count, submitted: submissions.length, shortlisted: shortlisted.data().count };
-      challenges.push({ id: doc.id, title: data.title, organizationId: organization.id, metrics, state, submissions, results, evaluation: { assigned: assigned.has(doc.id) } });
+      const evaluating = new Set(evaluations.docs.map((item) => item.data().submissionId as string)).size;
+      const metrics = { enrolled: enrolled.data().count, submitted: submissions.length, shortlisted: shortlisted.data().count, evaluating };
+      challenges.push({
+        id: doc.id,
+        title: data.title,
+        organizationId: organization.id,
+        isDemo: data.demo === true,
+        metrics,
+        state,
+        submissions,
+        results,
+        evaluation: { assigned: assigned.has(doc.id) },
+      });
     }
     const proposalSnapshot = await db.collection(PROPOSALS).where("organizationId", "==", organization.id).get();
     proposals.push(...proposalSnapshot.docs.map((doc) => toProposalView(doc.id, doc.data())));

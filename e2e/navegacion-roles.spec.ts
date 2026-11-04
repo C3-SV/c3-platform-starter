@@ -212,7 +212,8 @@ test.describe("Sin desbordes horizontales en ningún ancho", () => {
       for (const ruta of ["/mi-c3", "/trayectoria", "/cuenta", "/empresa", `/mi-c3/retos/${challenge.challengeId}`, `/retos/${challenge.challengeId}/inscripcion`]) {
         await page.goto(ruta);
         await expect(page.getByRole("button", { name: /^Menú de la cuenta/ })).toBeVisible();
-        await page.waitForLoadState("networkidle");
+        // Las páginas con datos en vivo no siempre quedan en red inactiva: se espera el contenido principal.
+        await expect(page.getByRole("main")).toBeVisible();
         const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
         expect(desborde, `desborde en ${ruta} a ${ancho}px`).toBeLessThanOrEqual(1);
       }
