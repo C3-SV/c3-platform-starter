@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { consolidatedAverage, maxTotal, parseRecognition, parseScores, solutionReady, totalOf } from "../../src/lib/domain/evaluation.ts";
+import { consolidatedAverage, isWeighted, maxTotal, parseRecognition, parseScores, scoreOf, solutionReady, totalOf } from "../../src/lib/domain/evaluation.ts";
 import { ValidationFailure } from "../../src/lib/domain/validation.ts";
 
 const rubric = [
@@ -20,6 +20,20 @@ test("los puntajes deben cubrir cada criterio con enteros dentro de su máximo",
 test("el total y el máximo se suman por criterio", () => {
   assert.equal(maxTotal(rubric), 25);
   assert.equal(totalOf({ c1: 8, c2: 7, c3: 5 }), 20);
+});
+
+test("con pesos, cada criterio aporta su peso según el puntaje relativo a su máximo", () => {
+  const weighted = [
+    { id: "c1", label: "Calidad del resultado", maxScore: 10, weight: 20 },
+    { id: "c2", label: "Claridad del enfoque", maxScore: 10, weight: 30 },
+    { id: "c3", label: "Viabilidad", maxScore: 5, weight: 50 },
+  ];
+  assert.equal(isWeighted(weighted), true);
+  assert.equal(isWeighted(rubric), false);
+  assert.equal(maxTotal(weighted), 100);
+  assert.equal(scoreOf({ c1: 10, c2: 10, c3: 5 }, weighted), 100);
+  assert.equal(scoreOf({ c1: 5, c2: 0, c3: 5 }, weighted), 60);
+  assert.equal(scoreOf({ c1: 8, c2: 7, c3: 5 }, rubric), 20, "sin pesos, el total es la suma de los puntajes");
 });
 
 test("el promedio consolida los jurados con un decimal y no existe sin evaluaciones", () => {

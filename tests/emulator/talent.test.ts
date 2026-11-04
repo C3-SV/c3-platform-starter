@@ -20,6 +20,8 @@ import {
   requestContact,
   saveDefense,
 } from "../../src/lib/server/talent.ts";
+import { contactRequestDocId, talentRowTokenOf } from "../../src/lib/server/ids.ts";
+import { createTeam, joinTeamByCode } from "../../src/lib/server/teams.ts";
 import { admin, clearAuth, clearFirestore, createAuthUser, joven, testAuth, testDb } from "./support.ts";
 
 const now = new Date("2026-10-12T18:00:00.000Z");
@@ -86,7 +88,8 @@ async function scenario() {
     links: ["https://github.com/equipo/rutas-atlas"],
     submit: true,
   }, duringDeadline);
-  return { db, org, experience, challenge, submissionId: `${challenge.id}__${joven.uid}` };
+  // Las escrituras reciben el token de la fila del tablero, nunca el id interno de la entrega.
+  return { db, org, experience, challenge, submissionId: talentRowTokenOf(`${challenge.id}__${joven.uid}`) };
 }
 
 beforeEach(async () => {
@@ -322,4 +325,55 @@ test("con el challenge concluido la persona sigue viendo su retroalimentación p
   assert.equal((await listMyCheckpoints(db, joven, challenge.id)).length, 0);
   await assert.rejects(addCheckpoint(db, joven, challenge.id, { text: "Avance que llega después del cierre." }, duringDeadline), expectHttp(409, "reto_concluido"));
   await assert.rejects(saveDefense(db, joven, challenge.id, defenseInput, duringDeadline), expectHttp(409, "reto_concluido"));
+  await assert.rejects(saveFeedback(db, representante, challenge.id, { submissionId, text: "Un cambio después del cierre.", publish: true }, duringDeadline), expectHttp(409, "reto_concluido"));
+});
+
+test("el tablero entrega un token por fila: ni el uid ni el id interno aparecen, y el id interno no sirve para escribir", async () => {
+  const { db, challenge } = await scenario();
+  const board = await getTalentBoard(db, representante, challenge.id);
+  const serialized = JSON.stringify(board);
+  assert.equal(serialized.includes(joven.uid), false, "ningún campo del tablero lleva el uid");
+  assert.equal(serialized.includes(`${challenge.id}__${joven.uid}`), false, "tampoco aparece el id interno de la entrega");
+  await assert.rejects(
+    addToShortlist(db, representante, challenge.id, { submissionId: `${challenge.id}__${joven.uid}`, reason: "Explica bien los trade-offs." }, duringDeadline),
+    expectHttp(404),
+  );
+});
+
+test("la defensa se congela al cerrar el plazo de entregas, aunque el challenge siga publicado", async () => {
+  const { db, challenge } = await scenario();
+  await assert.rejects(
+    saveDefense(db, joven, challenge.id, defenseInput, new Date("2026-11-20T00:00:00.000Z")),
+    expectHttp(409, "plazo_cerrado"),
+  );
+});
+
+test("el contacto con un equipo se pide a su líder y sigue el mismo consentimiento", async () => {
+  const db = testDb();
+  await createAuthUser(representante.email, representante.uid);
+  const org = await createOrganization(db, admin, "Distribuidora Atlas", now);
+  await linkRepresentative(db, testAuth(), admin, org.id, representante.email, now);
+  const experience = await createExperience(db, admin, experienceInput, now);
+  const challenge = await createChallenge(db, admin, { ...challengeFor(experience.id, org.id), allows: ["team"], teamMinSize: 2, teamMaxSize: 4 }, now);
+  await setExperienceStatus(db, admin, experience.id, { status: "published" }, now);
+  await setChallengeStatus(db, admin, challenge.id, { status: "published" }, now);
+
+  const leaderEnrollment = await enrollInChallenge(db, joven, challenge.id, "team", now);
+  await reviewEnrollment(db, admin, leaderEnrollment.id, "approved", now);
+  const team = await createTeam(db, joven, challenge.id, "Equipo Rutas", now);
+  const memberEnrollment = await enrollInChallenge(db, otra, challenge.id, "team", now);
+  await reviewEnrollment(db, admin, memberEnrollment.id, "approved", now);
+  await joinTeamByCode(db, otra, team.code, now);
+  await saveDelivery(db, joven, challenge.id, {
+    text: "Heurística de inserción con ventanas horarias y comparación contra búsqueda exhaustiva.",
+    links: ["https://github.com/equipo/rutas-atlas"],
+    submit: true,
+  }, duringDeadline);
+
+  const [row] = (await getTalentBoard(db, representante, challenge.id)).rows;
+  assert.equal(row.mode, "team");
+  await addToShortlist(db, representante, challenge.id, { submissionId: row.submissionId, reason: "Trabajo sólido en equipo." }, duringDeadline);
+  const contact = await requestContact(db, representante, challenge.id, { submissionId: row.submissionId }, duringDeadline);
+  assert.equal(contact.id, contactRequestDocId(challenge.id, joven.uid), "la solicitud va a la líder del equipo");
+  assert.equal(contact.status, "esperando_consentimiento");
 });
