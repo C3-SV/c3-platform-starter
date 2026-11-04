@@ -35,3 +35,15 @@ export function teamParticipationDocId(challengeId: string, teamId: string): str
 export function membershipDocId(experienceId: string, userId: string): string {
   return `${experienceId}__${userId}`;
 }
+
+/** Lista corta: una entrada por entrega enviada (el id de la entrega es el de la entrada). */
+export const SHORTLISTS = "shortlists";
+/** Solicitudes de contacto con consentimiento: una por persona y challenge. */
+export const CONTACT_REQUESTS = "contactRequests";
+/** Defensa de una entrega enviada: un documento por entrega (id = submissionId). */
+export const DEFENSES = "defenses";
+
+/** Solicitud de contacto: como máximo una por persona y challenge; la empresa solo puede tener una activa. */
+export function contactRequestDocId(challengeId: string, userId: string): string {
+  return `${challengeId}__${userId}`;
+}

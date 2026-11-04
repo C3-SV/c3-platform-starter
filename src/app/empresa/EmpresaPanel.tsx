@@ -10,6 +10,7 @@ import { formatDateTime } from "@/lib/domain/format";
 import { evaluationHref } from "@/lib/domain/navigation";
 import { proposalNextStep, proposalPresentation } from "@/lib/domain/proposals";
 import type { CompanySpace } from "@/lib/server/companies";
+import { TalentoPanel } from "./TalentoPanel";
 
 /** V09 · Espacio de empresa. Solo muestra las organizaciones vinculadas a la persona autenticada. */
 export function EmpresaPanel() {
@@ -25,6 +26,7 @@ function EmpresaContenido() {
   const [space, setSpace] = useState<CompanySpace | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string>("");
+  const [talentoId, setTalentoId] = useState<string | null>(null);
   const signedIn = session.status === "signed-in";
 
   // Carga del espacio al entrar; las actualizaciones ocurren en la respuesta.
@@ -109,10 +111,23 @@ function EmpresaContenido() {
                 <div style={{ height: 6, background: "var(--c3-conecta)" }} />
                 <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                    <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Challenge</span>
+                    <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Challenge empresarial</span>
                     <StatePill state={challenge.state} />
                   </div>
                   <span className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{challenge.title}</span>
+                  <dl aria-label="Cifras del challenge" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, margin: 0 }}>
+                    {[
+                      ["Inscritas", challenge.metrics.enrolled],
+                      ["Entregas recibidas", challenge.metrics.submitted],
+                      ["En lista corta", challenge.metrics.shortlisted],
+                    ].map(([label, value]) => (
+                      <div key={label} style={{ background: "var(--c3-superficie-sutil)", borderRadius: 8, padding: "8px 10px" }}>
+                        <dt style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>{label}</dt>
+                        <dd style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>«En evaluación» llega con la matriz de evaluación (próximamente).</span>
                   <div style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--c3-borde)", display: "flex", flexDirection: "column", gap: 10 }}>
                     <span style={{ fontSize: 14 }}>
                       {challenge.submissions.length === 0 ? "Todavía no hay soluciones enviadas" : `${challenge.submissions.length} ${challenge.submissions.length === 1 ? "solución recibida" : "soluciones recibidas"}`}
@@ -123,6 +138,16 @@ function EmpresaContenido() {
                       ) : (
                         <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>Para evaluar, C3 te asigna como jurado de este challenge.</span>
                       )
+                    ) : null}
+                    {challenge.submissions.length > 0 ? (
+                      <button
+                        type="button"
+                        className="c3-btn c3-btn--contorno"
+                        aria-expanded={talentoId === challenge.id}
+                        onClick={() => setTalentoId(talentoId === challenge.id ? null : challenge.id)}
+                      >
+                        {talentoId === challenge.id ? "Ocultar talento" : "Ver talento y lista corta"}
+                      </button>
                     ) : null}
                     {challenge.submissions.map((solution) => (
                       <div key={solution.id} style={{ background: "var(--c3-superficie-sutil)", borderRadius: 8, padding: 12, display: "flex", flexDirection: "column", gap: 6 }}>
@@ -155,6 +180,16 @@ function EmpresaContenido() {
           </div>
         )}
       </section>
+
+      {talentoId ? (
+        <section style={{ display: "flex", flexDirection: "column", gap: 16 }} aria-labelledby="talento-titulo">
+          <h2 id="talento-titulo" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Talento del challenge</h2>
+          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
+            Compará entregable, proceso y defensa. Agregá a la lista corta a quienes destacan y pedí contacto: la persona decide si acepta.
+          </p>
+          <TalentoPanel challengeId={talentoId} />
+        </section>
+      ) : null}
 
       <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tus propuestas</h2>

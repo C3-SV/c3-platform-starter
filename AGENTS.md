@@ -18,6 +18,8 @@ C3 Platform materializa **Compite · Crea · Conecta**. Su experiencia central i
 
 **Vocabulario:** «challenge» es el término oficial de producto en la interfaz, los mensajes y los documentos (decisión D8, 26-10-2026). Las direcciones y los identificadores técnicos (`/retos/…`, `challengeId`, colecciones) no cambian. Detalle en [docs/PRODUCTO-Y-NAVEGACION.md](docs/PRODUCTO-Y-NAVEGACION.md).
 
+**Propuesta de negocio vigente (update del 3-nov-2026, [docs/UPDATE-2026-11-03-demo-integral.md](docs/UPDATE-2026-11-03-demo-integral.md)):** el producto es **talento primero**. Una empresa paga por challenge para observar capacidades de talento joven mediante evidencia (entregable, proceso y defensa), no para «recibir soluciones». Un challenge empresarial pertenece a **Conecta** (con Crea como línea secundaria si aplica). Los paquetes de referencia son Esencial US$800, Completo US$1,500 y Destacado US$3,000, por proyecto; no hay suscripción, checkout ni contratación garantizada. En la interfaz de la demo se usa voseo; los datos inventados se marcan como **DEMO**.
+
 Roles/recorridos: visitante; participante individual o en equipo; jurado; representante de empresa; administrador C3. Las vistas V01–V12 del diseño son **capacidades y referencias visuales**, no equivalen a rutas ni están todas resueltas con el mismo layout. Las rutas efectivas están en README y deben revisarse junto a la navegación real.
 
 No implementar sin decisión explícita: pagos, subida de archivos, autojuez, CRM, mensajería, bolsa de empleo, nuevas certificaciones o migración de datos personales históricos de Copa y HTC. No confundir una demo funcional con un piloto autorizado con datos reales.
@@ -75,6 +77,9 @@ No usar especificaciones no disponibles como fuente de verdad; las dependencias 
 - **Evaluación:** solo después del cierre de entregas. Las soluciones se muestran anónimas («Solución 1», «Solución 2»…). Cada criterio recibe un entero dentro de su máximo. Un jurado finaliza una evaluación una sola vez.
 - **Resultados:** promedio simple de los jurados con un decimal. La publicación por C3 queda bloqueada hasta que cada solución tenga dos evaluaciones finalizadas de jurados distintos.
 - **Propuestas sin cuenta:** cualquier empresa puede proponer. Hay campo trampa, límite de 5 propuestas por hora y conexión (solo se guarda un hash con sal, nunca la IP) y la confirmación aparece solo si la propuesta quedó guardada. No añadas endpoints públicos sin estas defensas.
+- **Talento y contacto (demo 3-nov-2026):** la lista corta es por entrega enviada, con motivo cualitativo obligatorio. Una solicitud de contacto exige representante vinculada, lista corta, inscripción aprobada y entrega individual; nace en «esperando consentimiento» y solo la persona la acepta, declina o revoca. La empresa registra «contactado» o «seguimiento» solo tras aceptar. **Ningún estado implica contratación.** Ninguna vista muestra correo ni otros datos de contacto hasta que se decida el canal.
+- **Defensa:** recurso separado de la entrega. Solo sobre entrega enviada; en equipo, la registra la líder. El uso de herramientas de IA se declara sin juzgarlo.
+- **Paquetes:** `src/lib/domain/commercial.ts` es la fuente única de tarifas. Son de referencia; en la demo no hay cobro ni contrato.
 - **Trayectoria:** la registra C3 y la persona no la edita. Los resultados oficiales no se modifican desde Cuenta.
 - **Cuenta:** la eliminación de cuentas no se habilita hasta definir la retención o anonimización de participaciones, entregas, evaluaciones y resultados.
 - **No simular funciones.** Un botón navega o ejecuta una operación real. No confirmes éxito antes de persistir. Lo no implementado se marca «Próximamente».
@@ -157,6 +162,16 @@ Una tarea está lista cuando su objetivo y recorrido funcionan, no se rompen per
 ## 14. Skills y ayudas
 
 Las skills fijadas por `skills-lock.json` en `.agents/skills/` y `.claude/skills/` incluyen Firebase Auth, Firestore, auditoría de reglas y buenas prácticas de React/Next. Consultarlas cuando apliquen; no instalar terceros sin revisar licencias/origen. `graphify-out/GRAPH_REPORT.md` puede orientar búsquedas, pero confirmar siempre en el código.
+
+**Impeccable (diseño de interfaz):** la skill está disponible como plugin de usuario en `C:\Users\chris\.claude\plugins\marketplaces\impeccable` (`.claude/skills/impeccable`). Antes de editar interfaz, ejecutar una vez por sesión `.claude/skills/impeccable/scripts/impeccable context` desde la raíz del repo (en Windows sin `sh`, `impeccable.cmd`). No ejecutar `npx impeccable install` sin revisar lo que escribe en el repo. El sistema visual de referencia es el design system «C3» de Claude (tokens en `diseno-claude/tokens/`); no crear uno nuevo.
+
+## 15. Demo integral del 4-nov-2026
+
+Fuente de decisiones: [docs/UPDATE-2026-11-03-demo-integral.md](docs/UPDATE-2026-11-03-demo-integral.md). Plan, inventario y estado: [docs/superpowers/plans/2026-11-03-c3-challenges-demo.md](docs/superpowers/plans/2026-11-03-c3-challenges-demo.md). Pendientes y bloqueos: [PENDIENTES-REALES](docs/PENDIENTES-REALES.md#prioridad-máxima--demo-integral-del-4-nov-2026-update-del-3-nov).
+
+- Firebase: la demo usa **`c3-platform-demo`**, el proyecto que ya existe en la cuenta del responsable. Es una **excepción explícita** a §7 decidida el 3-nov-2026: ese proyecto está vinculado a la aplicación, así que cualquier escritura (seed, cuentas, reglas) necesita autorización expresa por operación, con `--dry-run` previo. El seed no sobrescribe ni duplica: si un documento ajeno tiene el mismo título, el plan se detiene. Las contraseñas de las cuentas demo nunca se guardan en el repo, en docs ni en logs.
+- Un ejemplo inventado (empresa, usuarios, challenge, entregas, puntajes) se marca **DEMO** o «Datos demostrativos».
+- Antes de declarar un flujo completado: pruebas automáticas, control de acceso verificado en el emulador y recorrido en navegador. Lo que no esté verificado se reporta como pendiente.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

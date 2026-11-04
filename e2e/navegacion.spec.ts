@@ -103,7 +103,8 @@ test.describe("Referencias básicas de cada página", () => {
     for (const ruta of rutas) {
       await page.goto(ruta);
       const titulo = await page.title();
-      expect(titulo, `título de ${ruta}`).toMatch(/C3 Platform$/);
+      // La Home usa el título institucional del update (3-nov-2026): «C3 Challenges · …». El resto mantiene «· C3 Platform».
+      expect(titulo, `título de ${ruta}`).toMatch(ruta === "/" ? /^C3 Challenges · / : /C3 Platform$/);
       titulos.set(ruta, titulo);
       await expect(page.locator("main"), `<main> de ${ruta}`).toHaveCount(1);
     }

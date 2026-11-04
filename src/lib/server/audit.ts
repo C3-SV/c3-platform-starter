@@ -8,7 +8,7 @@ import type { DocumentData, DocumentReference, Firestore } from "firebase-admin/
 import type { Actor } from "./auth.ts";
 import { AUDIT_LOG } from "./ids.ts";
 
-export type AuditTargetType = "experience" | "challenge" | "enrollment";
+export type AuditTargetType = "experience" | "challenge" | "enrollment" | "submission" | "contactRequest";
 
 export interface AuditEntry {
   action: string;

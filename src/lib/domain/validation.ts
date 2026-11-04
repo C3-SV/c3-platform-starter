@@ -1,5 +1,6 @@
 /** Validaciones PURAS de entradas. Se usan en el servidor antes de cualquier escritura. */
 import { fallbackLineOf } from "./catalog.ts";
+import { parseCommercialPackageId, type CommercialPackageId } from "./commercial.ts";
 import type { ExperienceKind, ExperienceLine, ExperienceModality, ExperienceStatus, ParticipationMode } from "./types.ts";
 
 export const EXPERIENCE_KINDS: readonly ExperienceKind[] = ["competencia", "hackathon", "challenge_empresarial", "taller", "charla", "encuentro"];
@@ -62,6 +63,7 @@ export interface ChallengeInput {
   deliverables: string[];
   rubric: RubricInputCriterion[];
   organizationName: string;
+  commercialPackage: CommercialPackageId | null;
   allows: ParticipationMode[];
   teamMinSize: number | null;
   teamMaxSize: number | null;
@@ -230,6 +232,8 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
   const summary = text(raw, "summary", 10, 280, issues, "Resumen");
   const problem = text(raw, "problem", 20, 4000, issues, "Problema");
   const organizationName = text(raw, "organizationName", 2, 120, issues, "Organización responsable");
+  // El paquete es opcional: un challenge sin paquete declarado sigue siendo válido (p. ej. convocatorias no comerciales).
+  const commercialPackage = parseCommercialPackageId(raw.commercialPackage);
 
   const deliverables = Array.isArray(raw.deliverables)
     ? raw.deliverables.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean)
@@ -293,6 +297,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
     deliverables,
     rubric: rubric.map((criterion) => ({ label: criterion.label, maxScore: criterion.maxScore })),
     organizationName,
+    commercialPackage,
     allows: uniqueAllows,
     teamMinSize: uniqueAllows.includes("team") ? teamMinSize : null,
     teamMaxSize: uniqueAllows.includes("team") ? teamMaxSize : null,
