@@ -5,15 +5,14 @@
  */
 import type { SeedRecord } from "./seed-data.ts";
 
-export function isResettableDemoRecord(collection: string, id: string, data: Record<string, unknown>, demoChallengeId: string): boolean {
+export function isResettableDemoRecord(collection: string, id: string, data: Record<string, unknown>): boolean {
   if (!id.startsWith("seed_")) return false;
   if (data.managedBy !== "c3-seed") return false;
   if (collection === "experiences") return data.isDemo === true && !data.sourceUrl;
-  if (collection === "challenges") return id === demoChallengeId && data.demo === true;
   return data.demo === true || data.isDemo === true;
 }
 
 /** Selección sobre el dataset definido en el seed, para pruebas y para el dry-run sin consultar Firestore. */
-export function resettableFrom(records: readonly SeedRecord[], demoChallengeId: string): SeedRecord[] {
-  return records.filter((record) => isResettableDemoRecord(record.collection, record.id, record.data, demoChallengeId));
+export function resettableFrom(records: readonly SeedRecord[]): SeedRecord[] {
+  return records.filter((record) => isResettableDemoRecord(record.collection, record.id, record.data));
 }

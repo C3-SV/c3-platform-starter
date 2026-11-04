@@ -11,7 +11,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { SEED_COLLECTIONS, SEED_RECORDS, seedId } from "../src/lib/seed/seed-data.ts";
+import { SEED_COLLECTIONS, SEED_RECORDS } from "../src/lib/seed/seed-data.ts";
 import { isResettableDemoRecord, resettableFrom } from "../src/lib/seed/demo-reset.ts";
 import { isOutsideDirectory } from "../src/lib/seed/demo-accounts.ts";
 
@@ -28,7 +28,6 @@ const project = valueOf("--project");
 const confirmProject = valueOf("--confirm-project");
 const backupPath = valueOf("--backup-file") ? resolve(valueOf("--backup-file")) : null;
 const DEMO_PROJECTS = ["c3-platform-demo", "demo-c3-platform"];
-const DEMO_CHALLENGE_ID = seedId("challenge", "empresa-demostracion-rutas");
 
 function fail(message) {
   console.error(`Reset detenido: ${message}`);
@@ -72,7 +71,7 @@ const candidates = [];
 for (const collection of SEED_COLLECTIONS) {
   const snapshot = await db.collection(collection).get();
   for (const doc of snapshot.docs) {
-    if (isResettableDemoRecord(collection, doc.id, doc.data(), DEMO_CHALLENGE_ID)) {
+    if (isResettableDemoRecord(collection, doc.id, doc.data())) {
       candidates.push({ collection, id: doc.id, data: doc.data() });
     }
   }
@@ -83,7 +82,7 @@ const byCollection = new Map();
 for (const item of candidates) byCollection.set(item.collection, (byCollection.get(item.collection) ?? 0) + 1);
 for (const [collection, count] of byCollection) console.log(`  ${collection}: ${count}`);
 console.log(`Documentos de demostración a eliminar: ${candidates.length}`);
-const seedDemoCount = resettableFrom(Object.values(SEED_RECORDS).flat(), DEMO_CHALLENGE_ID).length;
+const seedDemoCount = resettableFrom(Object.values(SEED_RECORDS).flat()).length;
 console.log(`Del seed definido en código: ${seedDemoCount} documentos marcados como demostración (las experiencias históricas quedan fuera).`);
 
 if (!apply) {
