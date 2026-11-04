@@ -1,81 +1,59 @@
 # Pendientes y decisiones abiertas — C3 Platform
 
-Este archivo mantiene **solo decisiones y trabajos no cerrados**. Actualizar la condición de cierre al resolverlos; no copiar aquí narrativas de implementaciones anteriores. El alcance implementado y las rutas están en [README](../README.md).
+Solo lo que sigue abierto. Al resolver un asunto, quitarlo; la historia queda en el [plan de la demo](superpowers/plans/2026-11-03-c3-challenges-demo.md). El alcance implementado y las rutas están en el [README](../README.md).
 
-## Prioridad máxima — demo integral del 4-nov-2026 (update del 3-nov)
+## Demo del 4-nov-2026
 
-Plan, inventario y estado por tarea: [plan 2026-11-03](superpowers/plans/2026-11-03-c3-challenges-demo.md). Fuente de decisiones: [UPDATE-2026-11-03](UPDATE-2026-11-03-demo-integral.md).
+Cerrado: las reglas y funciones del [update](UPDATE-2026-11-03-demo-integral.md) que se podían construir, y la carga del seed v5 en `c3-platform-demo`.
 
-| Asunto | Situación conocida | Para cerrar |
+| Asunto | Situación | Para cerrar |
 | --- | --- | --- |
-| Firebase remoto y cuentas demo | Proyecto de la demo: **`c3-platform-demo`** (decisión del responsable, 3-nov-2026; excepción explícita a AGENTS §7, registrada en §15). **Hecho:** seed v2 aplicado con respaldo previo fuera del repo (`C:\Users\chris\.c3-demo\backup-seed-v1-2026-11-03.json`); cuentas `joven@`, `empresa@` y `admin@demo.c3.com.sv` creadas con UID fijo; claim de administración y vínculo verificados en solo lectura. **Pendiente:** confirmar si el sitio `demo.plat.c3.com.sv` lee este proyecto; decidir sobre `c3-challenges-demo` (creado por error, sin uso; su eliminación requiere confirmación); rotar la clave de la cuenta de servicio tras el ensayo y guardarla fuera del repositorio y de carpetas sincronizadas | Confirmaciones del responsable; borrar la clave local al terminar |
-| Versiones del seed | **Hecho en código (`SEED_VERSION = 5`):** rúbrica ponderada 20/30/25/25 y tres challenges demo adicionales (92 registros). Modo `update` con respaldo previo; `apply` se niega ante versiones anteriores. **En remoto:** v2 aplicado el 3-nov-2026; v3 y v4 aplicados el 4-nov-2026; **v5 aplicado el 4-nov-2026** (dry-run, respaldo `C:\Users\chris\.c3-demo\backup-seed-update-v5-2026-11-04.json` y `update`: 37 creados y 55 actualizados; verificado en solo lectura: 92 documentos sin diferencias). La carga devolvió al estado del seed una solicitud de contacto demo que se había cambiado en el remoto; su estado anterior está en el respaldo | Comprobar en `demo.plat.c3.com.sv` los cuatro challenges |
-| Dataset de demostración completo | **Hecho en remoto:** 1 organización, 6 perfiles sin cuenta, 7 inscripciones, 5 participaciones, 5 entregas (4 enviadas, 1 borrador), 3 defensas, 2 listas cortas, 2 solicitudes de contacto y 3 propuestas. **Implementado en código:** el tablero muestra el estado de evaluación, la matriz por criterio y la bitácora por persona. **Sin verificar en remoto:** evaluaciones con puntajes, resultado publicado de demostración, bitácora y retroalimentación del seed local; el registro de ejecución remota (plan §8) no las incluye | Autorizar la carga de esas colecciones en `c3-platform-demo` y verificarla en solo lectura |
-| Contacto con datos | **Decidido el 4-nov-2026:** canal simulado tras «aceptado» (mensaje interno facilitado por C3). Ningún correo ni teléfono se muestra a la empresa ni a la persona | Decidir el canal real y la retención (PRIVACIDAD) antes de datos reales |
-| Contacto con equipos | **Decidido el 4-nov-2026:** la solicitud va a la líder del equipo, con el mismo consentimiento y canal simulado | Revisar con el responsable al tener datos reales |
-| Rúbrica con pesos | **Decidido y hecho el 4-nov-2026:** pesos opcionales por criterio (enteros de 1 a 100, suman 100). La demo usa 20/30/25/25 | Carga remota de la v4 hecha el 4-nov-2026 (fila de versiones) |
-| Plazo de la defensa | **Decidido y hecho el 4-nov-2026:** la defensa se congela al cerrar el plazo de entregas (409 `plazo_cerrado`) | Ninguna |
-| Impeccable | Plugin de usuario (skill v4.8.0), fuera del repositorio. Ejecutados en la revisión del 4-nov-2026: `impeccable context` (sin `PRODUCT.md`: el trabajo fue un refinamiento de la vista existente, no un rediseño) e `impeccable detect` sobre `src/app` y `src/components` (4 avisos en `globals.css` y `layout.tsx`, archivos previos a esta rama y no modificados). `npx impeccable install` no se ha ejecutado: escribe configuración en el repo | Decidir si se crea `PRODUCT.md` (`init`) antes de cualquier rediseño; los 4 avisos quedan para el responsable del sistema visual |
-| Voz de la interfaz | El update pide voseo; el README del artifact de diseño pide tuteo | Se aplica el voseo del update; el artifact no se corrige |
-| Filtros de `/explorar` | **Hecho:** tipo, línea, estado y «solo demo», en el cliente (`FiltrosExplorar`). La guía de estilo decía «sin filtros en el MVP»; esa decisión queda superada por el update | Ninguno |
-| E2E y revisión visual | Talento, bitácora y contactos tienen E2E solo en escritorio (`e2e/zz-demo-talento.spec.ts`). Defensa y retroalimentación no tienen E2E. No hay revisión visual registrada a 390 px y 1280 px | Añadir E2E de defensa y retroalimentación y revisar en navegador a 390 px y 1280 px |
-| Next.js 16.4.0 | `next build` muestra el aviso de seguridad y se detiene la primera vez; al repetir compila | Actualización aparte, con revisión de compatibilidad (no incluida en la demo) |
-| Resultados después de publicar | **Decidido y hecho el 4-nov-2026:** las evaluaciones quedan congeladas al publicar (409 `resultados_publicados`). No hay instantánea aparte: los promedios siguen calculándose desde las evaluaciones, que ya no cambian | Decidir si se guarda una instantánea (no bloquea la demo) |
-| Sal de la conexión para propuestas (`RATE_LIMIT_SALT`) | En producción es obligatoria: sin ella `POST /api/propuestas` responde error (falla cerrada). En desarrollo y emulador usa una sal de prueba | Configurar `RATE_LIMIT_SALT` en Vercel con un valor aleatorio largo antes de recibir propuestas. No versionar el valor. `check:vercel-env` ya falla si falta |
-| Solicitudes de contacto ya cargadas | Los ids de solicitud de contacto ahora son un resumen del uid (no revelan el uid). Las solicitudes cargadas en `c3-platform-demo` con el formato anterior quedarían huérfanas | **Hecho el 4-nov-2026** en `c3-platform-demo`: `demo-reset --apply` con respaldo y luego `seed` en modo `update` con respaldo; verificado en solo lectura (55 documentos, sin diferencias). Falta comprobar el sitio `demo.plat.c3.com.sv` (plan §8) |
-| Dashboard de empresa (E2) | **Hecho en parte el 4-nov-2026:** subnavegación (Resumen, Talento, Propuestas), CTA «Ver entregas», próximo hito (cierre de entregas), paquete de referencia y «Perfiles de interés». Faltan Participantes, Entregas y Evaluación como secciones propias, y Configuración | Decidir si esas secciones se separan del panel actual |
-| Configuración del challenge por la empresa (E3) | **Hecho el 4-nov-2026:** quien representa a la empresa del challenge y C3 editan resumen, problema, entregables y cierre de entregas (`PATCH /api/empresa/retos/[id]/configuracion`); la rúbrica se edita solo mientras no haya entregas. Solo con el challenge publicado y antes del cierre. **Decisión del responsable:** por ahora una representante que también es jurado puede configurar; no se distingue un rol de jurado. No se editan modalidad ni tamaño de equipo | Distinguir el rol de jurado cuando se defina; decidir si la empresa puede editar modalidad y equipos |
-| Consentimientos de la inscripción (J2, J3) | **Hecho el 4-nov-2026:** la inscripción exige confirmar la elegibilidad y aceptar las reglas; el servidor guarda `confirmedEligibilityAt` y `acceptedRulesAt` | Ninguna |
-| Challenges demo adicionales (§4.C) | **Hecho en código el 4-nov-2026:** tres challenges más con las mismas cuentas demo: uno abierto (retail, la cuenta joven tiene un borrador), uno en evaluación (fintech) y uno concluido con resultados publicados (conciliación) | Cargarlos en remoto con la v5 (fila de versiones) |
-| Vista de auditoría para admin (E6) | **Hecho el 4-nov-2026:** sección «Auditoría» en la consola (`/admin/auditoria`, `GET /api/admin/auditoria`), solo administración | Ninguna |
-| Banner «Entorno de demostración» | **Hecho el 4-nov-2026:** aparece solo cuando el proyecto de Firebase es `c3-platform-demo` | Ninguna |
-| Progreso y estado de evaluación en Mi challenge (J4, J8) | **Hecho el 4-nov-2026:** Mi challenge muestra pendiente, en revisión o publicado y, con puntajes publicados, el promedio, el lugar y el promedio por criterio | Ninguna |
-| Comentarios del jurado | **Hecho el 4-nov-2026:** comentario interno por solución; lo ve solo C3 en el tablero de resultados y no llega a la empresa ni a la persona | Ninguna |
-| Índices de Firestore (§4.D) | **Hecho el 4-nov-2026:** `tests/unit/firestore-indexes.test.ts` falla si una consulta nueva necesita un índice compuesto que `firestore.indexes.json` no declara | Ninguna |
-| E2E pendientes | Faltan recorridos completos de empresa, defensa, retroalimentación y contacto; el acceso cruzado entre organizaciones solo lo prueba el emulador | Escribir los E2E |
-| Revisión visual y accesibilidad | Sin revisión registrada a 390 y 1280 px de pantallas autenticadas, ni accesibilidad de talento | Hacer la revisión |
-| Ensayo y capturas de respaldo | Sin ensayo cronometrado ni capturas de pantallas con sesión | Ensayar con el guion |
-| Impeccable: PRODUCT.md y pase visual (Task 1) | Sin `PRODUCT.md` ni `DESIGN.md` | Decidir con el responsable |
-| Zona horaria en fechas de cierre (B.1) | **Hecho el 4-nov-2026** en el detalle del challenge y en el panel de empresa (`formatDeadline`: «hora de El Salvador»). Otras pantallas muestran solo la fecha | Extender a las demás si hace falta |
-| Estados de «/explorar» | El update pide Abierto, Concluido y Demo; el código tiene Abierto, Próximo, Concluido y una casilla de demo | Alinear con el responsable |
-| Comandos `seed:dry-run` y `seed:apply` | `package.json` no pasa `--project`; el seed falla sin argumentos | Usar las líneas completas de la sección de comandos del seed en el [README](../README.md) (con `--project`, `--confirm-project` y `--allow-write`). Cambiar `package.json` solo por decisión del responsable |
+| Sitio demo | `demo.plat.c3.com.sv` no se ha recorrido con las tres cuentas ni se confirmó que lee `c3-platform-demo`. El check de Vercel del PR #20 llegó a fallar y no se leyó su log | Recorrido con las cuentas demo; revisar el log en Vercel |
+| Firebase de la demo | Borrar `c3-challenges-demo` (creado por error); rotar la clave de la cuenta de servicio y sacarla de carpetas sincronizadas; rotar la contraseña demo que apareció en una sesión | Responsable (manual) |
+| Dashboard de empresa (E2) | Hay subnavegación, hito, paquete y perfiles de interés. Participantes, Entregas y Evaluación no son secciones propias | Decidir si se separan |
+| Configuración del challenge (E3) | Edita resumen, problema, entregables, cierre y rúbrica (esta, sin entregas). No edita modalidad ni equipos. Una representante que también es jurado puede configurar | Definir el rol de jurado y si la empresa edita modalidad y equipos |
+| Resultados | Quedan congeladas las evaluaciones al publicar; no hay instantánea aparte | Decidir si se guarda una |
+| E2E | Faltan recorridos completos de empresa, defensa, retroalimentación y contacto; el acceso entre organizaciones solo lo prueba el emulador | Escribirlos |
+| Revisión visual y accesibilidad | Sin revisión a 390 y 1280 px de las pantallas con sesión ni accesibilidad de talento (aplazada por el responsable) | Hacerla |
+| Ensayo | Sin ensayo cronometrado ni capturas de respaldo de pantallas con sesión | Ensayar con el guion de [docs/demo](demo/README.md) |
+| Impeccable | Sin `PRODUCT.md` ni `DESIGN.md`; `npx impeccable install` no se ejecutó | Decidir `init` con el responsable |
+| Diferencias menores con el update | La zona horaria solo se muestra en el detalle del challenge y en el panel de empresa; `/explorar` ofrece Abierto, Próximo y Concluido (el update pide Abierto, Concluido y Demo); bitácora y defensa en un challenge no publicado responden 404 (el update pide 409) | Alinear con el responsable |
+| Scripts del seed | `seed:dry-run` y `seed:apply` de `package.json` no pasan `--project` | Usar las líneas completas del README; cambiar `package.json` solo por decisión del responsable |
+| Next.js 16.4.0 | `next build` muestra un aviso de seguridad y se detiene de forma intermitente; al repetir compila | Actualización aparte con revisión de compatibilidad |
+| Voz de la interfaz | El update pide voseo y el README del artifact de diseño pide tuteo | Se aplica el voseo; el artifact no se corrige |
 
-## Prioridad alta — estabilidad y experiencia de producto
+## Estabilidad y producto
 
-| Asunto | Situación conocida | Para cerrar |
+| Asunto | Situación | Para cerrar |
 | --- | --- | --- |
-| Usabilidad con personas | La arquitectura de navegación (decisiones D1–D10 de la [auditoría](AUDITORIA-NAVEGACION-2026-10.md)) está implementada y verificada con pruebas técnicas, **no con personas**: faltan tareas guiadas por rol (participante, jurado, representante, admin) y una auditoría con lector de pantalla y dispositivos reales | Prueba con 4–5 personas por rol midiendo pasos y errores ([PLAN-CONSTRUCCION](PLAN-CONSTRUCCION.md), «Métricas»); revisión visual a 390 y 1280 px por el responsable |
-| Aviso de seguridad de Next.js | `next build` (16.4.0) muestra un aviso de versión afectada por una vulnerabilidad conocida y, la primera vez de cada tanda, **se detiene** y pide repetir el comando (el CI no se vio afectado). No se actualizó nada | Decidir y planificar la actualización como tarea aparte, con revisión de compatibilidad; hasta entonces repetir `npm run build` si se detiene |
-| Validación integral | CI verde por PR sobre `dev` (typecheck, lint, unitarias, reglas con emulador y E2E de escritorio y móvil). Las pruebas de versiones revisadas no sustituyen una ejecución actual | Repetir el CI sobre `dev` y `main` en cada promoción |
-| Espacio local | El disco C: de esta máquina queda con ~1–2 GB libres tras instalar dependencias y compilar | Recuperar espacio antes de instalar o compilar; verificar con `df` |
-| Perfil público: menores e imagen | El perfil público compartible está implementado (opt-in, privado por defecto, centro de estudio oculto por defecto, sin datos privados). **No hay edad en el modelo**: no se puede distinguir a una persona menor, y el texto legal no está aprobado | Validar con asesoría local el tratamiento de menores, nombre e imagen antes de datos reales; decidir si se exige consentimiento de tutor o una edad mínima para activarlo |
-| Rutas antiguas de evaluación | `/evaluar/[id]` y `/empresa/retos/[id]/evaluacion` redirigen (307) a `/mi-c3/evaluar/[id]` para no romper enlaces ya enviados | Retirarlas cuando no queden invitaciones vigentes |
-| Admin en móvil | Funcional (menú plegable) pero optimizado para escritorio, según la decisión D5 | Revisar si el equipo opera Admin desde teléfono; si no, mantener |
+| Usabilidad con personas | La navegación (D1–D10 de [PRODUCTO](PRODUCTO-Y-NAVEGACION.md)) está verificada con pruebas técnicas, no con personas: faltan tareas guiadas por rol y una auditoría con lector de pantalla y dispositivos reales | Prueba con 4–5 personas por rol ([PLAN-CONSTRUCCION](PLAN-CONSTRUCCION.md), «Métricas») |
+| Perfil público: menores e imagen | Implementado (opt-in, privado por defecto, centro de estudio oculto). No hay edad en el modelo y el texto legal no está aprobado | Validar con asesoría local menores, nombre e imagen; decidir consentimiento de tutor o edad mínima |
+| Rutas antiguas de evaluación | `/evaluar/[id]` y `/empresa/retos/[id]/evaluacion` redirigen (307) a `/mi-c3/evaluar/[id]` | Retirarlas sin invitaciones vigentes |
+| Admin en móvil | Funcional (menú plegable) y optimizado para escritorio (D5) | Mantener salvo que el equipo opere desde teléfono |
+| Validación integral | Las pruebas de versiones anteriores no sustituyen una ejecución actual | Repetir el CI en `dev` y `main` en cada promoción |
 
 ## Repositorio, despliegue y ambientes
 
-- **Ramas oficiales (`dev` sincronizada con `main` el 26-10-2026):** `dev` para integración y pruebas, `main` para producción; PR de trabajo a `dev` y promoción de `dev` a `main`. Un solo checkout, sin worktrees.
-- **Visibilidad deseada:** repositorio canónico **privado**. El remoto actualmente identificado es `C3-SV/c3-platform-starter` y se reportó como **público**. Antes de hacerlo privado, comprobar compatibilidad, costos y permisos reales del despliegue Vercel. No cambiar repositorio, plan ni visibilidad sin decisión del responsable.
-- **CI:** `.github/workflows/ci.yml` ejecuta PR y push a `main` y a `dev`.
-- **Mantenimiento del flujo Git:** retirar, mediante cambio acotado y revisado, `npm run worktree` y el script `scripts/worktree.mjs` para que las herramientas coincidan con la política de un checkout.
-- **Firebase real:** revisar configuración actual del proyecto `c3-platform-demo`, Web App, Auth, reglas/índices y variables públicas/privadas de Vercel. No hacer cambios remotos sin autorización; entorno de desarrollo usa emuladores `demo-c3-platform`.
-- Confirmar procedimiento de asignación, revocación y auditoría del claim `c3Admin`, así como controles operativos de administradores en el piloto.
+- **Ramas:** `dev` integra y prueba; `main` es producción. Un solo checkout, sin worktrees. CI en PR y en push a `main` y `dev`.
+- **Visibilidad:** el repo `C3-SV/c3-platform-starter` es público y la meta es hacerlo privado; antes, comprobar compatibilidad, costos y permisos del despliegue en Vercel. No cambiar repositorio, plan ni visibilidad sin decisión del responsable.
+- **Flujo Git:** retirar, con un cambio acotado, `npm run worktree` y `scripts/worktree.mjs` para que las herramientas coincidan con la política.
+- **Firebase real:** revisar la configuración del proyecto `c3-platform-demo` (Web App, Auth, reglas, índices y variables de Vercel). Sin cambios remotos sin autorización.
+- **Claim `c3Admin`:** confirmar el procedimiento de asignación, revocación y auditoría, y los controles operativos para el piloto.
 
 ## Privacidad, legal y datos reales
 
-- Acordar y validar aviso de privacidad, términos, tratamiento de menores, permisos de imagen/nombre y propiedad intelectual de soluciones, con asesoría local cuando corresponda.
-- Aprobar retención, anonimización y eliminación de cuentas sin borrar evidencia oficial indebidamente.
-- Revisar anti-spam, privacidad y retención del formulario público de propuestas; no debilitar validaciones del servidor.
-- No migrar datos personales de Copa 2026 o Hackathon de Turismo Creativo sin inventario de fuentes, consentimiento/base legal y plan de migración autorizado.
-- Evaluar y validar con emuladores casos de permisos negativos y revocaciones: participación ajena, empresa sin vínculo, jurado revocado, resultado no publicado.
+- Aviso de privacidad, términos, tratamiento de menores, permisos de imagen y nombre, y propiedad intelectual de las soluciones, con asesoría local.
+- Retención, anonimización y eliminación de cuentas sin borrar evidencia oficial indebidamente.
+- Canal de contacto real tras la aceptación (hoy simulado) y su retención.
+- Anti-spam, privacidad y retención del formulario público de propuestas; no debilitar las validaciones del servidor.
+- No migrar datos personales de Copa 2026 ni del Hackathon de Turismo Creativo sin inventario de fuentes, base legal y plan autorizado.
+- Casos negativos de permisos y revocaciones en emulador: participación ajena, empresa sin vínculo, jurado revocado, resultado no publicado.
 
-## Piloto y funcionalidades deliberadamente fuera de alcance
+## Piloto y fuera de alcance
 
 - Definir empresa, challenge, responsables, audiencia, fechas, métricas, soporte y criterios de éxito del piloto.
-- La respuesta de empresa a propuestas que requieren ajustes se gestiona por correo; un flujo interno no está implementado.
-- Comentarios de jurados, filtros avanzados, automatizaciones y eliminación de cuenta requieren decisiones independientes.
-- La «Bitácora de producto y especificaciones del MVP v2.2» citada por el paquete de diseño no figura en este repositorio. Localizarla o formalizar reglas de producto verificadas; nunca suponer contenido.
+- La respuesta de la empresa a ajustes pedidos en una propuesta se gestiona por correo; no hay flujo interno.
+- Filtros avanzados, automatizaciones y eliminación de cuenta requieren decisiones independientes.
+- La «Bitácora de producto y especificaciones del MVP v2.2» que cita el paquete de diseño no está en el repositorio: localizarla o formalizar reglas verificadas; nunca suponer su contenido.
 
-## Seguimiento
-
-Por cada decisión registrar en su PR o issue: responsable, alcance acordado, criterio de aceptación y prueba. Si no hay decisión, mantenerla aquí sin presentarla como funcionalidad completada.
+Por cada decisión, registrar en su PR o issue: responsable, alcance, criterio de aceptación y prueba. Sin decisión, el asunto se queda aquí y no se presenta como funcionalidad completada.
