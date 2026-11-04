@@ -20,6 +20,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <a href="#contenido" className="c3-saltar">Saltar al contenido</a>
+        {process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === "c3-platform-demo" ? (
+          <div role="note" style={{ background: "var(--c3-advertencia)", color: "#111111", fontSize: 13, fontWeight: 600, textAlign: "center", padding: "6px 16px" }}>
+            Entorno de demostración: datos inventados, sin cobros ni contratos, y sin envío de correos.
+          </div>
+        ) : null}
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
