@@ -7,10 +7,11 @@ import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
 import { commercialPackageOf, formatUsd } from "@/lib/domain/commercial";
-import { formatDateTime, formatDeadline } from "@/lib/domain/format";
+import { formatDeadline } from "@/lib/domain/format";
 import { evaluationHref } from "@/lib/domain/navigation";
 import { proposalNextStep, proposalPresentation } from "@/lib/domain/proposals";
 import type { CompanySpace } from "@/lib/server/companies";
+import { ConfiguracionChallenge } from "./ConfiguracionChallenge";
 import { TalentoPanel } from "./TalentoPanel";
 
 /** V09 · Espacio de empresa. Solo muestra las organizaciones vinculadas a la persona autenticada. */
@@ -28,6 +29,7 @@ function EmpresaContenido() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string>("");
   const [talentoId, setTalentoId] = useState<string | null>(null);
+  const [configId, setConfigId] = useState<string | null>(null);
   const signedIn = session.status === "signed-in";
 
   // Carga del espacio al entrar; las actualizaciones ocurren en la respuesta.
@@ -49,6 +51,14 @@ function EmpresaContenido() {
       active = false;
     };
   }, [signedIn]);
+
+  // Al abrir una sección de trabajo, se lleva la vista hasta ella.
+  useEffect(() => {
+    const target = talentoId ? "talento-seccion" : configId ? "configuracion-seccion" : null;
+    if (!target) return;
+    const reducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(target)?.scrollIntoView({ behavior: reducido ? "auto" : "smooth", block: "start" });
+  }, [talentoId, configId]);
 
   if (session.status !== "signed-in") return null;
 
@@ -115,7 +125,18 @@ function EmpresaContenido() {
           Talento
         </button>
         <a href="#tus-propuestas" className="c3-btn c3-btn--contorno" style={{ minHeight: 40, padding: "0 16px" }}>Propuestas</a>
-        <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Configuración del challenge: próximamente</span>
+        <button
+          type="button"
+          className="c3-btn c3-btn--contorno"
+          style={{ minHeight: 40, padding: "0 16px" }}
+          disabled={challenges.length === 0}
+          onClick={() => {
+            setTalentoId(null);
+            setConfigId(challenges[0]?.id ?? null);
+          }}
+        >
+          Configuración
+        </button>
       </nav>
 
       <section id="tus-challenges" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -126,98 +147,99 @@ function EmpresaContenido() {
             <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Cuando C3 publique uno de tus problemas, aparece aquí.</span>
           </div>
         ) : (
-          <div className="c3-grilla-tarjetas">
-            {challenges.map((challenge) => (
-              <article key={challenge.id} className="c3-card" style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                <div style={{ height: 6, background: "var(--c3-conecta)" }} />
-                <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <div className="c3-res-tarjetas">
+            {challenges.map((challenge) => {
+              const pack = commercialPackageOf(challenge.commercialPackage);
+              const hasSubmissions = challenge.submissions.length > 0;
+              return (
+                <article key={challenge.id} className="c3-res-tarjeta" data-activa={talentoId === challenge.id || configId === challenge.id} aria-label={challenge.title}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Challenge empresarial</span>
                     <StatePill state={challenge.state} />
                   </div>
-                  {challenge.isDemo ? <span className="c3-etiqueta" style={{ color: "var(--c3-advertencia)" }}>DEMO · datos demostrativos</span> : null}
-                  {commercialPackageOf(challenge.commercialPackage) ? (
-                    <span style={{ fontSize: 13, color: "var(--c3-texto-suave)" }}>
-                      Paquete de referencia: {commercialPackageOf(challenge.commercialPackage)?.label} · {formatUsd(commercialPackageOf(challenge.commercialPackage)?.referenceFeeUsd ?? 0)} · simulación, sin cobro
-                    </span>
-                  ) : null}
-                  {challenge.submissionClosesAt ? (
-                    <span style={{ fontSize: 13, color: "var(--c3-texto-suave)" }}>Próximo hito: cierre de entregas el {formatDeadline(challenge.submissionClosesAt) ?? ""}</span>
-                  ) : null}
-                  <span className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{challenge.title}</span>
-                  <dl aria-label="Cifras del challenge" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 8, margin: 0 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <h3 className="c3-titulo" style={{ fontSize: 20, lineHeight: 1.3, fontWeight: 600 }}>{challenge.title}</h3>
+                    {challenge.isDemo ? <span className="c3-etiqueta" style={{ color: "var(--c3-advertencia)" }}>DEMO · datos demostrativos</span> : null}
+                  </div>
+                  <dl aria-label="Cifras del challenge" className="c3-res-kpis">
                     {[
                       ["Inscritas", challenge.metrics.enrolled],
                       ["Entregas recibidas", challenge.metrics.submitted],
                       ["En evaluación", challenge.metrics.evaluating],
                       ["Perfiles de interés", challenge.metrics.shortlisted],
                     ].map(([label, value]) => (
-                      <div key={label} style={{ background: "var(--c3-superficie-sutil)", borderRadius: 8, padding: "8px 10px" }}>
-                        <dt style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>{label}</dt>
-                        <dd style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>{value}</dd>
+                      <div key={label} className="c3-res-kpi">
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
                       </div>
                     ))}
                   </dl>
-                  <div style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--c3-borde)", display: "flex", flexDirection: "column", gap: 10 }}>
-                    <span style={{ fontSize: 14 }}>
-                      {challenge.submissions.length === 0 ? "Todavía no hay soluciones enviadas" : `${challenge.submissions.length} ${challenge.submissions.length === 1 ? "solución recibida" : "soluciones recibidas"}`}
-                    </span>
-                    {challenge.submissions.length > 0 ? (
-                      challenge.evaluation.assigned ? (
-                        <Link href={evaluationHref(challenge.id)} className="c3-btn c3-btn--primario">Evaluar soluciones</Link>
-                      ) : (
-                        <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>Para evaluar, C3 te asigna como jurado de este challenge.</span>
-                      )
-                    ) : null}
-                    {challenge.submissions.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 13, color: "var(--c3-texto-suave)" }}>
+                    {challenge.submissionClosesAt ? <span>Próximo hito: cierre de entregas el {formatDeadline(challenge.submissionClosesAt) ?? ""}</span> : null}
+                    {pack ? <span>Paquete de referencia: {pack.label} · {formatUsd(pack.referenceFeeUsd)} · simulación, sin cobro</span> : null}
+                    <span>{hasSubmissions ? `${challenge.submissions.length} ${challenge.submissions.length === 1 ? "solución recibida" : "soluciones recibidas"}` : "Todavía no hay soluciones enviadas"}</span>
+                  </div>
+                  <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+                    {hasSubmissions ? (
                       <button
                         type="button"
-                        className="c3-btn c3-btn--contorno"
+                        className="c3-btn c3-btn--primario"
                         aria-expanded={talentoId === challenge.id}
-                        onClick={() => setTalentoId(talentoId === challenge.id ? null : challenge.id)}
+                        onClick={() => {
+                          setConfigId(null);
+                          setTalentoId(talentoId === challenge.id ? null : challenge.id);
+                        }}
                       >
                         {talentoId === challenge.id ? "Ocultar talento" : "Ver talento y lista corta"}
                       </button>
                     ) : null}
-                    {challenge.submissions.map((solution) => (
-                      <div key={solution.id} style={{ background: "var(--c3-superficie-sutil)", borderRadius: 8, padding: 12, display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600 }}>
-                          {solution.name ?? "Sin nombre"} · {solution.mode === "team" ? "Equipo" : "Individual"}
-                        </span>
-                        <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>
-                          Enviada {formatDateTime(solution.submittedAt) ?? ""}
-                        </span>
-                        <p style={{ fontSize: 14, lineHeight: 1.5 }}>{solution.text}</p>
-                        {solution.links.map((link) => (
-                          <a key={link} href={link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 500, wordBreak: "break-all" }}>{link}</a>
-                        ))}
-                      </div>
-                    ))}
+                    {hasSubmissions ? (
+                      challenge.evaluation.assigned ? (
+                        <Link href={evaluationHref(challenge.id)} className="c3-btn c3-btn--contorno">Evaluar soluciones</Link>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>Para evaluar, C3 te asigna como jurado de este challenge.</span>
+                      )
+                    ) : null}
+                    <button
+                      type="button"
+                      className="c3-btn c3-btn--contorno"
+                      aria-expanded={configId === challenge.id}
+                      onClick={() => {
+                        setTalentoId(null);
+                        setConfigId(configId === challenge.id ? null : challenge.id);
+                      }}
+                    >
+                      {configId === challenge.id ? "Cerrar configuración" : "Configurar challenge"}
+                    </button>
                   </div>
-                </div>
-                {challenge.results ? (
-                  <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 6 }}>
-                    <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Resultado publicado</span>
-                    {challenge.results.rows.map((row) => (
-                      <span key={row.label} style={{ fontSize: 14 }}>
-                        {row.label}: {row.recognition ?? "sin reconocimiento"}{row.average !== null ? ` · promedio ${row.average.toFixed(1)}` : ""}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
 
       {talentoId ? (
-        <section style={{ display: "flex", flexDirection: "column", gap: 16 }} aria-labelledby="talento-titulo">
-          <h2 id="talento-titulo" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Talento del challenge</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-            Compará entregable, proceso y defensa. Agregá a la lista corta a quienes destacan y pedí contacto: la persona decide si acepta.
-          </p>
+        <section id="talento-seccion" style={{ display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: 16 }} aria-labelledby="talento-titulo">
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <h2 id="talento-titulo" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Resultados y talento</h2>
+            <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
+              {challenges.find((item) => item.id === talentoId)?.title}. Compará entregable, proceso y defensa. Agregá a la lista corta a quienes destacan y pedí contacto: la persona decide si acepta.
+            </p>
+          </div>
           <TalentoPanel challengeId={talentoId} />
+        </section>
+      ) : null}
+
+      {configId ? (
+        <section id="configuracion-seccion" style={{ display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: 16 }} aria-labelledby="configuracion-titulo">
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <h2 id="configuracion-titulo" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Configuración del challenge</h2>
+            <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
+              {challenges.find((item) => item.id === configId)?.title}. La editan quien representa a la empresa y C3, mientras el challenge está publicado y antes del cierre de entregas.
+            </p>
+          </div>
+          <ConfiguracionChallenge challengeId={configId} />
         </section>
       ) : null}
 

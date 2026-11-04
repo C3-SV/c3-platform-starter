@@ -2483,3 +2483,219 @@ textarea.c3-campo {
   flex-direction: column;
   gap: 8px;
 }
+
+/* ── Espacio de empresa: selector de challenges y exploración de resultados ───────────────────── */
+.c3-res-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+  gap: 16px;
+}
+
+.c3-res-tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  background: var(--c3-superficie);
+  border: 1px solid var(--c3-borde);
+  border-radius: 16px;
+  border-top: 5px solid var(--c3-conecta);
+}
+
+.c3-res-tarjeta[data-activa="true"] {
+  border-color: var(--c3-accion);
+  box-shadow: 0 0 0 2px var(--c3-accion);
+}
+
+.c3-res-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.c3-res-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  background: var(--c3-superficie-sutil);
+  border-radius: 12px;
+}
+
+.c3-res-kpi dt {
+  font-size: 12px;
+  color: var(--c3-texto-suave);
+}
+
+.c3-res-kpi dd {
+  margin: 0;
+  font-family: var(--c3-font-titulo);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.c3-res-herramientas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.c3-res-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.c3-res-filtro {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--c3-borde-fuerte);
+  border-radius: 999px;
+  background: var(--c3-superficie);
+  color: var(--c3-texto);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.c3-res-filtro[aria-pressed="true"] {
+  background: var(--c3-accion);
+  border-color: var(--c3-accion);
+  color: var(--c3-texto-inverso);
+}
+
+.c3-res-envoltura {
+  overflow-x: auto;
+  background: var(--c3-superficie);
+  border: 1px solid var(--c3-borde);
+  border-radius: 16px;
+}
+
+.c3-res-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.c3-res-tabla caption {
+  padding: 14px 16px 4px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--c3-texto-suave);
+}
+
+.c3-res-tabla th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c3-texto-suave);
+  background: var(--c3-superficie-sutil);
+  white-space: nowrap;
+}
+
+.c3-res-tabla td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--c3-borde);
+  vertical-align: middle;
+}
+
+.c3-res-tabla tr[data-abierta="true"] td {
+  background: var(--c3-superficie-sutil);
+}
+
+.c3-res-nombre {
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c3-accion);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.c3-res-barra {
+  display: block;
+  height: 8px;
+  min-width: 90px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--c3-borde);
+}
+
+.c3-res-barra > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--c3-conecta);
+}
+
+.c3-res-calor {
+  min-width: 64px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.c3-res-ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.c3-res-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--c3-superficie-sutil);
+  border-radius: 12px;
+}
+
+.c3-res-bloque > summary {
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.c3-res-bloque > summary small {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--c3-texto-suave);
+}
+
+.c3-res-decision {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: var(--c3-superficie);
+  border: 1px solid var(--c3-borde);
+  border-radius: 12px;
+}
+
+@media (max-width: 899px) {
+  .c3-res-ficha {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .c3-res-oculta-movil {
+    display: none;
+  }
+}
