@@ -1,0 +1,446 @@
+/**
+ * Talento para empresas (E4–E9): tablero de entregas, lista corta, solicitud de contacto con consentimiento
+ * y defensa de la entrega. Las reglas puras viven en domain/contact.ts y domain/defense.ts.
+ * La empresa solo ve su propia organización; la persona solo ve sus solicitudes y su defensa.
+ * Ninguna vista expone el correo ni otros datos de contacto: el canal de contacto sigue pendiente de decisión.
+ */
+import type { DocumentData, Firestore } from "firebase-admin/firestore";
+import type { CommercialPackageId } from "../domain/commercial.ts";
+import {
+  ACTIVE_CONTACT_STATUSES,
+  canTransitionContact,
+  contactEligibilityIssue,
+  contactStatePresentation,
+  nextContactStatus,
+  parseContactMessage,
+  parseShortlistReason,
+  type ContactActor,
+  type ContactStatus,
+} from "../domain/contact.ts";
+import { canRecordDefense, parseDefenseInput, type DefenseInput } from "../domain/defense.ts";
+import type { PresentedState } from "../domain/presentation.ts";
+import type { Challenge } from "../domain/types.ts";
+import { ValidationFailure } from "../domain/validation.ts";
+import { recordAudit } from "./audit.ts";
+import type { Actor } from "./auth.ts";
+import { CHALLENGES, ORGANIZATIONS, loadChallenge, loadExperience } from "./catalog.ts";
+import { ORGANIZATION_MEMBERS } from "./companies.ts";
+import { HttpError, notFound } from "./errors.ts";
+import {
+  CONTACT_REQUESTS,
+  DEFENSES,
+  ENROLLMENTS,
+  SHORTLISTS,
+  SUBMISSIONS,
+  TEAMS,
+  TEAM_MEMBERSHIPS,
+  USERS,
+  contactRequestDocId,
+  enrollmentDocId,
+  membershipDocId,
+  participationDocId,
+  teamParticipationDocId,
+} from "./ids.ts";
+
+export interface DefenseView extends DefenseInput {
+  submissionId: string;
+  updatedAt: string;
+}
+
+export interface ContactView {
+  id: string;
+  status: ContactStatus;
+  state: PresentedState;
+  message: string | null;
+  updatedAt: string;
+}
+
+export interface TalentRow {
+  submissionId: string;
+  mode: "individual" | "team";
+  /** Solo en entregas individuales: el contacto se solicita a una persona concreta. */
+  userId: string | null;
+  name: string | null;
+  submittedAt: string | null;
+  text: string;
+  links: string[];
+  defense: DefenseView | null;
+  shortlist: { reason: string; addedAt: string } | null;
+  contact: ContactView | null;
+  /** Ya se puede pedir contacto: lista corta, inscripción aprobada, entrega individual y sin solicitud activa. */
+  canRequestContact: boolean;
+}
+
+export interface TalentBoard {
+  challenge: {
+    id: string;
+    title: string;
+    organizationId: string | null;
+    status: string;
+    isDemo: boolean;
+    commercialPackage: CommercialPackageId | null;
+  };
+  rows: TalentRow[];
+}
+
+export interface ContactForMe {
+  id: string;
+  challengeId: string;
+  challengeTitle: string;
+  organizationName: string;
+  status: ContactStatus;
+  state: PresentedState;
+  message: string | null;
+  updatedAt: string;
+  /** Acciones que la persona puede tomar ahora sobre esta solicitud. */
+  actions: ContactStatus[];
+}
+
+type Raw = Record<string, unknown>;
+const PARTICIPANT_ACTIONS: readonly ContactStatus[] = ["aceptado", "declinado", "revocado"];
+const COMPANY_ACTIONS: readonly ContactStatus[] = ["contactado", "seguimiento"];
+
+function asObject(raw: unknown): Raw {
+  return typeof raw === "object" && raw !== null && !Array.isArray(raw) ? (raw as Raw) : {};
+}
+
+function forbidden(message: string): HttpError {
+  return new HttpError(403, "sin_permiso", message);
+}
+
+/** Organización del challenge. Solo admin y representantes vinculadas por C3 pasan. Los borradores no existen para la empresa. */
+async function requireCompanyChallenge(db: Firestore, actor: Actor, challengeId: string): Promise<Challenge & { organizationId: string | null }> {
+  const challenge = await loadChallenge(db, challengeId);
+  const raw = (await db.collection(CHALLENGES).doc(challengeId).get()).data() as DocumentData;
+  const organizationId = typeof raw.organizationId === "string" ? raw.organizationId : null;
+  if (challenge.status === "draft" && !actor.isAdmin) throw notFound();
+  if (!actor.isAdmin) await requireOrganizationMember(db, actor, organizationId);
+  return { ...challenge, organizationId };
+}
+
+async function requireOrganizationMember(db: Firestore, actor: Actor, organizationId: string | null): Promise<void> {
+  if (!organizationId) throw forbidden("Este challenge no tiene una empresa vinculada.");
+  const membership = await db.collection(ORGANIZATION_MEMBERS).doc(`${organizationId}__${actor.uid}`).get();
+  if (!membership.exists) throw forbidden("Solo la representante de la empresa de este challenge puede hacer esto.");
+}
+
+async function displayNamesOf(db: Firestore, userIds: string[]): Promise<Map<string, string | null>> {
+  const unique = [...new Set(userIds)];
+  const snapshots = await Promise.all(unique.map((uid) => db.collection(USERS).doc(uid).get()));
+  return new Map(unique.map((uid, index) => [uid, (snapshots[index].data()?.displayName as string | undefined) ?? null]));
+}
+
+async function teamNamesOf(db: Firestore, teamIds: string[]): Promise<Map<string, string | null>> {
+  const unique = [...new Set(teamIds)];
+  const snapshots = await Promise.all(unique.map((id) => db.collection(TEAMS).doc(id).get()));
+  return new Map(unique.map((id, index) => [id, (snapshots[index].data()?.name as string | undefined) ?? null]));
+}
+
+function defenseOf(submissionId: string, data: DocumentData): DefenseView {
+  return {
+    submissionId,
+    videoUrl: data.videoUrl ?? null,
+    summary: data.summary,
+    decisions: data.decisions,
+    testing: data.testing ?? null,
+    tradeoffs: data.tradeoffs ?? null,
+    aiUse: data.aiUse ?? null,
+    updatedAt: data.updatedAt,
+  };
+}
+
+function contactViewOf(id: string, data: DocumentData): ContactView {
+  const status = data.status as ContactStatus;
+  return {
+    id,
+    status,
+    state: contactStatePresentation(status, "company"),
+    message: data.message ?? null,
+    updatedAt: data.updatedAt,
+  };
+}
+
+/** Tablero de entregas enviadas del challenge para la empresa: entregables, defensa, lista corta y contacto. */
+export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: string): Promise<TalentBoard> {
+  const challenge = await requireCompanyChallenge(db, actor, challengeId);
+  const [submissions, defenses, shortlist, requests, enrollments] = await Promise.all([
+    db.collection(SUBMISSIONS).where("challengeId", "==", challengeId).where("status", "==", "submitted").get(),
+    db.collection(DEFENSES).where("challengeId", "==", challengeId).get(),
+    db.collection(SHORTLISTS).where("challengeId", "==", challengeId).get(),
+    db.collection(CONTACT_REQUESTS).where("challengeId", "==", challengeId).get(),
+    db.collection(ENROLLMENTS).where("challengeId", "==", challengeId).where("status", "==", "approved").get(),
+  ]);
+
+  const defenseById = new Map(defenses.docs.map((doc) => [doc.id, defenseOf(doc.id, doc.data())]));
+  const shortlistById = new Map(shortlist.docs.map((doc) => [doc.id, doc.data()]));
+  const requestByUser = new Map(requests.docs.map((doc) => [doc.data().userId as string, { id: doc.id, data: doc.data() }]));
+  const approvedUsers = new Set(enrollments.docs.map((doc) => doc.data().userId as string));
+
+  const individualUserIds = submissions.docs.filter((doc) => doc.data().mode !== "team").map((doc) => doc.data().userId as string);
+  const teamIds = submissions.docs.filter((doc) => doc.data().mode === "team").map((doc) => doc.id.split("__team__")[1]);
+  const [names, teamNames] = await Promise.all([displayNamesOf(db, individualUserIds), teamNamesOf(db, teamIds)]);
+
+  const rows: TalentRow[] = submissions.docs.map((doc) => {
+    const data = doc.data();
+    const isTeam = data.mode === "team";
+    const userId = isTeam ? null : (data.userId as string);
+    const request = userId ? requestByUser.get(userId) : undefined;
+    const entry = shortlistById.get(doc.id);
+    const hasActiveRequest = request ? ACTIVE_CONTACT_STATUSES.includes(request.data.status as ContactStatus) : false;
+    return {
+      submissionId: doc.id,
+      mode: isTeam ? "team" : "individual",
+      userId,
+      name: isTeam ? (teamNames.get(doc.id.split("__team__")[1]) ?? null) : (names.get(userId as string) ?? null),
+      submittedAt: data.submittedAt ?? null,
+      text: data.text ?? "",
+      links: data.links ?? [],
+      defense: defenseById.get(doc.id) ?? null,
+      shortlist: entry ? { reason: entry.reason, addedAt: entry.createdAt } : null,
+      contact: request && userId ? contactViewOf(request.id, request.data) : null,
+      canRequestContact: contactEligibilityIssue({
+        isLinkedRepresentative: true,
+        hasShortlistEntry: Boolean(entry),
+        hasApprovedEnrollment: Boolean(userId && approvedUsers.has(userId)),
+        hasActiveRequest,
+      }) === null && !request,
+    };
+  });
+
+  const experience = await loadExperience(db, challenge.experienceId);
+  return {
+    challenge: {
+      id: challenge.id,
+      title: challenge.title,
+      organizationId: challenge.organizationId,
+      status: challenge.status,
+      isDemo: experience.isDemo === true,
+      commercialPackage: challenge.commercialPackage ?? null,
+    },
+    rows: rows.sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? "")),
+  };
+}
+
+/** Solo una entrega enviada del challenge puede entrar a la lista corta. */
+async function submittedSubmissionOf(db: Firestore, challengeId: string, submissionId: string): Promise<DocumentData> {
+  const snapshot = await db.collection(SUBMISSIONS).doc(submissionId).get();
+  const data = snapshot.data();
+  if (!snapshot.exists || !data || data.challengeId !== challengeId || data.status !== "submitted") {
+    throw notFound("La entrega no existe o todavía no fue enviada en este challenge.");
+  }
+  return data;
+}
+
+function submissionIdOf(body: Raw): string {
+  const value = typeof body.submissionId === "string" ? body.submissionId.trim() : "";
+  if (!value) throw new ValidationFailure([{ field: "submissionId", message: "Elegí una entrega enviada." }]);
+  return value;
+}
+
+export async function addToShortlist(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<void> {
+  const challenge = await requireCompanyChallenge(db, actor, challengeId);
+  const body = asObject(rawBody);
+  const submissionId = submissionIdOf(body);
+  const reason = parseShortlistReason(body.reason);
+  const submission = await submittedSubmissionOf(db, challengeId, submissionId);
+
+  const ref = db.collection(SHORTLISTS).doc(submissionId);
+  const batch = db.batch();
+  batch.set(ref, {
+    organizationId: challenge.organizationId,
+    challengeId,
+    submissionId,
+    userId: submission.mode === "team" ? null : submission.userId,
+    reason,
+    addedByUserId: actor.uid,
+    createdAt: now.toISOString(),
+  });
+  recordAudit(db, batch, actor, now, { action: "lista_corta.agregar", target: { type: "submission", id: submissionId }, details: { challengeId } });
+  await batch.commit();
+}
+
+export async function removeFromShortlist(db: Firestore, actor: Actor, challengeId: string, submissionId: string, now: Date): Promise<void> {
+  await requireCompanyChallenge(db, actor, challengeId);
+  const ref = db.collection(SHORTLISTS).doc(submissionId);
+  const entry = (await ref.get()).data();
+  if (!entry || entry.challengeId !== challengeId) throw notFound("Esa entrega no está en la lista corta de este challenge.");
+  const submission = (await db.collection(SUBMISSIONS).doc(submissionId).get()).data();
+  const userId = submission?.mode === "team" ? null : (submission?.userId as string | undefined) ?? null;
+  if (userId) {
+    const request = (await db.collection(CONTACT_REQUESTS).doc(contactRequestDocId(challengeId, userId)).get()).data();
+    if (request && ACTIVE_CONTACT_STATUSES.includes(request.status as ContactStatus)) {
+      throw new HttpError(409, "solicitud_activa", "Cerrá la solicitud de contacto antes de quitar a la persona de la lista corta.");
+    }
+  }
+  const batch = db.batch();
+  batch.delete(ref);
+  recordAudit(db, batch, actor, now, { action: "lista_corta.quitar", target: { type: "submission", id: submissionId }, details: { challengeId } });
+  await batch.commit();
+}
+
+/**
+ * Solicitud de contacto. Requiere: entrega individual, lista corta, inscripción aprobada en el challenge
+ * y ninguna solicitud activa. La persona decide después (consentimiento); nada se envía por correo.
+ */
+export async function requestContact(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<ContactView> {
+  const challenge = await requireCompanyChallenge(db, actor, challengeId);
+  const body = asObject(rawBody);
+  const submissionId = submissionIdOf(body);
+  const message = parseContactMessage(body.message);
+  const submission = await submittedSubmissionOf(db, challengeId, submissionId);
+  if (submission.mode === "team") {
+    throw new HttpError(409, "contacto_individual", "Por ahora el contacto se solicita a personas de entregas individuales. El flujo para equipos aún no está definido.");
+  }
+  const userId = submission.userId as string;
+
+  const [shortlistEntry, enrollment, existing] = await Promise.all([
+    db.collection(SHORTLISTS).doc(submissionId).get(),
+    db.collection(ENROLLMENTS).doc(enrollmentDocId(challenge.experienceId, userId)).get(),
+    db.collection(CONTACT_REQUESTS).doc(contactRequestDocId(challengeId, userId)).get(),
+  ]);
+  const issue = contactEligibilityIssue({
+    isLinkedRepresentative: true,
+    hasShortlistEntry: shortlistEntry.exists,
+    hasApprovedEnrollment: enrollment.data()?.status === "approved",
+    hasActiveRequest: existing.exists && ACTIVE_CONTACT_STATUSES.includes(existing.data()?.status as ContactStatus),
+  });
+  // Declinada o revocada son respuestas finales: no se vuelve a pedir contacto ni se reemplaza la solicitud cerrada.
+  if (existing.exists && !ACTIVE_CONTACT_STATUSES.includes(existing.data()?.status as ContactStatus)) {
+    throw new HttpError(409, "contacto_cerrado", "La persona ya respondió a una solicitud anterior: declinó o revocó el permiso. No se vuelve a pedir contacto.");
+  }
+  if (issue) throw new HttpError(409, "contacto_no_disponible", issue);
+
+  const id = contactRequestDocId(challengeId, userId);
+  const stamp = now.toISOString();
+  const status = nextContactStatus(null, "company", "esperando_consentimiento");
+  const data = {
+    organizationId: challenge.organizationId,
+    challengeId,
+    userId,
+    status,
+    message,
+    requestedByUserId: actor.uid,
+    lastChangedBy: "company" satisfies ContactActor,
+    createdAt: stamp,
+    updatedAt: stamp,
+  };
+  const batch = db.batch();
+  batch.set(db.collection(CONTACT_REQUESTS).doc(id), data);
+  recordAudit(db, batch, actor, now, { action: "contacto.solicitar", target: { type: "contactRequest", id }, details: { challengeId } });
+  await batch.commit();
+  return contactViewOf(id, data);
+}
+
+/** La persona acepta, declina o revoca. Solo sobre sus propias solicitudes; una ajena responde como inexistente. */
+export async function answerContactRequest(db: Firestore, actor: Actor, requestId: string, rawBody: unknown, now: Date): Promise<ContactView> {
+  const ref = db.collection(CONTACT_REQUESTS).doc(requestId);
+  const snapshot = await ref.get();
+  const data = snapshot.data();
+  if (!snapshot.exists || !data || data.userId !== actor.uid) throw notFound("No encontramos esa solicitud.");
+  const body = asObject(rawBody);
+  if (typeof body.to !== "string" || !PARTICIPANT_ACTIONS.includes(body.to as ContactStatus)) {
+    throw new ValidationFailure([{ field: "to", message: "Elegí aceptar, declinar o revocar el permiso." }]);
+  }
+  const next = nextContactStatus(data.status as ContactStatus, "participant", body.to as ContactStatus);
+  const stamp = now.toISOString();
+  const batch = db.batch();
+  batch.update(ref, { status: next, lastChangedBy: "participant", updatedAt: stamp });
+  recordAudit(db, batch, actor, now, { action: `contacto.${next}`, target: { type: "contactRequest", id: requestId } });
+  await batch.commit();
+  return contactViewOf(requestId, { ...data, status: next, updatedAt: stamp });
+}
+
+/** La empresa registra contacto o seguimiento tras la aceptación. No implica contratación. */
+export async function advanceContactRequest(db: Firestore, actor: Actor, requestId: string, rawBody: unknown, now: Date): Promise<ContactView> {
+  const ref = db.collection(CONTACT_REQUESTS).doc(requestId);
+  const snapshot = await ref.get();
+  const data = snapshot.data();
+  if (!snapshot.exists || !data) throw notFound("No encontramos esa solicitud.");
+  if (!actor.isAdmin) await requireOrganizationMember(db, actor, (data.organizationId as string | null) ?? null);
+  const body = asObject(rawBody);
+  if (typeof body.to !== "string" || !COMPANY_ACTIONS.includes(body.to as ContactStatus)) {
+    throw new ValidationFailure([{ field: "to", message: "Elegí registrar el contacto o el seguimiento." }]);
+  }
+  if (!canTransitionContact(data.status as ContactStatus, "company", body.to as ContactStatus)) {
+    throw new ValidationFailure([{ field: "to", message: "Esa acción no está disponible para el estado actual de la solicitud." }]);
+  }
+  const next = body.to as ContactStatus;
+  const stamp = now.toISOString();
+  const batch = db.batch();
+  batch.update(ref, { status: next, lastChangedBy: "company", updatedAt: stamp });
+  recordAudit(db, batch, actor, now, { action: `contacto.${next}`, target: { type: "contactRequest", id: requestId } });
+  await batch.commit();
+  return contactViewOf(requestId, { ...data, status: next, updatedAt: stamp });
+}
+
+/** Solicitudes que la persona recibió, con las acciones que puede tomar. Nunca datos de la empresa más allá del nombre. */
+export async function listMyContactRequests(db: Firestore, actor: Actor): Promise<ContactForMe[]> {
+  const snapshot = await db.collection(CONTACT_REQUESTS).where("userId", "==", actor.uid).get();
+  const rows = await Promise.all(snapshot.docs.map(async (doc) => {
+    const data = doc.data();
+    const status = data.status as ContactStatus;
+    const challenge = (await db.collection(CHALLENGES).doc(data.challengeId).get()).data();
+    const organization = data.organizationId ? (await db.collection(ORGANIZATIONS).doc(data.organizationId).get()).data() : undefined;
+    const candidates = [...PARTICIPANT_ACTIONS];
+    return {
+      id: doc.id,
+      challengeId: data.challengeId as string,
+      challengeTitle: (challenge?.title as string | undefined) ?? "Challenge",
+      organizationName: (organization?.name as string | undefined) ?? "Empresa",
+      status,
+      state: contactStatePresentation(status, "participant"),
+      message: (data.message as string | null) ?? null,
+      updatedAt: data.updatedAt as string,
+      actions: candidates.filter((to) => canTransitionContact(status, "participant", to)),
+    };
+  }));
+  return rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+/** Entrega propia de la persona en el challenge: la submission individual, o la del equipo si ella es integrante. */
+async function ownSubmissionOf(db: Firestore, actor: Actor, challengeId: string): Promise<{ submissionId: string; isLeader: boolean } | null> {
+  const challenge = await loadChallenge(db, challengeId);
+  if (challenge.status !== "published") throw notFound();
+  const experience = await loadExperience(db, challenge.experienceId);
+  const enrollment = (await db.collection(ENROLLMENTS).doc(enrollmentDocId(experience.id, actor.uid)).get()).data();
+  if (!enrollment || enrollment.status !== "approved" || enrollment.challengeId !== challengeId) return null;
+  if (enrollment.mode !== "team") return { submissionId: participationDocId(challengeId, actor.uid), isLeader: true };
+  const membership = (await db.collection(TEAM_MEMBERSHIPS).doc(membershipDocId(experience.id, actor.uid)).get()).data();
+  if (!membership?.teamId) return null;
+  const team = (await db.collection(TEAMS).doc(membership.teamId).get()).data();
+  return { submissionId: teamParticipationDocId(challengeId, membership.teamId), isLeader: team?.leaderUserId === actor.uid };
+}
+
+export async function getMyDefense(db: Firestore, actor: Actor, challengeId: string): Promise<DefenseView | null> {
+  const own = await ownSubmissionOf(db, actor, challengeId);
+  if (!own) return null;
+  const snapshot = await db.collection(DEFENSES).doc(own.submissionId).get();
+  return snapshot.exists ? defenseOf(own.submissionId, snapshot.data() as DocumentData) : null;
+}
+
+/** Registra o actualiza la defensa de mi entrega enviada. En equipo, solo la líder. */
+export async function saveDefense(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<DefenseView> {
+  const own = await ownSubmissionOf(db, actor, challengeId);
+  if (!own) throw forbidden("Tu inscripción todavía no está aprobada para este challenge.");
+  if (!own.isLeader) throw new HttpError(403, "solo_lider", "Solo la líder del equipo registra la defensa.");
+  const submission = (await db.collection(SUBMISSIONS).doc(own.submissionId).get()).data();
+  if (!canRecordDefense(submission?.status ?? null)) {
+    throw new HttpError(409, "entrega_no_enviada", "Enviá tu entrega antes de registrar la defensa.");
+  }
+  const input = parseDefenseInput(rawBody);
+  const ref = db.collection(DEFENSES).doc(own.submissionId);
+  const existing = (await ref.get()).data();
+  const stamp = now.toISOString();
+  const data = {
+    challengeId,
+    userId: actor.uid,
+    ...input,
+    createdAt: existing?.createdAt ?? stamp,
+    updatedAt: stamp,
+  };
+  const batch = db.batch();
+  batch.set(ref, data);
+  recordAudit(db, batch, actor, now, { action: "defensa.registrar", target: { type: "submission", id: own.submissionId }, details: { challengeId } });
+  await batch.commit();
+  return defenseOf(own.submissionId, data);
+}

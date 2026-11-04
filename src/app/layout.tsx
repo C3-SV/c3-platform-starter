@@ -5,8 +5,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   // Cada página aporta su propio título; la plantilla agrega el nombre del producto para distinguir pestañas e historial.
-  title: { default: "C3 Platform", template: "%s · C3 Platform" },
-  description: "Compite. Crea. Conecta. Challenges reales de empresas y competencias técnicas para jóvenes.",
+  title: { default: "C3 Challenges · Descubrí talento a través de retos reales", template: "%s · C3 Platform" },
+  description: "C3 conecta empresas con talento joven mediante challenges que hacen visibles el entregable, el proceso y el criterio técnico.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

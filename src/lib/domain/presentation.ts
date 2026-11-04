@@ -33,7 +33,7 @@ export function presentState(status: ExperienceStatus, dates: WindowDates, now: 
 export const KIND_LABEL: Record<ExperienceKind, string> = {
   competencia: "Compite · Competencia",
   hackathon: "Crea · Hackathon",
-  challenge_empresarial: "Conecta · Challenge",
+  challenge_empresarial: "Conecta · Challenge empresarial",
   taller: "Crea · Taller",
   charla: "Conecta · Charla",
   encuentro: "Conecta · Encuentro",

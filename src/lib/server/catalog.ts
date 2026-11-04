@@ -3,6 +3,7 @@
  * poder probarse contra el emulador. Cada función verifica permisos antes de leer o escribir.
  */
 import type { DocumentData, Firestore, Query, QueryDocumentSnapshot } from "firebase-admin/firestore";
+import { parseCommercialPackageId } from "../domain/commercial.ts";
 import { presentState, type PresentedState } from "../domain/presentation.ts";
 import { experienceLinesOf, normalizeExperienceMetadata, presentExperienceState, type ExperienceLine } from "../domain/catalog.ts";
 import {
@@ -111,6 +112,7 @@ function toChallenge(id: string, data: DocumentData): Challenge {
     deliverables: data.deliverables ?? [],
     rubric: (data.rubric ?? []) as RubricCriterion[],
     organizationName: data.organizationName,
+    commercialPackage: parseCommercialPackageId(data.commercialPackage),
     allows: data.allows ?? [],
     teamMinSize: data.teamMinSize ?? null,
     teamMaxSize: data.teamMaxSize ?? null,
@@ -345,6 +347,7 @@ export async function createChallenge(db: Firestore, actor: Actor, rawInput: unk
     deliverables: input.deliverables,
     rubric: rubricWithIds(input.rubric),
     organizationName: input.organizationName,
+    commercialPackage: input.commercialPackage,
     allows: input.allows,
     teamMinSize: input.teamMinSize,
     teamMaxSize: input.teamMaxSize,

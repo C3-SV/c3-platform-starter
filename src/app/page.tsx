@@ -60,10 +60,10 @@ export default async function HomePage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 860 }}>
             <span className="c3-etiqueta" style={{ color: "var(--c3-compite-claro)" }}>Competitive Coding Club · El Salvador</span>
             <h1 className="c3-titulo" style={{ fontSize: "clamp(36px, 7vw, 56px)", lineHeight: 1.05, fontWeight: 800, color: "#ffffff" }}>
-              Problemas reales. Talento técnico joven.
+              Problemas reales. Talento que demuestra lo que sabe.
             </h1>
             <p style={{ fontSize: 18, lineHeight: 1.6, color: "#a9b8d0" }}>
-              Las empresas plantean challenges técnicos de verdad. Equipos jóvenes los resuelven. Lo que entregan queda registrado como evidencia oficial de C3.
+              Las empresas plantean necesidades. C3 diseña y opera retos que permiten observar cómo el talento joven construye, decide y defiende sus soluciones.
             </p>
           </div>
 
@@ -71,14 +71,14 @@ export default async function HomePage() {
             <div style={{ background: "#17294a", border: "1px solid #2c3f63", borderRadius: 20, padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
               <span className="c3-etiqueta" style={{ color: "var(--c3-compite-claro)" }}>Soy estudiante o joven técnico</span>
               <div className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: "#ffffff" }}>
-                Resolvé challenges y construí una trayectoria que C3 respalda
+                Demostrá lo que sabés construir
               </div>
               <p style={{ fontSize: 16, lineHeight: 1.6, color: "#a9b8d0" }}>
-                Explorá challenges abiertos, inscribite solo o en equipo, entregá tu solución y recibí un resultado oficial.
+                Explorá retos, participá, documentá tu proceso y convertí tu trabajo en evidencia.
               </p>
               <div style={{ marginTop: "auto", paddingTop: 8 }}>
                 <Link href="/explorar" className="c3-btn" style={{ background: "#2c62b0", color: "#ffffff", padding: "16px 28px", display: "inline-flex" }}>
-                  Explorar experiencias
+                  Explorar challenges
                 </Link>
               </div>
             </div>
@@ -86,10 +86,10 @@ export default async function HomePage() {
             <div style={{ background: "var(--c3-conecta)", borderRadius: 20, padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
               <span className="c3-etiqueta" style={{ color: "#ffffff" }}>Soy una empresa</span>
               <div className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: "#ffffff" }}>
-                Convertí un problema técnico en un challenge resuelto por equipos
+                Descubrí talento con evidencia, no solo con currículums
               </div>
               <p style={{ fontSize: 16, lineHeight: 1.6, color: "#ffffff" }}>
-                Contanos tu necesidad. C3 la define contigo, recibís varias soluciones y las evaluás sobre la misma rúbrica.
+                Contanos una necesidad y C3 la convierte en un reto que te permite comparar capacidades.
               </p>
               <div style={{ marginTop: "auto", paddingTop: 8 }}>
                 <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 28px", display: "inline-flex" }}>
@@ -165,7 +165,7 @@ export default async function HomePage() {
         <div className="c3-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 700 }}>
             <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: "#ffffff" }}>
-              ¿Tu equipo técnico tiene un problema sin resolver?
+              ¿Querés ver cómo resuelve problemas el talento joven?
             </h2>
             <p style={{ fontSize: 16, lineHeight: 1.6, color: "#ffffff" }}>
               No necesitás un brief perfecto. Describí la situación con tus palabras y C3 se encarga de convertirla en un challenge.
