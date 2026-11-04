@@ -229,6 +229,49 @@ test("publicados los resultados, las evaluaciones quedan congeladas", async () =
   await assert.rejects(saveEvaluation(db, juez1, challengeId, first.id, { scores: { c1: 1, c2: 1 } }, afterDeadline), expectHttp(409, "resultados_publicados"));
 });
 
+test("Mi challenge muestra el estado de evaluación y, con puntajes publicados, el promedio por criterio sin los comentarios del jurado", async () => {
+  const { db, challengeId } = await scenario();
+  const auth = testAuth();
+  await createAuthUser(juez1.email, juez1.uid);
+  await createAuthUser(juez2.email, juez2.uid);
+  await assignJudge(db, auth, admin, challengeId, juez1.email, "empresa", now);
+  await assignJudge(db, auth, admin, challengeId, juez2.email, "externo", now);
+  assert.equal((await getDelivery(db, joven, challengeId, duringDeadline)).evaluation.state, "pendiente");
+  assert.equal((await getDelivery(db, joven, challengeId, afterDeadline)).evaluation.state, "en_revision");
+
+  const [first, second] = (await evaluationWorkspace(db, juez1, challengeId, afterDeadline)).solutions;
+  for (const solution of [first, second]) {
+    for (const judge of [juez1, juez2]) {
+      await saveEvaluation(db, judge, challengeId, solution.id, { scores: { c1: 8, c2: 6 }, finalize: true, comment: "Buen manejo de casos límite." }, afterDeadline);
+    }
+  }
+  await publishResults(db, admin, challengeId, { showScores: true }, afterDeadline);
+
+  const mine = await getDelivery(db, joven, challengeId, afterDeadline);
+  assert.equal(mine.evaluation.state, "publicado");
+  assert.equal(mine.evaluation.result?.average, 14);
+  assert.deepEqual(mine.evaluation.result?.criteria?.map((item) => item.average), [8, 6]);
+  assert.equal(JSON.stringify(mine).includes("Buen manejo"), false, "el comentario interno nunca llega a la persona");
+  const board = await resultsBoard(db, admin, challengeId);
+  assert.equal(board.rows[0].evaluations.some((item) => item.comment === "Buen manejo de casos límite."), true, "C3 sí ve el comentario");
+  await assert.rejects(
+    saveEvaluation(db, juez1, challengeId, first.id, { scores: { c1: 8, c2: 6 }, comment: "x".repeat(1001) }, afterDeadline),
+    (error) => error instanceof ValidationFailure,
+  );
+});
+
+test("la inscripción registra las confirmaciones y rechaza una sin aceptar las reglas", async () => {
+  const { db, challengeId } = await scenario();
+  await assert.rejects(
+    enrollInChallenge(db, noJuez, challengeId, "individual", now, { eligibility: true, rules: false }),
+    (error) => error instanceof ValidationFailure,
+  );
+  const enrollment = await enrollInChallenge(db, noJuez, challengeId, "individual", now, { eligibility: true, rules: true });
+  const stored = (await db.collection("enrollments").doc(enrollment.id).get()).data();
+  assert.equal(typeof stored?.acceptedRulesAt, "string");
+  assert.equal(typeof stored?.confirmedEligibilityAt, "string");
+});
+
 test("la entrega del participante sigue visible y sin cambios tras la publicación", async () => {
   const { db, challengeId } = await scenario();
   const view = await getDelivery(db, joven, challengeId, afterDeadline);

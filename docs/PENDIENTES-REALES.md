@@ -23,20 +23,20 @@ Plan, inventario y estado por tarea: [plan 2026-11-03](superpowers/plans/2026-11
 | Resultados después de publicar | **Decidido y hecho el 4-nov-2026:** las evaluaciones quedan congeladas al publicar (409 `resultados_publicados`). No hay instantánea aparte: los promedios siguen calculándose desde las evaluaciones, que ya no cambian | Decidir si se guarda una instantánea (no bloquea la demo) |
 | Sal de la conexión para propuestas (`RATE_LIMIT_SALT`) | En producción es obligatoria: sin ella `POST /api/propuestas` responde error (falla cerrada). En desarrollo y emulador usa una sal de prueba | Configurar `RATE_LIMIT_SALT` en Vercel con un valor aleatorio largo antes de recibir propuestas. No versionar el valor. `check:vercel-env` ya falla si falta |
 | Solicitudes de contacto ya cargadas | Los ids de solicitud de contacto ahora son un resumen del uid (no revelan el uid). Las solicitudes cargadas en `c3-platform-demo` con el formato anterior quedarían huérfanas | **Hecho el 4-nov-2026** en `c3-platform-demo`: `demo-reset --apply` con respaldo y luego `seed` en modo `update` con respaldo; verificado en solo lectura (55 documentos, sin diferencias). Falta comprobar el sitio `demo.plat.c3.com.sv` (plan §8) |
-| Dashboard de empresa (E2) | Falta la subnavegación (Resumen, Configuración, Participantes, Entregas, Evaluación, Talento), el CTA «Ver entregas» y «Próximos hitos» | Construir sobre el panel actual |
+| Dashboard de empresa (E2) | **Hecho en parte el 4-nov-2026:** subnavegación (Resumen, Talento, Propuestas), CTA «Ver entregas», próximo hito (cierre de entregas), paquete de referencia y «Perfiles de interés». Faltan Participantes, Entregas y Evaluación como secciones propias, y Configuración | Decidir si esas secciones se separan del panel actual |
 | Configuración del challenge por la empresa (E3) | La empresa no edita brief, fechas, elegibilidad, entregables ni criterios; las rutas de empresa no lo permiten | Decidir permisos por rol y construirlo |
-| Consentimientos de la inscripción (J2, J3) | No se pide confirmar elegibilidad ni aceptar reglas y consentimiento antes de inscribirse | Añadir las confirmaciones y registrarlas en el servidor |
+| Consentimientos de la inscripción (J2, J3) | **Hecho el 4-nov-2026:** la inscripción exige confirmar la elegibilidad y aceptar las reglas; el servidor guarda `confirmedEligibilityAt` y `acceptedRulesAt` | Ninguna |
 | Challenges demo adicionales (§4.C) | El seed tiene un solo challenge demo; el update pide 2 o 3 de dominios y estados distintos | Crear en el seed y cargar en remoto con autorización |
-| Vista de auditoría para admin (E6) | No hay vista; `recordAudit` escribe los registros | Construir la vista |
-| Banner «Entorno de demostración» | No existe | Añadir cuando el entorno demo esté definido |
-| Progreso y estado de evaluación en Mi challenge (J4, J8) | Evaluación y Resultado aparecen fijos en «pendiente» (`EntregaPanel.tsx`); no se muestra el estado de evaluación ni el puntaje por criterio | Conectar con el estado real |
-| Comentarios del jurado | No existen, separados del feedback publicable | Decidir y construir |
-| Índices de Firestore (§4.D) | `firestore.indexes.json` no tiene prueba que valide las consultas del tablero | Añadir prueba o script |
+| Vista de auditoría para admin (E6) | **Hecho el 4-nov-2026:** sección «Auditoría» en la consola (`/admin/auditoria`, `GET /api/admin/auditoria`), solo administración | Ninguna |
+| Banner «Entorno de demostración» | **Hecho el 4-nov-2026:** aparece solo cuando el proyecto de Firebase es `c3-platform-demo` | Ninguna |
+| Progreso y estado de evaluación en Mi challenge (J4, J8) | **Hecho el 4-nov-2026:** Mi challenge muestra pendiente, en revisión o publicado y, con puntajes publicados, el promedio, el lugar y el promedio por criterio | Ninguna |
+| Comentarios del jurado | **Hecho el 4-nov-2026:** comentario interno por solución; lo ve solo C3 en el tablero de resultados y no llega a la empresa ni a la persona | Ninguna |
+| Índices de Firestore (§4.D) | **Hecho el 4-nov-2026:** `tests/unit/firestore-indexes.test.ts` falla si una consulta nueva necesita un índice compuesto que `firestore.indexes.json` no declara | Ninguna |
 | E2E pendientes | Faltan recorridos completos de empresa, defensa, retroalimentación y contacto; el acceso cruzado entre organizaciones solo lo prueba el emulador | Escribir los E2E |
 | Revisión visual y accesibilidad | Sin revisión registrada a 390 y 1280 px de pantallas autenticadas, ni accesibilidad de talento | Hacer la revisión |
 | Ensayo y capturas de respaldo | Sin ensayo cronometrado ni capturas de pantallas con sesión | Ensayar con el guion |
 | Impeccable: PRODUCT.md y pase visual (Task 1) | Sin `PRODUCT.md` ni `DESIGN.md` | Decidir con el responsable |
-| Zona horaria en fechas de cierre (B.1) | No se muestra la zona horaria | Añadirla en `formatDateTime` |
+| Zona horaria en fechas de cierre (B.1) | **Hecho el 4-nov-2026** en el detalle del challenge y en el panel de empresa (`formatDeadline`: «hora de El Salvador»). Otras pantallas muestran solo la fecha | Extender a las demás si hace falta |
 | Estados de «/explorar» | El update pide Abierto, Concluido y Demo; el código tiene Abierto, Próximo, Concluido y una casilla de demo | Alinear con el responsable |
 | Comandos `seed:dry-run` y `seed:apply` | `package.json` no pasa `--project`; el seed falla sin argumentos | Usar las líneas completas de la sección de comandos del seed en el [README](../README.md) (con `--project`, `--confirm-project` y `--allow-write`). Cambiar `package.json` solo por decisión del responsable |
 
