@@ -11,7 +11,7 @@ import { requireAdmin, type Actor } from "./auth.ts";
 import { CHALLENGES, ORGANIZATIONS, loadExperience, windowOf } from "./catalog.ts";
 import { notFound } from "./errors.ts";
 import { PROPOSALS, toProposalView, type ProposalView } from "./proposals.ts";
-import { EVALUATIONS, JUDGE_ASSIGNMENTS, companyResults } from "./evaluation.ts";
+import { EVALUATIONS, companyResults, evaluableChallenges } from "./evaluation.ts";
 import { ENROLLMENTS, SHORTLISTS, SUBMISSIONS, TEAMS, USERS } from "./ids.ts";
 
 export const ORGANIZATION_MEMBERS = "organizationMembers";
@@ -118,9 +118,8 @@ export async function getCompanySpace(db: Firestore, actor: Actor, now: Date): P
     .filter((snapshot) => snapshot.exists)
     .map((snapshot) => toOrganization(snapshot.id, snapshot.data() as DocumentData));
 
-  // Evaluar es una asignación aparte, hecha por C3: ver el challenge no concede evaluarlo.
-  const assignments = await db.collection(JUDGE_ASSIGNMENTS).where("userId", "==", actor.uid).get();
-  const assigned = new Set(assignments.docs.filter((doc) => doc.data().status === "active").map((doc) => doc.data().challengeId as string));
+  // La representante evalúa los challenges de su organización, salvo que C3 le haya revocado la asignación.
+  const assigned = new Set((await evaluableChallenges(db, actor.uid)).keys());
 
   const challenges: CompanyChallenge[] = [];
   const proposals: ProposalView[] = [];

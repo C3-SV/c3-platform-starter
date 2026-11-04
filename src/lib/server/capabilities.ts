@@ -10,12 +10,12 @@ import { NO_CAPABILITIES, type Capabilities, type OrganizationRef } from "../dom
 import type { Actor } from "./auth.ts";
 import { ORGANIZATIONS } from "./catalog.ts";
 import { ORGANIZATION_MEMBERS } from "./companies.ts";
-import { JUDGE_ASSIGNMENTS } from "./evaluation.ts";
+import { evaluableChallenges } from "./evaluation.ts";
 
 export async function getCapabilities(db: Firestore, actor: Actor): Promise<Capabilities> {
-  const [memberships, assignments] = await Promise.all([
+  const [memberships, evaluable] = await Promise.all([
     db.collection(ORGANIZATION_MEMBERS).where("userId", "==", actor.uid).get(),
-    db.collection(JUDGE_ASSIGNMENTS).where("userId", "==", actor.uid).get(),
+    evaluableChallenges(db, actor.uid),
   ]);
 
   const organizationIds = [...new Set(memberships.docs.map((doc) => doc.data().organizationId as string))];
@@ -23,8 +23,8 @@ export async function getCapabilities(db: Firestore, actor: Actor): Promise<Capa
     .flatMap((snapshot): OrganizationRef[] => (snapshot.exists ? [{ id: snapshot.id, name: String(snapshot.data()?.name ?? "") }] : []))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  // Una asignación revocada no cuenta: ya no da acceso a evaluar.
-  const challenges = assignments.docs.filter((doc) => doc.data().status === "active").length;
+  // Una asignación revocada no cuenta; la representante evalúa los challenges de su organización.
+  const challenges = evaluable.size;
 
   return { ...NO_CAPABILITIES, admin: actor.isAdmin, organizations, judge: { challenges } };
 }
