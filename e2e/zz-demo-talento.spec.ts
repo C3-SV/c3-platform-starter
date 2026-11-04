@@ -38,7 +38,8 @@ test.describe("Demo de talento sobre el dataset del seed", () => {
     const comparacion = page.getByRole("table", { name: "Comparación de entregas" });
     await expect(comparacion).toBeVisible();
     await expect(comparacion.getByText("Ana Martínez")).toBeVisible();
-    await expect(comparacion.getByText("Publicada · promedio 34.0")).toBeVisible();
+    // Rúbrica ponderada 20/30/25/25: Ana promedia 85 sobre 100 con los dos jurados.
+    await expect(comparacion.getByText("Publicada · promedio 85.0")).toBeVisible();
     await expect(page.getByRole("table", { name: "Matriz por criterio" })).toBeVisible();
     await expect(comparacion.getByText("Aceptado")).toBeVisible();
   });
