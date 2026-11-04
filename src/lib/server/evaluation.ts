@@ -176,8 +176,9 @@ export async function evaluationWorkspace(db: Firestore, actor: Actor, challenge
         // Alias estable: el id real de la solución lleva el uid de quien la entregó.
         id: solutionAlias(index),
         label: `Solución ${index + 1}`,
-        text: solution.text,
-        links: solution.links,
+        // Hasta el cierre de entregas el jurado no ve el contenido de las soluciones.
+        text: canEvaluate ? solution.text : null,
+        links: canEvaluate ? solution.links : [],
         mine: evaluation
           ? { scores: evaluation.scores as Record<string, number>, total: evaluation.total as number, status: evaluation.status as "draft" | "finalized" }
           : null,

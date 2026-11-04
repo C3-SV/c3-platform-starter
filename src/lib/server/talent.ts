@@ -46,6 +46,7 @@ import {
   enrollmentDocId,
   membershipDocId,
   participationDocId,
+  talentRowTokenOf,
   teamParticipationDocId,
 } from "./ids.ts";
 
@@ -63,6 +64,7 @@ export interface ContactView {
 }
 
 export interface TalentRow {
+  /** Token opaco de la fila (ver talentRowTokenOf): no es el id interno ni revela el uid de quien entregó. */
   submissionId: string;
   mode: "individual" | "team";
   name: string | null;
@@ -286,7 +288,13 @@ export async function getTalentBoard(db: Firestore, actor: Actor, challengeId: s
       commercialPackage: challenge.commercialPackage ?? null,
       rubric: challenge.rubric,
     },
-    rows: rows.sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? "")),
+    rows: rows
+      .sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? ""))
+      .map((row) => ({
+        ...row,
+        submissionId: talentRowTokenOf(row.submissionId),
+        defense: row.defense ? { ...row.defense, submissionId: talentRowTokenOf(row.defense.submissionId) } : null,
+      })),
   };
 }
 
@@ -300,6 +308,14 @@ async function submittedSubmissionOf(db: Firestore, challengeId: string, submiss
   return data;
 }
 
+/** Resuelve el token de una fila del tablero a su entrega enviada del challenge. Un id interno o ajeno no encuentra nada. */
+async function submissionIdFromRow(db: Firestore, challengeId: string, rowToken: string): Promise<string> {
+  const snapshot = await db.collection(SUBMISSIONS).where("challengeId", "==", challengeId).where("status", "==", "submitted").get();
+  const match = snapshot.docs.find((doc) => talentRowTokenOf(doc.id) === rowToken);
+  if (!match) throw notFound("La entrega no existe o todavía no fue enviada en este challenge.");
+  return match.id;
+}
+
 function submissionIdOf(body: Raw): string {
   const value = typeof body.submissionId === "string" ? body.submissionId.trim() : "";
   if (!value) throw new ValidationFailure([{ field: "submissionId", message: "Elegí una entrega enviada." }]);
@@ -309,7 +325,7 @@ function submissionIdOf(body: Raw): string {
 export async function addToShortlist(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<void> {
   const challenge = await requireCompanyChallenge(db, actor, challengeId);
   const body = asObject(rawBody);
-  const submissionId = submissionIdOf(body);
+  const submissionId = await submissionIdFromRow(db, challengeId, submissionIdOf(body));
   const reason = parseShortlistReason(body.reason);
   const submission = await submittedSubmissionOf(db, challengeId, submissionId);
 
@@ -328,8 +344,9 @@ export async function addToShortlist(db: Firestore, actor: Actor, challengeId: s
   await batch.commit();
 }
 
-export async function removeFromShortlist(db: Firestore, actor: Actor, challengeId: string, submissionId: string, now: Date): Promise<void> {
+export async function removeFromShortlist(db: Firestore, actor: Actor, challengeId: string, rowToken: string, now: Date): Promise<void> {
   await requireCompanyChallenge(db, actor, challengeId);
+  const submissionId = await submissionIdFromRow(db, challengeId, rowToken);
   const ref = db.collection(SHORTLISTS).doc(submissionId);
   const entry = (await ref.get()).data();
   if (!entry || entry.challengeId !== challengeId) throw notFound("Esa entrega no está en la lista corta de este challenge.");
@@ -354,7 +371,7 @@ export async function removeFromShortlist(db: Firestore, actor: Actor, challenge
 export async function requestContact(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<ContactView> {
   const challenge = await requireCompanyChallenge(db, actor, challengeId);
   const body = asObject(rawBody);
-  const submissionId = submissionIdOf(body);
+  const submissionId = await submissionIdFromRow(db, challengeId, submissionIdOf(body));
   const message = parseContactMessage(body.message);
   const submission = await submittedSubmissionOf(db, challengeId, submissionId);
   if (submission.mode === "team") {
@@ -575,7 +592,7 @@ export async function listMyCheckpoints(db: Firestore, actor: Actor, challengeId
 export async function saveFeedback(db: Firestore, actor: Actor, challengeId: string, rawBody: unknown, now: Date): Promise<FeedbackView> {
   const challenge = await requireCompanyChallenge(db, actor, challengeId);
   const body = asObject(rawBody);
-  const submissionId = submissionIdOf(body);
+  const submissionId = await submissionIdFromRow(db, challengeId, submissionIdOf(body));
   const input = parseFeedbackInput(body);
   await submittedSubmissionOf(db, challengeId, submissionId);
   const ref = db.collection(FEEDBACKS).doc(submissionId);

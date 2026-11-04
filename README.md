@@ -140,6 +140,7 @@ Ver `.env.example`. Resumen:
 - `NEXT_PUBLIC_USE_FIREBASE_EMULATORS`: `true` conecta el navegador al emulador de Auth.
 - `GOOGLE_CLOUD_PROJECT`: proyecto usado por el Admin SDK en el servidor.
 - `FIREBASE_SERVICE_ACCOUNT_JSON` (privada) o `FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY` (privadas): credenciales del Admin SDK cuando Vercel no tiene ADC de Google. Nunca se suben al repositorio ni se usan como `NEXT_PUBLIC_*`.
+- `RATE_LIMIT_SALT` (privada): sal del hash de conexión del formulario de propuestas. Obligatoria en producción; sin ella `POST /api/propuestas` falla. Valor aleatorio largo, nunca versionado.
 - `FIRESTORE_EMULATOR_HOST` y `FIREBASE_AUTH_EMULATOR_HOST`: solo en desarrollo. Las define `firebase emulators:exec` cuando corren las pruebas.
 - Las credenciales privadas nunca van en `NEXT_PUBLIC_*`. En producción el Admin SDK usa Application Default Credentials o la identidad administrada del hosting.
 
