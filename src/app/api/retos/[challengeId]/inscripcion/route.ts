@@ -10,7 +10,9 @@ export function POST(request: Request, context: { params: Promise<{ challengeId:
     const actor = await requestActor(request);
     const { challengeId } = await context.params;
     const body = await request.json().catch(() => ({}));
-    const enrollment = await enrollInChallenge(database(), actor, challengeId, body?.mode, new Date());
+    // La inscripción exige confirmar la elegibilidad y aceptar las reglas; el servidor registra cuándo.
+    const consent = { eligibility: body?.confirmedEligibility, rules: body?.acceptedRules };
+    const enrollment = await enrollInChallenge(database(), actor, challengeId, body?.mode, new Date(), consent);
     return Response.json({ enrollment }, { status: 201 });
   });
 }

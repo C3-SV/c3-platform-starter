@@ -6,7 +6,8 @@ import { AppShell } from "@/components/AppShell";
 import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
-import { formatDateTime } from "@/lib/domain/format";
+import { commercialPackageOf, formatUsd } from "@/lib/domain/commercial";
+import { formatDateTime, formatDeadline } from "@/lib/domain/format";
 import { evaluationHref } from "@/lib/domain/navigation";
 import { proposalNextStep, proposalPresentation } from "@/lib/domain/proposals";
 import type { CompanySpace } from "@/lib/server/companies";
@@ -94,10 +95,30 @@ function EmpresaContenido() {
             ) : null}
           </div>
         </div>
-        <Link href="/empresa/proponer" className="c3-btn c3-btn--primario">Proponer un challenge</Link>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {challenges.some((challenge) => challenge.submissions.length > 0) ? (
+            <a href="#tus-challenges" className="c3-btn c3-btn--contorno">Ver entregas</a>
+          ) : null}
+          <Link href="/empresa/proponer" className="c3-btn c3-btn--primario">Proponer un challenge</Link>
+        </div>
       </div>
 
-      <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <nav aria-label="Secciones del espacio de empresa" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <a href="#tus-challenges" className="c3-btn c3-btn--contorno" style={{ minHeight: 40, padding: "0 16px" }}>Resumen</a>
+        <button
+          type="button"
+          className="c3-btn c3-btn--contorno"
+          style={{ minHeight: 40, padding: "0 16px" }}
+          disabled={!challenges.some((challenge) => challenge.submissions.length > 0)}
+          onClick={() => setTalentoId(challenges.find((challenge) => challenge.submissions.length > 0)?.id ?? null)}
+        >
+          Talento
+        </button>
+        <a href="#tus-propuestas" className="c3-btn c3-btn--contorno" style={{ minHeight: 40, padding: "0 16px" }}>Propuestas</a>
+        <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Configuración del challenge: próximamente</span>
+      </nav>
+
+      <section id="tus-challenges" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tus challenges</h2>
         {challenges.length === 0 ? (
           <div style={{ background: "var(--c3-superficie)", border: "1px dashed var(--c3-borde-fuerte)", borderRadius: 12, padding: 24, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -115,13 +136,21 @@ function EmpresaContenido() {
                     <StatePill state={challenge.state} />
                   </div>
                   {challenge.isDemo ? <span className="c3-etiqueta" style={{ color: "var(--c3-advertencia)" }}>DEMO · datos demostrativos</span> : null}
+                  {commercialPackageOf(challenge.commercialPackage) ? (
+                    <span style={{ fontSize: 13, color: "var(--c3-texto-suave)" }}>
+                      Paquete de referencia: {commercialPackageOf(challenge.commercialPackage)?.label} · {formatUsd(commercialPackageOf(challenge.commercialPackage)?.referenceFeeUsd ?? 0)} · simulación, sin cobro
+                    </span>
+                  ) : null}
+                  {challenge.submissionClosesAt ? (
+                    <span style={{ fontSize: 13, color: "var(--c3-texto-suave)" }}>Próximo hito: cierre de entregas el {formatDeadline(challenge.submissionClosesAt) ?? ""}</span>
+                  ) : null}
                   <span className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{challenge.title}</span>
                   <dl aria-label="Cifras del challenge" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 8, margin: 0 }}>
                     {[
                       ["Inscritas", challenge.metrics.enrolled],
                       ["Entregas recibidas", challenge.metrics.submitted],
                       ["En evaluación", challenge.metrics.evaluating],
-                      ["En lista corta", challenge.metrics.shortlisted],
+                      ["Perfiles de interés", challenge.metrics.shortlisted],
                     ].map(([label, value]) => (
                       <div key={label} style={{ background: "var(--c3-superficie-sutil)", borderRadius: 8, padding: "8px 10px" }}>
                         <dt style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>{label}</dt>
@@ -192,7 +221,7 @@ function EmpresaContenido() {
         </section>
       ) : null}
 
-      <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <section id="tus-propuestas" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tus propuestas</h2>
         {proposals.length === 0 ? (
           <div className="c3-card" style={{ padding: 24 }}>

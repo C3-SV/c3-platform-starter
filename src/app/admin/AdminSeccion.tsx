@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { AdminSectionId } from "@/lib/domain/admin-nav";
 import { adminHref } from "@/lib/domain/admin-nav";
 import { useAdminData } from "./AdminData";
+import { AuditoriaPanel } from "./AuditoriaPanel";
 import { EntregasPanel } from "./EntregasPanel";
 import { ExperienciasPanel } from "./ExperienciasPanel";
 import { InscripcionesPanel, type EnrollmentTarget } from "./InscripcionesPanel";
@@ -43,6 +44,9 @@ function Contenido({ section }: { section: AdminSectionId }) {
   const challenges = catalog?.challenges ?? [];
 
   switch (section) {
+    case "auditoria":
+      return <AuditoriaPanel />;
+
     case "resumen":
       return <ResumenPanel />;
 

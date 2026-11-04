@@ -3,7 +3,7 @@
  * y los enlaces directos conservan la sección. El orden sigue el ciclo de vida de una experiencia.
  */
 export interface AdminSection {
-  id: "resumen" | "propuestas" | "experiencias" | "inscripciones" | "entregas" | "jurados" | "resultados";
+  id: "resumen" | "propuestas" | "experiencias" | "inscripciones" | "entregas" | "jurados" | "resultados" | "auditoria";
   label: string;
   description: string;
 }
@@ -16,6 +16,7 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
   { id: "entregas", label: "Entregas", description: "Consulta de entregas y su autorización" },
   { id: "jurados", label: "Jurados y rúbricas", description: "Asignar jurados y ver la rúbrica de cada challenge" },
   { id: "resultados", label: "Resultados oficiales", description: "Consolidar, reconocer y publicar" },
+  { id: "auditoria", label: "Auditoría", description: "Bitácora de operaciones sensibles" },
 ];
 
 export type AdminSectionId = AdminSection["id"];

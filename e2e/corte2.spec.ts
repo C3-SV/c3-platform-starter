@@ -80,6 +80,8 @@ test.describe.serial("Corte 2: participación individual", () => {
 
     await page.goto(`/retos/${challengeId}/inscripcion`);
     await expect(page.getByRole("heading", { level: 1, name: challengeTitle })).toBeVisible();
+    await page.getByLabel("Confirmo que cumplo los requisitos de elegibilidad").check();
+    await page.getByLabel("Acepto las reglas del challenge y el uso de mis datos para la evaluación").check();
     await page.getByRole("button", { name: "Inscribirme", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Inscripción enviada" })).toBeVisible();
     await expect(page.getByText("Tu inscripción está en revisión por C3")).toBeVisible();

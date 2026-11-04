@@ -39,6 +39,9 @@ export interface CompanyChallenge {
   organizationId: string;
   /** Datos inventados de la demostración: la interfaz los marca como tales. */
   isDemo: boolean;
+  /** Paquete de referencia elegido (id de `commercial.ts`) y cierre de entregas, para el panel de la empresa. */
+  commercialPackage: string | null;
+  submissionClosesAt: string | null;
   /** Cifras operativas del challenge. Son conteos reales de registros; no hay métricas inventadas. */
   metrics: { enrolled: number; submitted: number; shortlisted: number; evaluating: number };
   state: PresentedState;
@@ -142,6 +145,8 @@ export async function getCompanySpace(db: Firestore, actor: Actor, now: Date): P
         title: data.title,
         organizationId: organization.id,
         isDemo: data.demo === true,
+        commercialPackage: typeof data.commercialPackage === "string" ? data.commercialPackage : null,
+        submissionClosesAt: typeof data.submissionClosesAt === "string" ? data.submissionClosesAt : null,
         metrics,
         state,
         submissions,

@@ -129,8 +129,8 @@ function EntregaContenido({ challengeId }: { challengeId: string }) {
     { label: "Inscrito", done: enrollmentStatus !== null, current: false },
     { label: "Habilitado", done: eligible, current: false },
     { label: "Entrega", done: state === "entregada", current: eligible && state !== "entregada" && state !== "fuera_de_plazo" },
-    { label: "Evaluación", done: false, current: false },
-    { label: "Resultado", done: false, current: false },
+    { label: "Evaluación", done: delivery.evaluation.state === "publicado", current: delivery.evaluation.state === "en_revision" },
+    { label: "Resultado", done: delivery.evaluation.state === "publicado", current: false },
   ];
 
   return (
@@ -182,6 +182,35 @@ function EntregaContenido({ challengeId }: { challengeId: string }) {
               <strong>{banner.title}</strong>
               <span style={{ fontSize: 14, lineHeight: 1.5 }}>{banner.text}</span>
             </div>
+          ) : null}
+
+          {submission?.status === "submitted" ? (
+            <section className="c3-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }} aria-labelledby="titulo-evaluacion">
+              <span id="titulo-evaluacion" className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Evaluación</span>
+              {delivery.evaluation.state === "pendiente" ? (
+                <p style={{ fontSize: 14, lineHeight: 1.5 }}>Pendiente: el jurado evalúa después del cierre de entregas.</p>
+              ) : null}
+              {delivery.evaluation.state === "en_revision" ? (
+                <p style={{ fontSize: 14, lineHeight: 1.5 }}>En revisión: el jurado está evaluando las soluciones. C3 publica el resultado cuando todas tengan dos evaluaciones.</p>
+              ) : null}
+              {delivery.evaluation.state === "publicado" && delivery.evaluation.result ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <p style={{ fontSize: 14, lineHeight: 1.5 }}>
+                    <strong>Resultado publicado.</strong>
+                    {delivery.evaluation.result.recognition ? ` Reconocimiento: ${delivery.evaluation.result.recognition}.` : ""}
+                    {delivery.evaluation.result.average !== null ? ` Promedio: ${delivery.evaluation.result.average} de ${delivery.evaluation.result.maxTotal}.` : " C3 no publicó puntajes para este challenge."}
+                    {delivery.evaluation.result.place !== null ? ` Lugar ${delivery.evaluation.result.place} de ${delivery.evaluation.result.of}.` : ""}
+                  </p>
+                  {delivery.evaluation.result.criteria ? (
+                    <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, lineHeight: 1.6 }} aria-label="Promedio por criterio">
+                      {delivery.evaluation.result.criteria.map((criterion) => (
+                        <li key={criterion.label}>{criterion.label}: {criterion.average ?? "—"} de {criterion.maxScore}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ) : null}
+            </section>
           ) : null}
 
           {enrollmentStatus !== null && !eligible ? (

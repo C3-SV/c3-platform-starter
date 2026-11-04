@@ -6,7 +6,7 @@ import { SiteShell } from "@/components/SiteShell";
 import { StatePill } from "@/components/StatePill";
 import { EnrollmentCta } from "@/components/EnrollmentCta";
 import { experienceLabel } from "@/lib/domain/presentation";
-import { formatDate, formatDateTime, modalityLabel } from "@/lib/domain/format";
+import { formatDate, formatDeadline, formatDateTime, modalityLabel } from "@/lib/domain/format";
 import { database } from "@/lib/server/context";
 import { getPublicChallenge } from "@/lib/server/catalog";
 import { publicWinners } from "@/lib/server/evaluation";
@@ -58,7 +58,7 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
             <Meta label="Organización responsable" value={challenge.organizationName} />
             <Meta label="Modalidad" value={modality} />
             {challenge.submissionClosesAt ? (
-              <Meta label="Cierre de entregas" value={formatDateTime(challenge.submissionClosesAt) ?? ""} />
+              <Meta label="Cierre de entregas" value={formatDeadline(challenge.submissionClosesAt) ?? ""} />
             ) : null}
             <EnrollmentCta enrollHref={`/retos/${challenge.id}/inscripcion`} registrationOpen={registrationOpen} variant="hero" />
           </div>

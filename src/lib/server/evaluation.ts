@@ -7,6 +7,7 @@ import type { Auth } from "firebase-admin/auth";
 import type { DocumentData, Firestore } from "firebase-admin/firestore";
 import {
   consolidatedAverage,
+  criterionAverages,
   maxTotal,
   parseRecognition,
   parseScores,
@@ -180,7 +181,7 @@ export async function evaluationWorkspace(db: Firestore, actor: Actor, challenge
         text: canEvaluate ? solution.text : null,
         links: canEvaluate ? solution.links : [],
         mine: evaluation
-          ? { scores: evaluation.scores as Record<string, number>, total: evaluation.total as number, status: evaluation.status as "draft" | "finalized" }
+          ? { scores: evaluation.scores as Record<string, number>, total: evaluation.total as number, status: evaluation.status as "draft" | "finalized", comment: (evaluation.comment as string | null | undefined) ?? null }
           : null,
       };
     }),
@@ -211,6 +212,11 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
   const ref = db.collection(EVALUATIONS).doc(evaluationDocId(submissionId, actor.uid));
   const scores = parseScores(body.scores, challenge.rubric);
   const finalize = body.finalize === true;
+  // Comentario interno del jurado: lo ve solo C3. No es la retroalimentación que la empresa publica a la persona.
+  const comment = typeof body.comment === "string" && body.comment.trim() ? body.comment.trim() : null;
+  if (comment && comment.length > 1000) {
+    throw new ValidationFailure([{ field: "comment", message: "El comentario puede tener hasta 1000 caracteres." }]);
+  }
   const stamp = now.toISOString();
   // La lectura del estado y la escritura van en una transacción: un guardado simultáneo no reabre una evaluación finalizada.
   await db.runTransaction(async (transaction) => {
@@ -226,6 +232,7 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
       kind: assignment.kind,
       scores,
       total: scoreOf(scores, challenge.rubric),
+      comment,
       status: finalize ? "finalized" : "draft",
       createdAt: existing?.createdAt ?? stamp,
       updatedAt: stamp,
@@ -241,7 +248,7 @@ export interface BoardRow {
   finalizedJudges: number;
   average: number | null;
   recognition: Recognition | null;
-  evaluations: { judgeUid: string; kind: string; total: number; status: string }[];
+  evaluations: { judgeUid: string; kind: string; total: number; status: string; comment: string | null }[];
 }
 
 export interface ResultsBoard {
@@ -284,6 +291,7 @@ async function boardFor(db: Firestore, challengeId: string): Promise<ResultsBoar
         kind: doc.data().kind ?? "externo",
         total: doc.data().total as number,
         status: doc.data().status as string,
+        comment: (doc.data().comment as string | null | undefined) ?? null,
       })),
     });
   }
@@ -352,11 +360,21 @@ export async function resultForSubmission(db: Firestore, challengeId: string, su
   if (!row) return null;
   const ranked = [...board.rows].filter((item) => item.average !== null).sort((a, b) => (b.average ?? 0) - (a.average ?? 0));
   const place = row.average === null ? null : ranked.findIndex((item) => item.submissionId === submissionId) + 1;
+  // Puntaje por criterio: solo cuando C3 publicó con puntajes visibles, y solo de las evaluaciones finalizadas de esta solución.
+  const challenge = await loadChallenge(db, challengeId);
+  const finalized = results.showScores
+    ? (await db.collection(EVALUATIONS).where("challengeId", "==", challengeId).get()).docs
+        .map((doc) => doc.data())
+        .filter((data) => data.submissionId === submissionId && data.status === "finalized")
+    : [];
+  const averages = finalized.length > 0 ? criterionAverages(finalized.map((data) => data.scores as Record<string, number>), challenge.rubric) : null;
   return {
     recognition: row.recognition ? RECOGNITION_LABEL[row.recognition] : null,
     average: results.showScores ? row.average : null,
     place: results.showScores ? place : null,
     of: results.showScores ? ranked.length : null,
+    maxTotal: results.showScores ? maxTotal(challenge.rubric) : null,
+    criteria: averages ? challenge.rubric.map((criterion) => ({ label: criterion.label, maxScore: criterion.maxScore, average: averages[criterion.id] ?? null })) : null,
   };
 }
 

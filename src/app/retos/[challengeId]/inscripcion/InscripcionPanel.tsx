@@ -54,6 +54,8 @@ function InscripcionContenido({ challenge }: { challenge: InscripcionChallenge }
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<ParticipationMode>(challenge.allows.includes("individual") ? "individual" : "team");
+  const [confirmedEligibility, setConfirmedEligibility] = useState(false);
+  const [acceptedRules, setAcceptedRules] = useState(false);
   const signedIn = session.status === "signed-in";
   const individual = challenge.allows.includes("individual");
   const team = challenge.allows.includes("team");
@@ -85,7 +87,7 @@ function InscripcionContenido({ challenge }: { challenge: InscripcionChallenge }
     try {
       const data = await apiRequest<{ enrollment: EnrollmentView }>(`/api/retos/${challenge.id}/inscripcion`, {
         method: "POST",
-        body: { mode },
+        body: { mode, confirmedEligibility, acceptedRules },
       });
       setEnrollment(data.enrollment);
       setNotice(data.enrollment.mode === "team"
@@ -146,6 +148,18 @@ function InscripcionContenido({ challenge }: { challenge: InscripcionChallenge }
                     Por equipo
                   </label>
                 </fieldset>
+              ) : null}
+              {challenge.registrationOpen ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 12, fontSize: 14, lineHeight: 1.5 }}>
+                    <input type="checkbox" checked={confirmedEligibility} onChange={(event) => setConfirmedEligibility(event.target.checked)} style={{ width: 20, height: 20, marginTop: 2, accentColor: "var(--c3-accion)" }} />
+                    Confirmo que cumplo los requisitos de elegibilidad
+                  </label>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 12, fontSize: 14, lineHeight: 1.5 }}>
+                    <input type="checkbox" checked={acceptedRules} onChange={(event) => setAcceptedRules(event.target.checked)} style={{ width: 20, height: 20, marginTop: 2, accentColor: "var(--c3-accion)" }} />
+                    Acepto las reglas del challenge y el uso de mis datos para la evaluación
+                  </label>
+                </div>
               ) : null}
               {registrationOpenButton(challenge.registrationOpen, busy, () => void enroll())}
             </section>
