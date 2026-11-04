@@ -79,7 +79,23 @@ test("las filas vacías de rúbrica se descartan y no bloquean la validación", 
     ...validChallenge,
     rubric: [{ label: "Calidad", maxScore: 10 }, { label: "", maxScore: Number.NaN }],
   }, now);
-  assert.deepEqual(parsed.rubric, [{ label: "Calidad", maxScore: 10 }]);
+  assert.deepEqual(parsed.rubric, [{ label: "Calidad", maxScore: 10, weight: null }]);
+});
+
+test("una rúbrica con pesos necesita un peso por criterio y que sumen 100", () => {
+  const weighted = parseChallengeInput({
+    ...validChallenge,
+    rubric: [{ label: "Calidad", maxScore: 10, weight: 60 }, { label: "Claridad", maxScore: 10, weight: 40 }],
+  }, now);
+  assert.deepEqual(weighted.rubric.map((item) => item.weight), [60, 40]);
+  assert.deepEqual(
+    fields(() => parseChallengeInput({ ...validChallenge, rubric: [{ label: "Calidad", maxScore: 10, weight: 60 }, { label: "Claridad", maxScore: 10, weight: 30 }] }, now)),
+    ["rubric"],
+  );
+  assert.deepEqual(
+    fields(() => parseChallengeInput({ ...validChallenge, rubric: [{ label: "Calidad", maxScore: 10, weight: 60 }, { label: "Claridad", maxScore: 10 }] }, now)),
+    ["rubric"],
+  );
 });
 
 test("challenge sin modalidad o sin entregables se rechaza", () => {

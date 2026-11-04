@@ -45,6 +45,8 @@ export interface RubricCriterion {
   id: string;
   label: string;
   maxScore: number;
+  /** Peso en porcentaje cuando la rúbrica es ponderada: todos los criterios tienen peso y suman 100. */
+  weight?: number;
 }
 
 export interface Challenge {

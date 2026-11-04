@@ -11,8 +11,8 @@ import {
   parseRecognition,
   parseScores,
   RECOGNITION_LABEL,
+  scoreOf,
   solutionReady,
-  totalOf,
   type Recognition,
 } from "../domain/evaluation.ts";
 import { ValidationFailure } from "../domain/validation.ts";
@@ -176,8 +176,9 @@ export async function evaluationWorkspace(db: Firestore, actor: Actor, challenge
         // Alias estable: el id real de la solución lleva el uid de quien la entregó.
         id: solutionAlias(index),
         label: `Solución ${index + 1}`,
-        text: solution.text,
-        links: solution.links,
+        // Hasta el cierre de entregas el jurado no ve el contenido de las soluciones.
+        text: canEvaluate ? solution.text : null,
+        links: canEvaluate ? solution.links : [],
         mine: evaluation
           ? { scores: evaluation.scores as Record<string, number>, total: evaluation.total as number, status: evaluation.status as "draft" | "finalized" }
           : null,
@@ -214,6 +215,9 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
   // La lectura del estado y la escritura van en una transacción: un guardado simultáneo no reabre una evaluación finalizada.
   await db.runTransaction(async (transaction) => {
     const existing = (await transaction.get(ref)).data();
+    // Congelar al publicar: una vez publicados los resultados, ninguna evaluación cambia.
+    const results = (await transaction.get(db.collection(RESULTS).doc(challengeId))).data();
+    if (results?.status === "published") throw new HttpError(409, "resultados_publicados", "Los resultados ya están publicados: las evaluaciones quedaron congeladas.");
     if (existing?.status === "finalized") throw new HttpError(409, "ya_finalizada", "Esta evaluación ya está finalizada.");
     transaction.set(ref, {
       submissionId,
@@ -221,7 +225,7 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
       judgeUserId: actor.uid,
       kind: assignment.kind,
       scores,
-      total: totalOf(scores),
+      total: scoreOf(scores, challenge.rubric),
       status: finalize ? "finalized" : "draft",
       createdAt: existing?.createdAt ?? stamp,
       updatedAt: stamp,

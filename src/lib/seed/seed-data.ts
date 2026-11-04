@@ -1,4 +1,5 @@
-import type { ExperienceKind, ExperienceLine, ExperienceStatus } from "../domain/types.ts";
+import type { ExperienceKind, ExperienceLine, ExperienceStatus, RubricCriterion } from "../domain/types.ts";
+import { scoreOf } from "../domain/evaluation.ts";
 import { contactRequestDocId, enrollmentDocId, participationDocId } from "../server/ids.ts";
 import { assignmentDocId, evaluationDocId } from "../server/evaluation.ts";
 import { DEMO_ACCOUNTS } from "./demo-accounts.ts";
@@ -33,7 +34,7 @@ export interface SeedRecord {
 // v2 (3-nov-2026): línea Conecta para el challenge empresarial, nombre y rúbrica del reto demostrativo y paquete comercial.
 // Un documento con la misma versión y contenido distinto aparece como conflicto en buildSeedPlan. Una versión anterior se
 // actualiza con `update` (con respaldo y --allow-update), nunca con `apply`.
-const SEED_VERSION = 3;
+const SEED_VERSION = 4;
 const MANAGED_BY = "c3-seed";
 
 export function seedId(namespace: string, key: string): string {
@@ -166,6 +167,13 @@ const organizations: SeedRecord[] = [
 ];
 
 const demoChallengeExperienceId = seedId("experience", "challenge-empresarial-demo");
+/** Rúbrica del challenge demo con pesos 20/30/25/25 (update §0.3). Cada criterio se puntúa de 0 a 10. */
+const DEMO_RUBRIC: RubricCriterion[] = [
+  { id: "c1", label: "Comprensión del problema", maxScore: 10, weight: 20 },
+  { id: "c2", label: "Solución funcional y pruebas", maxScore: 10, weight: 30 },
+  { id: "c3", label: "Criterio técnico y decisiones", maxScore: 10, weight: 25 },
+  { id: "c4", label: "Claridad de la defensa", maxScore: 10, weight: 25 },
+];
 const challenges: SeedRecord[] = [
   {
     collection: "challenges",
@@ -182,13 +190,7 @@ const challenges: SeedRecord[] = [
         "Bitácora breve con dos decisiones clave",
         "Defensa con trade-offs y limitaciones",
       ],
-      // Rúbrica demostrativa: el modelo usa puntajes enteros por criterio (1–10). Los pesos del paquete no se codifican aquí.
-      rubric: [
-        { id: "c1", label: "Comprensión del problema", maxScore: 10 },
-        { id: "c2", label: "Solución funcional y pruebas", maxScore: 10 },
-        { id: "c3", label: "Criterio técnico y decisiones", maxScore: 10 },
-        { id: "c4", label: "Claridad de la defensa", maxScore: 10 },
-      ],
+      rubric: DEMO_RUBRIC,
       organizationName: "Empresa de demostración C3",
       commercialPackage: "completo",
       allows: ["individual", "team"],
@@ -541,7 +543,7 @@ function evaluationRecords(): SeedRecord[] {
         judgeUserId: entry.judge,
         kind: "externo",
         scores: entry.scores,
-        total: Object.values(entry.scores).reduce((sum, value) => sum + value, 0),
+        total: scoreOf(entry.scores, DEMO_RUBRIC),
         status: entry.finalized ? "finalized" : "draft",
         createdAt: DEMO_TIMES.changed,
         updatedAt: DEMO_TIMES.changed,

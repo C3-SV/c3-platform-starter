@@ -149,6 +149,7 @@ function rubricWithIds(criteria: ChallengeInput["rubric"]): RubricCriterion[] {
     id: `c${index + 1}`,
     label: criterion.label,
     maxScore: criterion.maxScore,
+    ...(criterion.weight === null ? {} : { weight: criterion.weight }),
   }));
 }
 

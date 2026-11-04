@@ -104,6 +104,8 @@ test("una persona sin asignación no ve el espacio de evaluación; antes del cie
   const beforeClose = await evaluationWorkspace(db, juez1, challengeId, duringDeadline);
   assert.equal(beforeClose.canEvaluate, false);
   const [solution] = beforeClose.solutions;
+  assert.equal(solution.text, null, "antes del cierre el jurado no ve el contenido de la solución");
+  assert.deepEqual(solution.links, []);
   await assert.rejects(saveEvaluation(db, juez1, challengeId, solution.id, { scores: { c1: 5, c2: 5 } }, duringDeadline), expectHttp(409, "entregas_abiertas"));
 });
 
@@ -208,6 +210,23 @@ test("revocar a un jurado le quita el acceso y conserva sus evaluaciones finaliz
   assert.deepEqual(await myAssignments(db, juez1, afterDeadline), []);
   const kept = await db.collection("evaluations").where("judgeUserId", "==", juez1.uid).get();
   assert.equal(kept.size, 1);
+});
+
+test("publicados los resultados, las evaluaciones quedan congeladas", async () => {
+  const { db, challengeId } = await scenario();
+  const auth = testAuth();
+  await createAuthUser(juez1.email, juez1.uid);
+  await createAuthUser(juez2.email, juez2.uid);
+  await assignJudge(db, auth, admin, challengeId, juez1.email, "empresa", now);
+  await assignJudge(db, auth, admin, challengeId, juez2.email, "externo", now);
+  const [first, second] = (await evaluationWorkspace(db, juez1, challengeId, afterDeadline)).solutions;
+  for (const solution of [first, second]) {
+    for (const judge of [juez1, juez2]) {
+      await saveEvaluation(db, judge, challengeId, solution.id, { scores: { c1: 7, c2: 7 }, finalize: true }, afterDeadline);
+    }
+  }
+  await publishResults(db, admin, challengeId, {}, afterDeadline);
+  await assert.rejects(saveEvaluation(db, juez1, challengeId, first.id, { scores: { c1: 1, c2: 1 } }, afterDeadline), expectHttp(409, "resultados_publicados"));
 });
 
 test("la entrega del participante sigue visible y sin cambios tras la publicación", async () => {

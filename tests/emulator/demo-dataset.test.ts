@@ -93,11 +93,12 @@ test("la matriz por criterio aparece porque C3 publicó con puntajes; los estado
   const sofia = board.rows.find((row) => row.name === "Sofía Ramírez");
   const joven = board.rows.find((row) => row.name === jovenName);
   assert.equal(ana?.evaluation.state, "publicada");
-  assert.equal(ana?.evaluation.average, 34);
+  // Rúbrica ponderada 20/30/25/25 (v4 del seed): Ana suma 84,5 con un jurado y 85,5 con el otro.
+  assert.equal(ana?.evaluation.average, 85);
   assert.deepEqual(ana?.evaluation.criteria, { c1: 8.5, c2: 8.5, c3: 8.5, c4: 8.5 });
-  // Sofía tiene dos jurados finalizados (v3 del seed): su promedio es (30 + 28) / 2 = 29.
+  // Sofía tiene dos jurados finalizados (v4 del seed): su promedio es (74,5 + 70,5) / 2 = 72,5 sobre 100.
   assert.equal(sofia?.evaluation.state, "publicada");
-  assert.equal(sofia?.evaluation.average, 29);
+  assert.equal(sofia?.evaluation.average, 72.5);
   assert.deepEqual(sofia?.evaluation.criteria, { c1: 7.5, c2: 7.5, c3: 6.5, c4: 7.5 });
   assert.equal(joven?.evaluation.state, "sin_evaluar");
 });

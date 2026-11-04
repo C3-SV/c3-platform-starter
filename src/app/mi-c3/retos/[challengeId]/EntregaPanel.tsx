@@ -292,7 +292,7 @@ function EntregaContenido({ challengeId }: { challengeId: string }) {
         </div>
         <RetroalimentacionCard challengeId={challenge.id} />
         {enrollmentStatus === "approved" ? <BitacoraPanel challengeId={challenge.id} /> : null}
-        {enrollmentStatus === "approved" ? <DefensaPanel challengeId={challenge.id} submitted={submission?.status === "submitted"} /> : null}
+        {enrollmentStatus === "approved" ? <DefensaPanel challengeId={challenge.id} submitted={submission?.status === "submitted"} canRecord={delivery.team?.role !== "integrante"} /> : null}
         <aside className="c3-tarea__columna c3-tarea__lateral">
           <section className="c3-card" aria-label="Brief y criterios" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
             <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Brief y criterios</span>

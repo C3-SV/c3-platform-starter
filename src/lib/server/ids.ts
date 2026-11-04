@@ -56,3 +56,11 @@ export const FEEDBACKS = "feedbacks";
 export function contactRequestDocId(challengeId: string, userId: string): string {
   return `${challengeId}__${createHash("sha256").update(`${challengeId}:${userId}`).digest("hex").slice(0, 32)}`;
 }
+
+/**
+ * Identificador opaco de una fila del tablero de talento. El id interno de una entrega individual lleva el uid
+ * de quien entregó, así que a la empresa solo le llega este token.
+ */
+export function talentRowTokenOf(submissionId: string): string {
+  return createHash("sha256").update(`fila:${submissionId}`).digest("hex").slice(0, 32);
+}

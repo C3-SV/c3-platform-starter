@@ -63,7 +63,7 @@ export default async function HomePage() {
               Problemas reales. Talento que demuestra lo que sabe.
             </h1>
             <p style={{ fontSize: 18, lineHeight: 1.6, color: "#a9b8d0" }}>
-              Las empresas plantean necesidades. C3 diseña y opera retos que permiten observar cómo el talento joven construye, decide y defiende sus soluciones.
+              Las empresas plantean necesidades. C3 diseña y opera challenges que permiten observar cómo el talento joven construye, decide y defiende sus soluciones.
             </p>
           </div>
 
@@ -74,7 +74,7 @@ export default async function HomePage() {
                 Demostrá lo que sabés construir
               </div>
               <p style={{ fontSize: 16, lineHeight: 1.6, color: "#a9b8d0" }}>
-                Explorá retos, participá, documentá tu proceso y convertí tu trabajo en evidencia.
+                Explorá challenges, participá, documentá tu proceso y convertí tu trabajo en evidencia.
               </p>
               <div style={{ marginTop: "auto", paddingTop: 8 }}>
                 <Link href="/explorar" className="c3-btn" style={{ background: "#2c62b0", color: "#ffffff", padding: "16px 28px", display: "inline-flex" }}>
@@ -89,7 +89,7 @@ export default async function HomePage() {
                 Descubrí talento con evidencia, no solo con currículums
               </div>
               <p style={{ fontSize: 16, lineHeight: 1.6, color: "#ffffff" }}>
-                Contanos una necesidad y C3 la convierte en un reto que te permite comparar capacidades.
+                Contanos una necesidad y C3 la convierte en un challenge que te permite comparar capacidades.
               </p>
               <div style={{ marginTop: "auto", paddingTop: 8 }}>
                 <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 28px", display: "inline-flex" }}>

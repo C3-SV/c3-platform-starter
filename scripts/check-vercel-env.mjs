@@ -55,4 +55,10 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+// Sin sal, el hash de conexión del formulario de propuestas se puede revertir por fuerza bruta (ver PENDIENTES-REALES).
+if (!process.env.RATE_LIMIT_SALT?.trim()) {
+  console.error("Falta RATE_LIMIT_SALT: sin sal, el límite de propuestas no protege la conexión de quien propone.");
+  process.exit(1);
+}
+
 console.log(`Variables de producción válidas para Firebase: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
