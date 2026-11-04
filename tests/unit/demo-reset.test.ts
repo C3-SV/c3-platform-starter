@@ -5,7 +5,7 @@ import { SEED_RECORDS, seedId } from "../../src/lib/seed/seed-data.ts";
 
 const challengeId = seedId("challenge", "empresa-demostracion-rutas");
 const all = Object.values(SEED_RECORDS).flat();
-const selected = resettableFrom(all, challengeId);
+const selected = resettableFrom(all);
 const titles = (records: typeof all) => records.map((record) => String(record.data.title ?? record.id));
 
 test("el reset selecciona el dataset de demostración: challenge, perfiles, inscripciones, evaluaciones y resultados", () => {
@@ -24,8 +24,8 @@ test("el reset nunca toca experiencias históricas con procedencia ni experienci
 });
 
 test("un documento sin la marca del seed o con id ajeno nunca se selecciona", () => {
-  assert.equal(isResettableDemoRecord("users", "c3-demo-joven", { demo: true, managedBy: "c3-seed" }, challengeId), false, "la cuenta demo tiene id fijo, no del seed");
-  assert.equal(isResettableDemoRecord("users", "seed_user_x", { demo: true }, challengeId), false, "sin managedBy del seed no se borra");
-  assert.equal(isResettableDemoRecord("enrollments", "abc__123", { demo: true, managedBy: "c3-seed" }, challengeId), false, "id sin prefijo del seed no se borra");
-  assert.equal(isResettableDemoRecord("contactRequests", "seed_challenge_x__persona-real", { managedBy: "c3-seed" }, challengeId), false, "sin marca demo no se borra");
+  assert.equal(isResettableDemoRecord("users", "c3-demo-joven", { demo: true, managedBy: "c3-seed" }), false, "la cuenta demo tiene id fijo, no del seed");
+  assert.equal(isResettableDemoRecord("users", "seed_user_x", { demo: true }), false, "sin managedBy del seed no se borra");
+  assert.equal(isResettableDemoRecord("enrollments", "abc__123", { demo: true, managedBy: "c3-seed" }), false, "id sin prefijo del seed no se borra");
+  assert.equal(isResettableDemoRecord("contactRequests", "seed_challenge_x__persona-real", { managedBy: "c3-seed" }), false, "sin marca demo no se borra");
 });

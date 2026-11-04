@@ -34,7 +34,7 @@ export interface SeedRecord {
 // v2 (3-nov-2026): línea Conecta para el challenge empresarial, nombre y rúbrica del reto demostrativo y paquete comercial.
 // Un documento con la misma versión y contenido distinto aparece como conflicto en buildSeedPlan. Una versión anterior se
 // actualiza con `update` (con respaldo y --allow-update), nunca con `apply`.
-const SEED_VERSION = 4;
+const SEED_VERSION = 5;
 const MANAGED_BY = "c3-seed";
 
 export function seedId(namespace: string, key: string): string {
@@ -569,18 +569,259 @@ function evaluationRecords(): SeedRecord[] {
   return [...assignments, ...evaluations, ...results];
 }
 
+// ---------------------------------------------------------------------------
+// Retos demo adicionales (update §4.C): otros dominios y estados, con las mismas cuentas demo (joven, empresa, admin)
+// y los mismos perfiles de demostración. Uno abierto, uno en evaluación y uno concluido con resultados publicados.
+// ---------------------------------------------------------------------------
+
+interface ExtraParticipant {
+  uid: string;
+  enrollment: "approved" | "pending";
+  submission?: "submitted" | "draft";
+  text?: string;
+}
+
+interface ExtraEvaluation {
+  /** Persona cuya solución se evalúa. */
+  uid: string;
+  judge: string;
+  scores: Record<string, number>;
+}
+
+interface ExtraChallengeSpec {
+  key: string;
+  experienceTitle: string;
+  title: string;
+  summary: string;
+  problem: string;
+  deliverables: string[];
+  rubric: RubricCriterion[];
+  commercialPackage: "esencial" | "completo" | "destacado";
+  closesAt: string;
+  status: ExperienceStatus;
+  participants: ExtraParticipant[];
+  evaluations?: ExtraEvaluation[];
+  resultsPublished?: boolean;
+}
+
+const EXTERNAL_JUDGE_UID = seedId("user", "jurado-externo");
+
+function extraChallenge(spec: ExtraChallengeSpec): { experience: SeedRecord; challenge: SeedRecord; records: SeedRecord[] } {
+  const experienceKey = `${spec.key}-experiencia`;
+  const experienceId = seedId("experience", experienceKey);
+  const challengeId = seedId("challenge", spec.key);
+  const stamp = "2026-10-01T00:00:00.000Z";
+  const experienceRecord = experience(experienceKey, {
+    title: spec.experienceTitle,
+    kind: "challenge_empresarial",
+    primaryLine: "conecta",
+    summary: spec.summary,
+    status: spec.status,
+    isDemo: true,
+    demoNote: "Configuración de demostración con empresa ficticia; no representa un acuerdo real.",
+  });
+  const challengeRecord: SeedRecord = {
+    collection: "challenges",
+    id: challengeId,
+    data: {
+      experienceId,
+      organizationId: DEMO_ORGANIZATION_ID,
+      title: spec.title,
+      summary: spec.summary,
+      problem: spec.problem,
+      deliverables: spec.deliverables,
+      rubric: spec.rubric,
+      organizationName: "Empresa de demostración C3",
+      commercialPackage: spec.commercialPackage,
+      allows: ["individual"],
+      teamMinSize: null,
+      teamMaxSize: null,
+      submissionClosesAt: spec.closesAt,
+      status: spec.status,
+      demo: true,
+      seedVersion: SEED_VERSION,
+      managedBy: MANAGED_BY,
+      createdAt: stamp,
+      updatedAt: stamp,
+    },
+  };
+
+  const records: SeedRecord[] = [];
+  for (const person of spec.participants) {
+    records.push({
+      collection: "enrollments",
+      id: enrollmentDocId(experienceId, person.uid),
+      data: { experienceId, challengeId, userId: person.uid, mode: "individual", status: person.enrollment, ...demoMeta, createdAt: DEMO_TIMES.created, updatedAt: DEMO_TIMES.created },
+    });
+    if (person.enrollment !== "approved") continue;
+    const submissionId = participationDocId(challengeId, person.uid);
+    records.push({
+      collection: "participations",
+      id: submissionId,
+      data: { challengeId, experienceId, userId: person.uid, mode: "individual", status: "active", ...demoMeta, createdAt: DEMO_TIMES.created, updatedAt: DEMO_TIMES.created },
+    });
+    if (!person.submission) continue;
+    const submitted = person.submission === "submitted";
+    records.push({
+      collection: "submissions",
+      id: submissionId,
+      data: {
+        participationId: submissionId,
+        challengeId,
+        userId: person.uid,
+        mode: "individual",
+        status: person.submission,
+        text: person.text ?? "",
+        links: [DEMO_LINK],
+        createdAt: DEMO_TIMES.created,
+        updatedAt: submitted ? DEMO_TIMES.submitted : DEMO_TIMES.created,
+        submittedAt: submitted ? DEMO_TIMES.submitted : null,
+        ...demoMeta,
+      },
+    });
+  }
+
+  if (spec.evaluations) {
+    const judges = [
+      { uid: DEMO_UID.admin, email: DEMO_ACCOUNTS.find((account) => account.key === "admin")?.email ?? "" },
+      { uid: EXTERNAL_JUDGE_UID, email: "jurado.externo@example.test" },
+    ];
+    for (const judge of judges) {
+      records.push({
+        collection: "judgeAssignments",
+        id: assignmentDocId(challengeId, judge.uid),
+        data: { challengeId, experienceId, userId: judge.uid, email: judge.email, kind: "externo", status: "active", assignedAt: DEMO_TIMES.created, assignedByUid: DEMO_UID.admin, revokedAt: null, ...demoMeta },
+      });
+    }
+    for (const entry of spec.evaluations) {
+      const submissionId = participationDocId(challengeId, entry.uid);
+      records.push({
+        collection: "evaluations",
+        id: evaluationDocId(submissionId, entry.judge),
+        data: {
+          submissionId,
+          challengeId,
+          judgeUserId: entry.judge,
+          kind: "externo",
+          scores: entry.scores,
+          total: scoreOf(entry.scores, spec.rubric),
+          status: "finalized",
+          createdAt: DEMO_TIMES.changed,
+          updatedAt: DEMO_TIMES.changed,
+          finalizedAt: DEMO_TIMES.changed,
+          ...demoMeta,
+        },
+      });
+    }
+  }
+  if (spec.resultsPublished) {
+    records.push({
+      collection: "results",
+      id: challengeId,
+      data: { challengeId, status: "published", showWinners: false, showScores: true, publishedAt: DEMO_TIMES.changed, publishedByUid: DEMO_UID.admin, ...demoMeta },
+    });
+  }
+  return { experience: experienceRecord, challenge: challengeRecord, records };
+}
+
+const ana = seedId("user", "ana-martinez");
+const luis = seedId("user", "luis-herrera");
+const sofia = seedId("user", "sofia-ramirez");
+const fernanda = seedId("user", "fernanda-lopez");
+const javier = seedId("user", "javier-mendez");
+const externo = EXTERNAL_JUDGE_UID;
+
+const extraChallenges = [
+  // Abierto: la cuenta joven tiene un borrador; todavía no hay soluciones enviadas.
+  extraChallenge({
+    key: "demanda-retail",
+    experienceTitle: "Challenge empresarial · Cadena de retail (demostración)",
+    title: "Predicción de demanda semanal para una cadena de tiendas",
+    summary: "Estimar la demanda semanal por tienda y explicar qué señales usó el modelo.",
+    problem: "Una cadena de tiendas ficticia reabastece a ciegas y termina con faltantes en unas sucursales y sobrantes en otras. Necesita un prototipo que, con un historial sintético de ventas, proponga la demanda de la próxima semana y explique las señales que pesaron.",
+    deliverables: ["Repositorio y README", "Pronóstico de ejemplo con su explicación", "Bitácora breve con dos decisiones clave"],
+    rubric: [
+      { id: "c1", label: "Calidad del pronóstico", maxScore: 10, weight: 40 },
+      { id: "c2", label: "Explicación de las señales", maxScore: 10, weight: 30 },
+      { id: "c3", label: "Claridad de la defensa", maxScore: 10, weight: 30 },
+    ],
+    commercialPackage: "esencial",
+    closesAt: "2027-01-31T23:59:00.000Z",
+    status: "published",
+    participants: [
+      { uid: DEMO_UID.joven, enrollment: "approved", submission: "draft", text: "Borrador: separé la serie por tienda y probé un promedio móvil como línea base antes de comparar modelos." },
+      { uid: fernanda, enrollment: "approved" },
+      { uid: javier, enrollment: "pending" },
+    ],
+  }),
+  // En evaluación: las entregas cerraron y solo un jurado finalizó una evaluación.
+  extraChallenge({
+    key: "tablero-fintech",
+    experienceTitle: "Challenge empresarial · Fintech (demostración)",
+    title: "Tablero de indicadores para decisiones de una fintech",
+    summary: "Diseñar un tablero que muestre morosidad y captación sin abrumar a quien decide.",
+    problem: "Una fintech ficticia revisa decenas de métricas cada lunes y nadie sabe cuáles importan. Necesita un tablero con pocos indicadores, con datos sintéticos, que permita decidir qué cartera mirar primero y por qué.",
+    deliverables: ["Prototipo navegable o código", "Criterios de elección de los indicadores", "Defensa con límites y siguientes pasos"],
+    rubric: [
+      { id: "c1", label: "Relevancia de los indicadores", maxScore: 10, weight: 25 },
+      { id: "c2", label: "Claridad visual", maxScore: 10, weight: 25 },
+      { id: "c3", label: "Criterio y decisiones", maxScore: 10, weight: 25 },
+      { id: "c4", label: "Claridad de la defensa", maxScore: 10, weight: 25 },
+    ],
+    commercialPackage: "destacado",
+    closesAt: "2026-10-30T23:59:00.000Z",
+    status: "published",
+    participants: [
+      { uid: ana, enrollment: "approved", submission: "submitted", text: "Tablero con cinco indicadores ordenados por impacto; cada tarjeta explica por qué está y cuándo dejaría de importar." },
+      { uid: luis, enrollment: "approved", submission: "submitted", text: "Vista única con semáforo por cartera y un detalle plegable; priorizé la morosidad temprana sobre la captación." },
+      { uid: DEMO_UID.joven, enrollment: "approved", submission: "submitted", text: "Tablero en dos niveles: resumen de tres números y detalle por segmento, con las decisiones documentadas." },
+    ],
+    evaluations: [{ uid: ana, judge: DEMO_UID.admin, scores: { c1: 8, c2: 7, c3: 9, c4: 8 } }],
+  }),
+  // Concluido: dos soluciones evaluadas por los dos jurados y resultados publicados con puntajes.
+  extraChallenge({
+    key: "conciliacion-bancaria",
+    experienceTitle: "Challenge empresarial · Conciliación (demostración)",
+    title: "Conciliación automática de extractos y libro contable",
+    summary: "Cruzar extractos bancarios con el libro contable y señalar las diferencias que requieren revisión.",
+    problem: "El equipo contable de una empresa ficticia concilia a mano cada cierre mensual y las diferencias llegan tarde. Necesita un prototipo que cruce movimientos sintéticos de un extracto y un libro, marque coincidencias y explique las diferencias.",
+    deliverables: ["Repositorio y README", "Reporte de diferencias de ejemplo", "Defensa con trade-offs"],
+    rubric: [
+      { id: "c1", label: "Calidad del resultado", maxScore: 10, weight: 30 },
+      { id: "c2", label: "Manejo de casos límite", maxScore: 10, weight: 25 },
+      { id: "c3", label: "Claridad del enfoque", maxScore: 10, weight: 20 },
+      { id: "c4", label: "Claridad de la defensa", maxScore: 10, weight: 25 },
+    ],
+    commercialPackage: "completo",
+    closesAt: "2026-10-15T23:59:00.000Z",
+    status: "closed",
+    participants: [
+      { uid: sofia, enrollment: "approved", submission: "submitted", text: "Cruce por monto y fecha con tolerancia de dos días; las diferencias se agrupan por causa probable." },
+      { uid: ana, enrollment: "approved", submission: "submitted", text: "Conciliación en dos pasadas: coincidencias exactas y luego aproximadas, con un reporte de partidas sin pareja." },
+    ],
+    evaluations: [
+      { uid: sofia, judge: DEMO_UID.admin, scores: { c1: 7, c2: 8, c3: 7, c4: 8 } },
+      { uid: sofia, judge: externo, scores: { c1: 8, c2: 7, c3: 8, c4: 7 } },
+      { uid: ana, judge: DEMO_UID.admin, scores: { c1: 9, c2: 8, c3: 9, c4: 9 } },
+      { uid: ana, judge: externo, scores: { c1: 8, c2: 9, c3: 9, c4: 9 } },
+    ],
+    resultsPublished: true,
+  }),
+];
+
 const demoRecords: SeedRecord[] = [
   ...evaluationRecords(),
   ...participantRecords(demoJoven, DEMO_UID.joven, false),
   ...demoParticipants.flatMap((person) => participantRecords(person, seedId("user", person.key), true)),
   ...demoProposals,
+  ...extraChallenges.flatMap((item) => item.records),
 ];
 const demoOf = (collection: SeedRecord["collection"]): SeedRecord[] => demoRecords.filter((record) => record.collection === collection);
 
 export const SEED_RECORDS = {
   organizations,
-  experiences,
-  challenges,
+  experiences: [...experiences, ...extraChallenges.map((item) => item.experience)],
+  challenges: [...challenges, ...extraChallenges.map((item) => item.challenge)],
   users: demoOf("users"),
   enrollments: demoOf("enrollments"),
   participations: demoOf("participations"),

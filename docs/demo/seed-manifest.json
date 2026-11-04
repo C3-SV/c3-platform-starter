@@ -1,9 +1,9 @@
 {
   "description": "Manifiesto del seed de demostración C3 Challenges. Generado por scripts/seed-manifest.mjs; no contiene credenciales.",
   "seedVersions": [
-    3
+    5
   ],
-  "total": 55,
+  "total": 92,
   "collections": [
     {
       "collection": "organizations",
@@ -14,7 +14,7 @@
     },
     {
       "collection": "experiences",
-      "count": 7,
+      "count": 10,
       "ids": [
         "seed_experience_copa-salvadorena-2026",
         "seed_experience_hackathon-turismo-creativo-vol-1",
@@ -22,14 +22,20 @@
         "seed_experience_taller-programacion-competitiva-instituto-retos",
         "seed_experience_hackathon-turismo-creativo-vol-2",
         "seed_experience_challenge-empresarial-demo",
-        "seed_experience_encuentro-c3-talento-industria"
+        "seed_experience_encuentro-c3-talento-industria",
+        "seed_experience_demanda-retail-experiencia",
+        "seed_experience_tablero-fintech-experiencia",
+        "seed_experience_conciliacion-bancaria-experiencia"
       ]
     },
     {
       "collection": "challenges",
-      "count": 1,
+      "count": 4,
       "ids": [
-        "seed_challenge_empresa-demostracion-rutas"
+        "seed_challenge_empresa-demostracion-rutas",
+        "seed_challenge_demanda-retail",
+        "seed_challenge_tablero-fintech",
+        "seed_challenge_conciliacion-bancaria"
       ]
     },
     {
@@ -46,7 +52,7 @@
     },
     {
       "collection": "enrollments",
-      "count": 7,
+      "count": 15,
       "ids": [
         "seed_experience_challenge-empresarial-demo__c3-demo-joven",
         "seed_experience_challenge-empresarial-demo__seed_user_ana-martinez",
@@ -54,29 +60,50 @@
         "seed_experience_challenge-empresarial-demo__seed_user_sofia-ramirez",
         "seed_experience_challenge-empresarial-demo__seed_user_diego-castillo",
         "seed_experience_challenge-empresarial-demo__seed_user_fernanda-lopez",
-        "seed_experience_challenge-empresarial-demo__seed_user_javier-mendez"
+        "seed_experience_challenge-empresarial-demo__seed_user_javier-mendez",
+        "seed_experience_demanda-retail-experiencia__c3-demo-joven",
+        "seed_experience_demanda-retail-experiencia__seed_user_fernanda-lopez",
+        "seed_experience_demanda-retail-experiencia__seed_user_javier-mendez",
+        "seed_experience_tablero-fintech-experiencia__seed_user_ana-martinez",
+        "seed_experience_tablero-fintech-experiencia__seed_user_luis-herrera",
+        "seed_experience_tablero-fintech-experiencia__c3-demo-joven",
+        "seed_experience_conciliacion-bancaria-experiencia__seed_user_sofia-ramirez",
+        "seed_experience_conciliacion-bancaria-experiencia__seed_user_ana-martinez"
       ]
     },
     {
       "collection": "participations",
-      "count": 5,
+      "count": 12,
       "ids": [
         "seed_challenge_empresa-demostracion-rutas__c3-demo-joven",
         "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez",
         "seed_challenge_empresa-demostracion-rutas__seed_user_luis-herrera",
         "seed_challenge_empresa-demostracion-rutas__seed_user_sofia-ramirez",
-        "seed_challenge_empresa-demostracion-rutas__seed_user_diego-castillo"
+        "seed_challenge_empresa-demostracion-rutas__seed_user_diego-castillo",
+        "seed_challenge_demanda-retail__c3-demo-joven",
+        "seed_challenge_demanda-retail__seed_user_fernanda-lopez",
+        "seed_challenge_tablero-fintech__seed_user_ana-martinez",
+        "seed_challenge_tablero-fintech__seed_user_luis-herrera",
+        "seed_challenge_tablero-fintech__c3-demo-joven",
+        "seed_challenge_conciliacion-bancaria__seed_user_sofia-ramirez",
+        "seed_challenge_conciliacion-bancaria__seed_user_ana-martinez"
       ]
     },
     {
       "collection": "submissions",
-      "count": 5,
+      "count": 11,
       "ids": [
         "seed_challenge_empresa-demostracion-rutas__c3-demo-joven",
         "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez",
         "seed_challenge_empresa-demostracion-rutas__seed_user_luis-herrera",
         "seed_challenge_empresa-demostracion-rutas__seed_user_sofia-ramirez",
-        "seed_challenge_empresa-demostracion-rutas__seed_user_diego-castillo"
+        "seed_challenge_empresa-demostracion-rutas__seed_user_diego-castillo",
+        "seed_challenge_demanda-retail__c3-demo-joven",
+        "seed_challenge_tablero-fintech__seed_user_ana-martinez",
+        "seed_challenge_tablero-fintech__seed_user_luis-herrera",
+        "seed_challenge_tablero-fintech__c3-demo-joven",
+        "seed_challenge_conciliacion-bancaria__seed_user_sofia-ramirez",
+        "seed_challenge_conciliacion-bancaria__seed_user_ana-martinez"
       ]
     },
     {
@@ -131,29 +158,39 @@
     },
     {
       "collection": "judgeAssignments",
-      "count": 2,
+      "count": 6,
       "ids": [
         "seed_challenge_empresa-demostracion-rutas__c3-demo-admin",
-        "seed_challenge_empresa-demostracion-rutas__seed_user_jurado-externo"
+        "seed_challenge_empresa-demostracion-rutas__seed_user_jurado-externo",
+        "seed_challenge_tablero-fintech__c3-demo-admin",
+        "seed_challenge_tablero-fintech__seed_user_jurado-externo",
+        "seed_challenge_conciliacion-bancaria__c3-demo-admin",
+        "seed_challenge_conciliacion-bancaria__seed_user_jurado-externo"
       ]
     },
     {
       "collection": "evaluations",
-      "count": 6,
+      "count": 11,
       "ids": [
         "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez__c3-demo-admin",
         "seed_challenge_empresa-demostracion-rutas__seed_user_ana-martinez__seed_user_jurado-externo",
         "seed_challenge_empresa-demostracion-rutas__seed_user_luis-herrera__c3-demo-admin",
         "seed_challenge_empresa-demostracion-rutas__seed_user_luis-herrera__seed_user_jurado-externo",
         "seed_challenge_empresa-demostracion-rutas__seed_user_sofia-ramirez__c3-demo-admin",
-        "seed_challenge_empresa-demostracion-rutas__seed_user_sofia-ramirez__seed_user_jurado-externo"
+        "seed_challenge_empresa-demostracion-rutas__seed_user_sofia-ramirez__seed_user_jurado-externo",
+        "seed_challenge_tablero-fintech__seed_user_ana-martinez__c3-demo-admin",
+        "seed_challenge_conciliacion-bancaria__seed_user_sofia-ramirez__c3-demo-admin",
+        "seed_challenge_conciliacion-bancaria__seed_user_sofia-ramirez__seed_user_jurado-externo",
+        "seed_challenge_conciliacion-bancaria__seed_user_ana-martinez__c3-demo-admin",
+        "seed_challenge_conciliacion-bancaria__seed_user_ana-martinez__seed_user_jurado-externo"
       ]
     },
     {
       "collection": "results",
-      "count": 1,
+      "count": 2,
       "ids": [
-        "seed_challenge_empresa-demostracion-rutas"
+        "seed_challenge_empresa-demostracion-rutas",
+        "seed_challenge_conciliacion-bancaria"
       ]
     }
   ]

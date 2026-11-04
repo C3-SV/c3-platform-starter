@@ -82,6 +82,14 @@ test("las filas vacías de rúbrica se descartan y no bloquean la validación", 
   assert.deepEqual(parsed.rubric, [{ label: "Calidad", maxScore: 10, weight: null }]);
 });
 
+test("un peso nulo cuenta como rúbrica sin pesos, no como peso cero", () => {
+  const parsed = parseChallengeInput({
+    ...validChallenge,
+    rubric: [{ label: "Calidad", maxScore: 10, weight: null }, { label: "Claridad", maxScore: 10, weight: null }],
+  }, now);
+  assert.deepEqual(parsed.rubric.map((item) => item.weight), [null, null]);
+});
+
 test("una rúbrica con pesos necesita un peso por criterio y que sumen 100", () => {
   const weighted = parseChallengeInput({
     ...validChallenge,

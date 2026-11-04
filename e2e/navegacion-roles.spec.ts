@@ -113,6 +113,8 @@ test.describe("Evaluar desde el espacio de empresa", () => {
 
   test("la representante sin asignación ve las soluciones pero no puede evaluarlas", async ({ page }) => {
     await loginAt(page, representante, "/empresa");
+    // Las soluciones se ven en la ficha del talento, no volcadas en la tarjeta del challenge.
+    await page.getByRole("button", { name: "Ver talento y lista corta" }).first().click();
     await expect(page.getByText("Solución de prueba: ruteo con ventanas horarias")).toBeVisible();
     await expect(page.getByRole("link", { name: "Evaluar soluciones", exact: true })).toHaveCount(0);
     await expect(page.getByText("C3 te asigna como jurado de este challenge.")).toBeVisible();
@@ -196,7 +198,7 @@ test.describe("Sin desbordes horizontales en ningún ancho", () => {
       await page.setViewportSize({ width: ancho, height: 900 });
       for (const ruta of ["/", "/explorar", "/compite", "/empresa/proponer", "/acceso", `/retos/${challenge.challengeId}`, "/no-existe"]) {
         await page.goto(ruta);
-        await page.waitForLoadState("networkidle");
+        await expect(page.locator("main").first()).toBeVisible();
         const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
         expect(desborde, `desborde en ${ruta} a ${ancho}px`).toBeLessThanOrEqual(1);
       }

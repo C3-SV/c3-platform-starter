@@ -34,7 +34,8 @@ test.describe("Demo de talento sobre el dataset del seed", () => {
   test("la empresa ve el tablero con evaluación publicada, matriz por criterio y estados de contacto", async ({ page }) => {
     await loginAt(page, { email: EMPRESA, password: credentials[EMPRESA] });
     await page.goto("/empresa");
-    await page.getByRole("button", { name: "Ver talento y lista corta" }).first().click();
+    // El espacio de la empresa demo tiene varios challenges: se abre el de las rutas, que es el que tiene el dataset completo.
+    await page.getByRole("article", { name: "Optimización de rutas para una operación de entregas" }).getByRole("button", { name: "Ver talento y lista corta" }).click();
     const comparacion = page.getByRole("table", { name: "Comparación de entregas" });
     await expect(comparacion).toBeVisible();
     await expect(comparacion.getByText("Ana Martínez")).toBeVisible();
