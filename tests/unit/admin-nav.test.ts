@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { ADMIN_HOME, ADMIN_SECTIONS, adminHref, adminSectionOf, parseAdminSection, pendingFor } from "../../src/lib/domain/admin-nav.ts";
 
 test("las secciones siguen el ciclo de vida y cada una tiene su dirección", () => {
-  assert.deepEqual(ADMIN_SECTIONS.map((section) => section.id), ["resumen", "propuestas", "experiencias", "inscripciones", "entregas", "jurados", "resultados"]);
+  assert.deepEqual(ADMIN_SECTIONS.map((section) => section.id), ["resumen", "propuestas", "experiencias", "inscripciones", "entregas", "jurados", "resultados", "auditoria"]);
   assert.equal(ADMIN_HOME, "resumen");
   assert.equal(adminHref("propuestas"), "/admin/propuestas");
   assert.equal(adminHref("inscripciones", { reto: "abc" }), "/admin/inscripciones?reto=abc");

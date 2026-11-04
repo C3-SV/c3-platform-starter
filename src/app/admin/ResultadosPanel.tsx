@@ -17,7 +17,7 @@ interface BoardRow {
   finalizedJudges: number;
   average: number | null;
   recognition: "ganador" | "finalista" | "mencion" | null;
-  evaluations: { judgeUid: string; kind: string; total: number; status: string }[];
+  evaluations: { judgeUid: string; kind: string; total: number; status: string; comment: string | null }[];
 }
 
 interface Board {
@@ -156,6 +156,11 @@ export function ResultadosPanel({ challenges }: { challenges: ChallengeOption[] 
                 <span style={{ display: "block", fontSize: 12, color: "var(--c3-texto-suave)" }}>
                   {row.evaluations.map((item) => `${item.total}/${board.maxTotal}${item.status === "finalized" ? "" : " (en curso)"}`).join(" · ") || "Sin evaluaciones"}
                 </span>
+                {row.evaluations.some((item) => item.comment) ? (
+                  <span style={{ display: "block", fontSize: 12, color: "var(--c3-texto-suave)" }}>
+                    Comentarios del jurado (solo C3): {row.evaluations.filter((item) => item.comment).map((item) => item.comment).join(" · ")}
+                  </span>
+                ) : null}
               </span>
               <span style={{ flex: "1 1 100px", fontFamily: "var(--c3-font-titulo)", fontWeight: 700, fontSize: 16 }}>{row.average !== null ? row.average.toFixed(1) : "—"}</span>
               <span style={{ flex: "1 1 180px" }}>

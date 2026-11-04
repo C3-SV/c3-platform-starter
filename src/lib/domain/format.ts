@@ -24,6 +24,12 @@ export function formatDateTime(iso: string | null | undefined): string | null {
   return dateTimeFormat.format(new Date(iso));
 }
 
+/** Fecha y hora de un cierre, con la zona horaria visible: quien participa sabe a qué hora vence. */
+export function formatDeadline(iso: string | null | undefined): string | null {
+  const text = formatDateTime(iso);
+  return text ? `${text} (hora de El Salvador)` : null;
+}
+
 export function modalityLabel(allows: string[], teamMin: number | null, teamMax: number | null): string {
   const hasTeam = allows.includes("team") && teamMin !== null && teamMax !== null;
   const team = hasTeam ? `equipos de ${teamMin} a ${teamMax}` : null;

@@ -7,7 +7,7 @@ import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError } from "@/lib/client/api";
 import { commercialPackageOf, formatUsd } from "@/lib/domain/commercial";
-import { formatDateTime } from "@/lib/domain/format";
+import { formatDateTime, formatDeadline } from "@/lib/domain/format";
 import { evaluationHref } from "@/lib/domain/navigation";
 import { proposalNextStep, proposalPresentation } from "@/lib/domain/proposals";
 import type { CompanySpace } from "@/lib/server/companies";
@@ -142,7 +142,7 @@ function EmpresaContenido() {
                     </span>
                   ) : null}
                   {challenge.submissionClosesAt ? (
-                    <span style={{ fontSize: 13, color: "var(--c3-texto-suave)" }}>Próximo hito: cierre de entregas el {formatDateTime(challenge.submissionClosesAt) ?? ""}</span>
+                    <span style={{ fontSize: 13, color: "var(--c3-texto-suave)" }}>Próximo hito: cierre de entregas el {formatDeadline(challenge.submissionClosesAt) ?? ""}</span>
                   ) : null}
                   <span className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{challenge.title}</span>
                   <dl aria-label="Cifras del challenge" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: 8, margin: 0 }}>

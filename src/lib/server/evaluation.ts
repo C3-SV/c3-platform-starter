@@ -181,7 +181,7 @@ export async function evaluationWorkspace(db: Firestore, actor: Actor, challenge
         text: canEvaluate ? solution.text : null,
         links: canEvaluate ? solution.links : [],
         mine: evaluation
-          ? { scores: evaluation.scores as Record<string, number>, total: evaluation.total as number, status: evaluation.status as "draft" | "finalized" }
+          ? { scores: evaluation.scores as Record<string, number>, total: evaluation.total as number, status: evaluation.status as "draft" | "finalized", comment: (evaluation.comment as string | null | undefined) ?? null }
           : null,
       };
     }),
@@ -212,6 +212,11 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
   const ref = db.collection(EVALUATIONS).doc(evaluationDocId(submissionId, actor.uid));
   const scores = parseScores(body.scores, challenge.rubric);
   const finalize = body.finalize === true;
+  // Comentario interno del jurado: lo ve solo C3. No es la retroalimentación que la empresa publica a la persona.
+  const comment = typeof body.comment === "string" && body.comment.trim() ? body.comment.trim() : null;
+  if (comment && comment.length > 1000) {
+    throw new ValidationFailure([{ field: "comment", message: "El comentario puede tener hasta 1000 caracteres." }]);
+  }
   const stamp = now.toISOString();
   // La lectura del estado y la escritura van en una transacción: un guardado simultáneo no reabre una evaluación finalizada.
   await db.runTransaction(async (transaction) => {
@@ -227,6 +232,7 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
       kind: assignment.kind,
       scores,
       total: scoreOf(scores, challenge.rubric),
+      comment,
       status: finalize ? "finalized" : "draft",
       createdAt: existing?.createdAt ?? stamp,
       updatedAt: stamp,
@@ -242,7 +248,7 @@ export interface BoardRow {
   finalizedJudges: number;
   average: number | null;
   recognition: Recognition | null;
-  evaluations: { judgeUid: string; kind: string; total: number; status: string }[];
+  evaluations: { judgeUid: string; kind: string; total: number; status: string; comment: string | null }[];
 }
 
 export interface ResultsBoard {
@@ -285,6 +291,7 @@ async function boardFor(db: Firestore, challengeId: string): Promise<ResultsBoar
         kind: doc.data().kind ?? "externo",
         total: doc.data().total as number,
         status: doc.data().status as string,
+        comment: (doc.data().comment as string | null | undefined) ?? null,
       })),
     });
   }

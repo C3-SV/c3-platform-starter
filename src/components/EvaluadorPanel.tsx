@@ -44,6 +44,7 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
   const [issues, setIssues] = useState<FieldIssue[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Record<string, string>>>({});
+  const [comments, setComments] = useState<Record<string, string>>({});
   const signedIn = session.status === "signed-in";
 
   // Carga inicial; las actualizaciones ocurren en la respuesta.
@@ -82,6 +83,10 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
     return Object.fromEntries((workspace?.challenge.rubric ?? []).map((criterion) => [criterion.id, saved[criterion.id] !== undefined ? String(saved[criterion.id]) : ""]));
   }
 
+  function commentFor(solution: Solution): string {
+    return comments[solution.id] ?? solution.mine?.comment ?? "";
+  }
+
   async function save(solution: Solution, finalize: boolean) {
     setIssues([]);
     setFormError(null);
@@ -90,7 +95,7 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
     const values = scoresFor(solution);
     const scores = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value === "" ? NaN : Number(value)]));
     try {
-      await apiRequest(`/api/evaluaciones/${challengeId}/soluciones/${solution.id}`, { method: "PUT", body: { scores, finalize } });
+      await apiRequest(`/api/evaluaciones/${challengeId}/soluciones/${solution.id}`, { method: "PUT", body: { scores, finalize, comment: commentFor(solution) } });
       setDrafts((current) => {
         const next = { ...current };
         delete next[solution.id];
@@ -209,6 +214,20 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
                   </div>
                 );
               })}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label htmlFor={`${solution.id}-comentario`} className="c3-etiqueta-campo">Comentario interno (opcional, solo lo ve C3)</label>
+                <textarea
+                  id={`${solution.id}-comentario`}
+                  className={`c3-campo${issueFor(issues, "comment") ? " c3-campo--error" : ""}`}
+                  rows={3}
+                  maxLength={1000}
+                  disabled={locked}
+                  value={commentFor(solution)}
+                  onChange={(event) => setComments((current) => ({ ...current, [solution.id]: event.target.value }))}
+                />
+                {issueFor(issues, "comment") ? <span className="c3-error-campo">{issueFor(issues, "comment")}</span> : null}
+              </div>
 
               {locked ? (
                 <span className="c3-ayuda">
