@@ -17,10 +17,23 @@ export function database(): Firestore {
 }
 
 /**
+ * Sal del hash de conexión. Sin una sal secreta, las IPv4 se revierten por fuerza bruta: en producción la variable es obligatoria.
+ * El emulador (desarrollo y E2E) usa una sal fija de prueba.
+ */
+function rateLimitSalt(): string {
+  const salt = process.env.RATE_LIMIT_SALT;
+  if (salt) return salt;
+  if (process.env.NODE_ENV === "production" && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    throw new Error("Falta RATE_LIMIT_SALT en el entorno de despliegue: sin sal no se protege la conexión de quien propone.");
+  }
+  return "c3-desarrollo";
+}
+
+/**
  * Clave de límite por conexión. Usa un hash con sal: la IP nunca se guarda en claro.
  * Sin IP visible (desarrollo), todas las pruebas comparten una sola clave.
  */
 export function clientKeyOf(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "local";
-  return createHash("sha256").update(`${process.env.RATE_LIMIT_SALT ?? "c3"}:${forwarded}`).digest("hex").slice(0, 40);
+  return createHash("sha256").update(`${rateLimitSalt()}:${forwarded}`).digest("hex").slice(0, 40);
 }

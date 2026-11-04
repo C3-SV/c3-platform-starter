@@ -22,7 +22,8 @@ export function ContactosPanel() {
   const signedIn = session.status === "signed-in";
   const [contacts, setContacts] = useState<ContactForMe[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [busyIds, setBusyIds] = useState<string[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!signedIn) return;
@@ -41,17 +42,24 @@ export function ContactosPanel() {
   }, [signedIn]);
 
   async function responder(requestId: string, to: string) {
-    setBusyId(requestId);
+    setBusyIds((current) => [...current, requestId]);
     setError(null);
+    setNotice(null);
     try {
-      const data = await apiRequest<{ contact: { id: string; status: string } }>(`/api/contactos/${requestId}`, { method: "PATCH", body: { to } });
-      const refreshed = await apiRequest<{ contacts: ContactForMe[] }>("/api/contactos");
-      setContacts(refreshed.contacts);
-      return data;
+      await apiRequest(`/api/contactos/${requestId}`, { method: "PATCH", body: { to } });
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : "No pudimos guardar tu respuesta. Intentá de nuevo.");
+      setBusyIds((current) => current.filter((id) => id !== requestId));
+      return;
+    }
+    // La respuesta ya quedó guardada: si refrescar la lista falla, no se muestra un error falso.
+    try {
+      const refreshed = await apiRequest<{ contacts: ContactForMe[] }>("/api/contactos");
+      setContacts(refreshed.contacts);
+    } catch {
+      setNotice("Tu respuesta quedó guardada. Recargá la página para ver el estado actualizado.");
     } finally {
-      setBusyId(null);
+      setBusyIds((current) => current.filter((id) => id !== requestId));
     }
   }
 
@@ -67,10 +75,14 @@ export function ContactosPanel() {
         </p>
       </div>
       {error ? <div className="c3-alerta c3-alerta--error" role="alert">{error}</div> : null}
+      {notice ? <div className="c3-alerta c3-alerta--exito" role="status">{notice}</div> : null}
       {contacts.map((contact) => (
         <article key={contact.id} style={{ borderTop: "1px solid var(--c3-borde)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>{contact.organizationName}</span>
+            <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontSize: 16, fontWeight: 600 }}>{contact.organizationName}</span>
+              {contact.isDemo ? <span className="c3-etiqueta" style={{ color: "var(--c3-advertencia)" }}>DEMO · datos demostrativos</span> : null}
+            </span>
             <StatePill state={contact.state} />
           </div>
           <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
@@ -84,7 +96,7 @@ export function ContactosPanel() {
                   key={to}
                   type="button"
                   className={`c3-btn c3-btn--${ACCIONES[to]?.tone ?? "contorno"}`}
-                  disabled={busyId === contact.id}
+                  disabled={busyIds.includes(contact.id)}
                   onClick={() => void responder(contact.id, to)}
                 >
                   {ACCIONES[to]?.label ?? to}

@@ -11,7 +11,9 @@ import { DELIVERY_MAX_LINKS } from "@/lib/domain/delivery";
 import { formatDate, formatDateTime } from "@/lib/domain/format";
 import { deliveryPresentation, enrollmentState, type PresentedState } from "@/lib/domain/presentation";
 import type { DeliveryView } from "@/lib/server/participation";
+import { BitacoraPanel } from "./BitacoraPanel";
 import { DefensaPanel } from "./DefensaPanel";
+import { RetroalimentacionCard } from "./RetroalimentacionCard";
 
 type Banner = { tone: "error" | "exito" | "advertencia" | "info"; title: string; text: string };
 
@@ -288,6 +290,8 @@ function EntregaContenido({ challengeId }: { challengeId: string }) {
           ) : null}
           <StateSummary state={deliveryPresentation(state)} />
         </div>
+        <RetroalimentacionCard challengeId={challenge.id} />
+        {enrollmentStatus === "approved" ? <BitacoraPanel challengeId={challenge.id} /> : null}
         {enrollmentStatus === "approved" ? <DefensaPanel challengeId={challenge.id} submitted={submission?.status === "submitted"} /> : null}
         <aside className="c3-tarea__columna c3-tarea__lateral">
           <section className="c3-card" aria-label="Brief y criterios" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>

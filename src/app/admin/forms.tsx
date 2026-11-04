@@ -309,14 +309,17 @@ export interface ExperienceOption {
 }
 
 /** Formulario de challenge. Se crea dentro de una experiencia existente, en borrador. */
+/** Formulario de challenge. `defaultOrganizationId` llega desde una propuesta aceptada (E1): la organización ya viene elegida. */
 export function ChallengeForm({
   experiences,
   organizations,
   onCreated,
+  defaultOrganizationId,
 }: {
   experiences: ExperienceOption[];
   organizations: { id: string; name: string }[];
   onCreated: (message: string) => void;
+  defaultOrganizationId?: string;
 }) {
   const [selectedExperienceId, setExperienceId] = useState("");
   // La experiencia activa es la elegida o, mientras no se elija, la primera disponible (las experiencias llegan después del primer render).
@@ -329,7 +332,7 @@ export function ChallengeForm({
   const [deliverables, setDeliverables] = useState("");
   const [rubric, setRubric] = useState("");
   const [organizationName, setOrganizationName] = useState("");
-  const [organizationId, setOrganizationId] = useState("");
+  const [organizationId, setOrganizationId] = useState(defaultOrganizationId ?? "");
   const [individual, setIndividual] = useState(true);
   const [team, setTeam] = useState(false);
   const [teamMin, setTeamMin] = useState(2);

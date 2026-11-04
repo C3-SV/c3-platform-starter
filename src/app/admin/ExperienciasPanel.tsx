@@ -69,6 +69,8 @@ export function ExperienciasPanel({
   // La hora se renueva cada vez que llega el catálogo: abrir o cerrar inscripciones cambia la etapa que se muestra.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => new Date(), [catalog]);
+  // Llegada desde una propuesta aceptada (E1): ?organizacion=<id> preelige la organización del challenge.
+  const [prefillOrganizationId] = useState(() => (typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("organizacion") ?? ""));
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
   const [lineFilter, setLineFilter] = useState<LineFilter>("todas");
@@ -404,6 +406,8 @@ export function ExperienciasPanel({
         }}
       />
       <ChallengeForm
+        key={prefillOrganizationId || "nuevo"}
+        defaultOrganizationId={prefillOrganizationId || undefined}
         experiences={experienceOptions}
         organizations={catalog.organizations}
         onCreated={(message) => {

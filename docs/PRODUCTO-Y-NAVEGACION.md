@@ -71,7 +71,7 @@ Una misma cuenta puede participar, evaluar, representar una organización y admi
 | `/empresa` | Representante vinculada | Ver challenges, soluciones y propuestas; ir a evaluar | Menú de la cuenta; «Mi empresa»; tarjeta en Mi C3 | Menú | Mi empresa |
 | `/admin` | Admin | — | Menú de la cuenta; tarjeta en Mi C3 | **Redirige** a `/admin/resumen` | Admin |
 | `/admin/resumen` | Admin | Ver pendientes (propuestas, inscripciones) con enlaces | Entrada de la consola | Cada contador lleva a su sección | — |
-| `/admin/{propuestas,experiencias,inscripciones,entregas,jurados,resultados}` | Admin | Operar esa parte del ciclo de vida | Menú lateral; resumen | Recargar y «atrás» conservan la sección; `?reto=` / `?experiencia=` en inscripciones | — |
+| `/admin/{propuestas,experiencias,inscripciones,entregas,jurados,resultados}` | Admin | Operar esa parte del ciclo de vida | Menú lateral; resumen | Recargar y «atrás» conservan la sección; `?reto=` / `?experiencia=` en inscripciones; `?organizacion=` en experiencias (E1) | — |
 | `/personas/[slug]` | Público | Ver el perfil público de una persona que lo activó | Enlace compartido; ganadores de un challenge | «Explorar experiencias»; 404 si no existe, se cambió o se desactivó | — |
 
 Criterios de aceptación y prueba de cada fila: `e2e/navegacion.spec.ts` y las pruebas de cada área (§9).
@@ -120,10 +120,15 @@ Plan y estado por tarea: [plan 2026-11-03](superpowers/plans/2026-11-03-c3-chall
 | Empresa registra contacto o seguimiento | Mismo panel, tras la aceptación | `PATCH /api/empresa/contactos/[id]` | Hecho |
 | Joven responde a la solicitud | `/mi-c3`, sección «Solicitudes de contacto» (`ContactosPanel`) | `PATCH /api/contactos/[id]`: aceptar, declinar o revocar | Hecho |
 | Joven registra su defensa | `/mi-c3/retos/[id]`, sección «Defensa» (`DefensaPanel`), tras enviar la entrega | `PUT /api/retos/[id]/defensa` (en equipo, solo la líder) | Hecho |
-| Empresa compara por criterios (tabla de evidencia) | Mismo panel: tabla «Comparación de evidencia» con defensa, lista corta y contacto por participante | Tabla y cifras por challenge (inscritas, entregas, lista corta) | Hecho (tabla de evidencia). **Próximamente:** matriz por criterios de la rúbrica y estado de evaluación |
+| Joven registra avances en su bitácora | `/mi-c3/retos/[id]`, sección «Avances y decisiones» (`BitacoraPanel`), con inscripción aprobada | `GET` y `POST /api/retos/[id]/bitacora`; se cierra con el plazo de entregas | Hecho |
+| Joven lee la retroalimentación publicada | `/mi-c3/retos/[id]`, «Lo que dijo la empresa sobre tu entrega» (`RetroalimentacionCard`) | `GET /api/retos/[id]/retroalimentacion`; un borrador nunca llega a la persona | Hecho |
+| Empresa redacta y publica retroalimentación | `/empresa` → «Ver talento y lista corta» (`TalentoPanel`), casilla «Publicar para la persona» | `PUT /api/empresa/retos/[id]/retroalimentacion` (entre 20 y 1500 caracteres) | Hecho |
+| Propuesta con intención (opcional) | `/empresa/proponer`, campo «¿Qué querés lograr?» (`ProponerForm.tsx`) | Se guarda el `intent` (`talento`, `solucion` o `ambos`) con la propuesta | Hecho |
+| Admin crea challenge desde una propuesta aceptada (E1) | `/admin/propuestas` → «Crear challenge para esta organización» (`PropuestasPanel.tsx`) | Abre `/admin/experiencias?organizacion=<id>`, que preelige la organización (`ExperienciasPanel.tsx`); no crea nada por sí solo | Hecho |
+| Empresa compara por criterios (tabla de evidencia) | Mismo panel: tabla «Comparación de evidencia» con defensa, lista corta y contacto por participante | Tabla y cifras por challenge (inscritas, entregas, lista corta) | Hecho (tabla de evidencia, matriz por criterio y estado «En evaluación»). La matriz y el promedio solo aparecen cuando C3 publicó con puntajes visibles |
 | Datos de contacto tras aceptación | — | — | **Próximamente** (canal sin decidir) |
 | Contactar a personas de un equipo | — | — | **Próximamente** (sin decidir) |
-| Filtros del catálogo por tipo, línea, estado y demo | `/explorar` (`FiltrosExplorar`, en el cliente) | Muestra solo las tarjetas que coinciden; no cambia qué existe | Hecho |
+| Filtros del catálogo por tipo (competencia, hackathon, challenge empresarial), línea, estado (abierto, próximo, concluido) y «solo demo» | `/explorar` (`FiltrosExplorar`, en el cliente) | Muestra solo las tarjetas que coinciden; no cambia qué existe | Hecho |
 
 Reglas de visibilidad: la empresa ve solo su organización (admin también); la persona ve solo sus solicitudes y su defensa; ninguna vista muestra correo ni otros datos de contacto.
 

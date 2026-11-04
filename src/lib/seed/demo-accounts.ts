@@ -107,6 +107,8 @@ export interface ProvisionOptions {
   now: Date;
   /** Recibe las contraseñas de las cuentas que se van a crear, antes de crearlas. Nunca se llama en dry-run. */
   writeCredentials: (credentials: { email: string; password: string }[]) => void;
+  /** Solo para emulador: contraseña fija de prueba. En remoto se omite y la contraseña se genera al azar. */
+  passwordFor?: () => string;
 }
 
 export interface ProvisionSummary {
@@ -119,7 +121,7 @@ export interface ProvisionSummary {
 export async function provisionDemoAccounts(options: ProvisionOptions): Promise<ProvisionSummary> {
   const organization = await options.db.collection("organizations").doc(options.organizationId).get();
   if (!organization.exists) {
-    throw new Error("Falta la organización demo: aplicá primero el seed (npm run seed:apply) y repetí la provisión.");
+    throw new Error("Falta la organización demo: aplicá primero el seed (ver docs/demo/README.md) y repetí la provisión.");
   }
 
   const existing = new Map<string, UserRecord>();
@@ -141,7 +143,10 @@ export async function provisionDemoAccounts(options: ProvisionOptions): Promise<
 
   if (options.apply) {
     const toCreate = plan.filter((item) => item.action === "crear");
-    const credentials = toCreate.map((item) => ({ email: item.account.email, password: generateDemoPassword() }));
+    const credentials = toCreate.map((item) => ({
+      email: item.account.email,
+      password: options.passwordFor ? options.passwordFor() : generateDemoPassword(),
+    }));
     if (credentials.length > 0) options.writeCredentials(credentials);
     for (const credential of credentials) {
       const account = DEMO_ACCOUNTS.find((item) => item.email === credential.email);
@@ -170,14 +175,18 @@ export async function provisionDemoAccounts(options: ProvisionOptions): Promise<
         if (current.c3Admin !== true) await options.auth.setCustomUserClaims(uid, { ...current, c3Admin: true });
       }
       if (account.role === "representante") {
-        await options.db.collection(ORGANIZATION_MEMBERS).doc(`${options.organizationId}__${uid}`).set({
-          organizationId: options.organizationId,
-          userId: uid,
-          email: account.email,
-          role: "representante",
-          createdAt: options.now.toISOString(),
-          createdByUid: PROVISIONED_BY,
-        }, { merge: true });
+        // La alta de la membresía se registra una sola vez: una segunda ejecución no cambia su fecha original.
+        const membershipRef = options.db.collection(ORGANIZATION_MEMBERS).doc(`${options.organizationId}__${uid}`);
+        if (!(await membershipRef.get()).exists) {
+          await membershipRef.set({
+            organizationId: options.organizationId,
+            userId: uid,
+            email: account.email,
+            role: "representante",
+            createdAt: options.now.toISOString(),
+            createdByUid: PROVISIONED_BY,
+          });
+        }
       }
     }
   }

@@ -4,6 +4,10 @@ import { ValidationFailure, type FieldIssue } from "./validation.ts";
 
 export type ProposalStatus = "received" | "needs_changes" | "accepted" | "not_prioritized";
 
+/** Qué quiere lograr la empresa con la propuesta. Selección única y opcional (update E0). */
+export const PROPOSAL_INTENTS = ["talento", "solucion", "ambos"] as const;
+export type ProposalIntent = (typeof PROPOSAL_INTENTS)[number];
+
 export interface ProposalInput {
   companyName: string;
   contactName: string;
@@ -11,6 +15,7 @@ export interface ProposalInput {
   problem: string;
   desiredOutcome: string;
   constraints: string;
+  intent: ProposalIntent | null;
 }
 
 export const PROPOSAL_LIMITS = {
@@ -74,12 +79,15 @@ export function parseProposalInput(input: unknown): ProposalInput {
   const problem = text("problem", PROPOSAL_LIMITS.problem.min, PROPOSAL_LIMITS.problem.max, "¿Cuál es el problema?");
   const desiredOutcome = optional("desiredOutcome", "¿Qué resultado les gustaría explorar?");
   const constraints = optional("constraints", "Datos y límites de confidencialidad");
+  const intent = typeof raw.intent === "string" && (PROPOSAL_INTENTS as readonly string[]).includes(raw.intent)
+    ? (raw.intent as ProposalIntent)
+    : null;
   if (raw.consent !== true) {
     issues.push({ field: "consent", message: "Para enviar la propuesta, aceptá que C3 te contacte por ese correo." });
   }
 
   if (issues.length) throw new ValidationFailure(issues);
-  return { companyName, contactName, contactEmail, problem, desiredOutcome, constraints };
+  return { companyName, contactName, contactEmail, problem, desiredOutcome, constraints, intent };
 }
 
 /** Transiciones de revisión por C3. Pedir ajustes exige una nota para la empresa. */

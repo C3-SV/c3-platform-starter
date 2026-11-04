@@ -7,6 +7,15 @@ import { formatDateTime } from "@/lib/domain/format";
 import { CONTACT_MESSAGE_MAX, SHORTLIST_REASON_LIMITS } from "@/lib/domain/contact";
 import type { TalentBoard, TalentRow } from "@/lib/server/talent";
 
+/** Estados de evaluación visibles para la empresa. Los puntajes solo aparecen cuando C3 publicó con puntajes visibles. */
+const EVALUATION_LABEL: Record<string, string> = {
+  sin_evaluar: "Sin evaluar",
+  en_evaluacion: "En evaluación",
+  lista_para_publicar: "Lista para publicar",
+  publicada: "Publicada",
+  sin_completar: "Sin completar",
+};
+
 /**
  * E3–E8 · Talento de un challenge: entregas enviadas con su evidencia separada (entregable, proceso y defensa),
  * lista corta con motivo y solicitud de contacto que queda esperando el consentimiento de la persona.
@@ -78,6 +87,7 @@ export function TalentoPanel({ challengeId }: { challengeId: string }) {
                 <th scope="col" style={{ padding: "8px 12px" }}>Entrega</th>
                 <th scope="col" style={{ padding: "8px 12px" }}>Defensa</th>
                 <th scope="col" style={{ padding: "8px 12px" }}>Lista corta</th>
+                <th scope="col" style={{ padding: "8px 12px" }}>Evaluación</th>
                 <th scope="col" style={{ padding: "8px 12px" }}>Contacto</th>
               </tr>
             </thead>
@@ -93,7 +103,39 @@ export function TalentoPanel({ challengeId }: { challengeId: string }) {
                   </td>
                   <td style={{ padding: "8px 12px" }}>{row.defense ? "Registrada" : "Pendiente"}</td>
                   <td style={{ padding: "8px 12px" }}>{row.shortlist ? "Sí" : "No"}</td>
+                  <td style={{ padding: "8px 12px" }}>
+                    {EVALUATION_LABEL[row.evaluation.state] ?? row.evaluation.state}
+                    {row.evaluation.average !== null ? ` · promedio ${row.evaluation.average.toFixed(1)}` : ""}
+                  </td>
                   <td style={{ padding: "8px 12px" }}>{row.contact ? row.contact.state.label : row.canRequestContact ? "Disponible" : row.mode === "team" ? "No disponible para equipos" : "No disponible"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {board.rows.some((row) => row.evaluation.criteria !== null) ? (
+        <div style={{ overflowX: "auto" }}>
+          <table aria-label="Matriz por criterio" style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+            <caption style={{ textAlign: "left", fontSize: 14, color: "var(--c3-texto-suave)", paddingBottom: 8 }}>
+              Matriz por criterio: promedio de los jurados finalizados. Visible porque C3 publicó los resultados con puntajes.
+            </caption>
+            <thead>
+              <tr style={{ textAlign: "left", borderBottom: "1px solid var(--c3-borde-fuerte)" }}>
+                <th scope="col" style={{ padding: "8px 12px" }}>Participante</th>
+                {board.challenge.rubric.map((criterion) => (
+                  <th key={criterion.id} scope="col" style={{ padding: "8px 12px" }}>{criterion.label} (máx. {criterion.maxScore})</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {board.rows.filter((row) => row.evaluation.criteria !== null).map((row) => (
+                <tr key={row.submissionId} style={{ borderBottom: "1px solid var(--c3-borde)" }}>
+                  <td style={{ padding: "8px 12px" }}>{row.name ?? "Sin nombre"}</td>
+                  {board.challenge.rubric.map((criterion) => (
+                    <td key={criterion.id} style={{ padding: "8px 12px" }}>{row.evaluation.criteria?.[criterion.id]?.toFixed(1) ?? "—"}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>
@@ -112,6 +154,15 @@ export function TalentoPanel({ challengeId }: { challengeId: string }) {
             onShortlist={(reason) => run(`lista:${row.submissionId}`, () => apiRequest(`/api/empresa/retos/${challengeId}/lista-corta`, { method: "POST", body: { submissionId: row.submissionId, reason } }), "Agregada a la lista corta.")}
             onUnshortlist={() => run(`lista:${row.submissionId}`, () => apiRequest(`/api/empresa/retos/${challengeId}/lista-corta/${row.submissionId}`, { method: "DELETE" }), "Quitada de la lista corta.")}
             onRequestContact={(message) => run(`contacto:${row.submissionId}`, () => apiRequest(`/api/empresa/retos/${challengeId}/contacto`, { method: "POST", body: { submissionId: row.submissionId, message } }), "Solicitud enviada. Queda esperando el consentimiento de la persona.")}
+            challengeId={challengeId}
+            onFeedbackSaved={() => {
+              setNotice(null);
+              setLoadError(null);
+              reload().then(
+                () => setNotice("Retroalimentación guardada."),
+                () => setLoadError("La retroalimentación se guardó, pero no pudimos actualizar el tablero. Recargá la página."),
+              );
+            }}
             onAdvance={(requestId, to) => run(`avance:${requestId}`, () => apiRequest(`/api/empresa/contactos/${requestId}`, { method: "PATCH", body: { to } }), "Seguimiento registrado.")}
           />
         ))
@@ -122,6 +173,8 @@ export function TalentoPanel({ challengeId }: { challengeId: string }) {
 
 interface FilaProps {
   row: TalentRow;
+  challengeId: string;
+  onFeedbackSaved: () => void;
   busy: string | null;
   onShortlist: (reason: string) => void;
   onUnshortlist: () => void;
@@ -129,7 +182,7 @@ interface FilaProps {
   onAdvance: (requestId: string, to: "contactado" | "seguimiento") => void;
 }
 
-function TalentoFila({ row, busy, onShortlist, onUnshortlist, onRequestContact, onAdvance }: FilaProps) {
+function TalentoFila({ row, challengeId, onFeedbackSaved, busy, onShortlist, onUnshortlist, onRequestContact, onAdvance }: FilaProps) {
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
   const [reasonError, setReasonError] = useState<string | null>(null);
@@ -172,6 +225,17 @@ function TalentoFila({ row, busy, onShortlist, onUnshortlist, onRequestContact, 
           {row.defense?.decisions ? <p style={{ fontSize: 14, lineHeight: 1.5 }}><strong>Decisiones:</strong> {row.defense.decisions}</p> : <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay decisiones registradas.</p>}
           {row.defense?.testing ? <p style={{ fontSize: 14, lineHeight: 1.5 }}><strong>Pruebas:</strong> {row.defense.testing}</p> : null}
           {row.defense?.tradeoffs ? <p style={{ fontSize: 14, lineHeight: 1.5 }}><strong>Trade-offs:</strong> {row.defense.tradeoffs}</p> : null}
+          {row.checkpoints.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, borderTop: "1px solid var(--c3-borde)", paddingTop: 8 }}>
+              <strong style={{ fontSize: 14 }}>Bitácora ({row.checkpoints.length})</strong>
+              {row.checkpoints.map((checkpoint) => (
+                <p key={checkpoint.id} style={{ fontSize: 13, lineHeight: 1.5 }}>
+                  <span style={{ color: "var(--c3-texto-suave)" }}>{formatDateTime(checkpoint.createdAt) ?? ""}:</span> {checkpoint.text}
+                  {checkpoint.link ? <> · <a href={checkpoint.link} target="_blank" rel="noopener noreferrer">enlace</a></> : null}
+                </p>
+              ))}
+            </div>
+          ) : null}
         </Evidencia>
         <Evidencia titulo="Defensa" pregunta="¿Lo comprende y puede defenderlo?">
           {row.defense ? (
@@ -185,6 +249,8 @@ function TalentoFila({ row, busy, onShortlist, onUnshortlist, onRequestContact, 
           )}
         </Evidencia>
       </div>
+
+      <RetroalimentacionForm challengeId={challengeId} row={row} onSaved={onFeedbackSaved} />
 
       <div style={{ borderTop: "1px solid var(--c3-borde)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
         {row.shortlist ? (
@@ -267,6 +333,49 @@ function ContactoAcciones({ row, busy, onAdvance }: { row: TalentRow; busy: stri
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Retroalimentación de la empresa sobre una entrega. Sin publicar, solo la ve la empresa; publicada, la ve la persona. */
+function RetroalimentacionForm({ challengeId, row, onSaved }: { challengeId: string; row: TalentRow; onSaved: () => void }) {
+  const current = row.feedback;
+  const [text, setText] = useState(current?.text ?? "");
+  const [publish, setPublish] = useState(Boolean(current?.publishedAt));
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function guardar(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      await apiRequest(`/api/empresa/retos/${challengeId}/retroalimentacion`, {
+        method: "PUT",
+        body: { submissionId: row.submissionId, text: text.trim(), publish },
+      });
+      onSaved();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : "No pudimos guardar la retroalimentación. Intentá de nuevo.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={guardar} noValidate style={{ display: "flex", flexDirection: "column", gap: 8, borderTop: "1px solid var(--c3-borde)", paddingTop: 16 }}>
+      <label htmlFor={`retro-${row.submissionId}`} className="c3-etiqueta-campo">Retroalimentación (entre 20 y 1500 caracteres)</label>
+      <textarea id={`retro-${row.submissionId}`} className="c3-campo" rows={3} maxLength={1500} value={text} onChange={(event) => setText(event.target.value)} />
+      <label style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 44, fontSize: 14 }}>
+        <input type="checkbox" checked={publish} onChange={(event) => setPublish(event.target.checked)} />
+        Publicar para la persona. Sin publicar, solo la ve la empresa.
+      </label>
+      {error ? <span role="alert" style={{ fontSize: 13, color: "var(--c3-error)" }}>{error}</span> : null}
+      <div>
+        <button type="submit" className="c3-btn c3-btn--contorno" disabled={saving}>
+          {saving ? "Guardando…" : current ? "Actualizar retroalimentación" : "Guardar retroalimentación"}
+        </button>
+      </div>
+    </form>
   );
 }
 

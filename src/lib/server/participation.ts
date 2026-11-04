@@ -248,6 +248,11 @@ async function resolveContext(
   const approved = enrollment?.status === "approved";
   const inWindow = canEditDelivery(challenge.submissionClosesAt, now);
 
+  // Una inscripción a un challenge concreto no habilita entregar en otro challenge de la misma experiencia.
+  if (enrollment && enrollment.challengeId != null && enrollment.challengeId !== challenge.id) {
+    return { mode, eligible: false, canEdit: false, isLeader: false, submissionId: null, team: null };
+  }
+
   // Una inscripción a la experiencia (sin challenge) es individual: no habilita challenges que se juegan solo por equipo.
   if (mode === "individual" && enrollment && enrollment.challengeId == null && !challenge.allows.includes("individual")) {
     return { mode, eligible: false, canEdit: false, isLeader: false, submissionId: null, team: null };

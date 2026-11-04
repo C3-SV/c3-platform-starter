@@ -1,5 +1,6 @@
 import type { ExperienceKind, ExperienceLine, ExperienceStatus } from "../domain/types.ts";
 import { contactRequestDocId, enrollmentDocId, participationDocId } from "../server/ids.ts";
+import { assignmentDocId, evaluationDocId } from "../server/evaluation.ts";
 import { DEMO_ACCOUNTS } from "./demo-accounts.ts";
 
 /** Colecciones que escribe el seed. El orden importa: las organizaciones van primero. */
@@ -15,6 +16,11 @@ export const SEED_COLLECTIONS = [
   "shortlists",
   "contactRequests",
   "companyProposals",
+  "checkpoints",
+  "feedbacks",
+  "judgeAssignments",
+  "evaluations",
+  "results",
 ] as const;
 
 export interface SeedRecord {
@@ -23,9 +29,11 @@ export interface SeedRecord {
   data: Record<string, unknown>;
 }
 
+// v3 (4-nov-2026): el challenge demostrativo lleva la marca demo; la solución publicada tiene dos evaluaciones finalizadas de jurados distintos; la retroalimentación de la cuenta joven está publicada.
 // v2 (3-nov-2026): línea Conecta para el challenge empresarial, nombre y rúbrica del reto demostrativo y paquete comercial.
-// Un documento ya aplicado con v1 aparece como conflicto en buildSeedPlan: no se sobrescribe sin una migración explícita.
-const SEED_VERSION = 2;
+// Un documento con la misma versión y contenido distinto aparece como conflicto en buildSeedPlan. Una versión anterior se
+// actualiza con `update` (con respaldo y --allow-update), nunca con `apply`.
+const SEED_VERSION = 3;
 const MANAGED_BY = "c3-seed";
 
 export function seedId(namespace: string, key: string): string {
@@ -188,6 +196,7 @@ const challenges: SeedRecord[] = [
       teamMaxSize: 4,
       submissionClosesAt: "2026-12-31T23:59:00.000Z",
       status: "published",
+      demo: true,
       seedVersion: SEED_VERSION,
       managedBy: MANAGED_BY,
       createdAt: "2026-10-01T00:00:00.000Z",
@@ -225,6 +234,8 @@ interface DemoParticipant {
   defense?: { summary: string; decisions: string; testing?: string; tradeoffs?: string; aiUse?: string };
   shortlist?: string;
   contact?: { status: "esperando_consentimiento" | "aceptado"; message: string };
+  checkpoints?: { text: string; link?: string }[];
+  feedback?: { text: string; publish: boolean };
 }
 
 /** Registros de una persona en el challenge demo: perfil (si no es cuenta demo), inscripción, participación, entrega, defensa, lista corta y contacto. */
@@ -268,6 +279,38 @@ function participantRecords(person: DemoParticipant, uid: string, withProfile: b
     },
   });
   if (!submitted) return records;
+
+  (person.checkpoints ?? []).forEach((checkpoint, index) => {
+    records.push({
+      collection: "checkpoints",
+      id: seedId("checkpoint", `${uid}-${index + 1}`),
+      data: {
+        challengeId: demoChallengeId,
+        submissionId,
+        authorUid: uid,
+        text: checkpoint.text,
+        link: checkpoint.link ?? null,
+        createdAt: `2026-10-${String(25 + index).padStart(2, "0")}T16:00:00.000Z`,
+        ...demoMeta,
+      },
+    });
+  });
+  if (person.feedback) {
+    records.push({
+      collection: "feedbacks",
+      id: submissionId,
+      data: {
+        challengeId: demoChallengeId,
+        submissionId,
+        organizationId: DEMO_ORGANIZATION_ID,
+        text: person.feedback.text,
+        publishedAt: person.feedback.publish ? DEMO_TIMES.changed : null,
+        updatedAt: DEMO_TIMES.changed,
+        writtenByUid: DEMO_UID.empresa,
+        ...demoMeta,
+      },
+    });
+  }
 
   if (person.defense) {
     records.push({
@@ -333,6 +376,11 @@ const demoJoven: DemoParticipant = {
   },
   shortlist: "Justifica la heurística con datos y reconoce sus límites en instancias grandes.",
   contact: { status: "esperando_consentimiento", message: "Nos gustaría conocer mejor tu propuesta de rutas y cómo tratás las ventanas horarias." },
+  checkpoints: [
+    { text: "Comparé la heurística de inserción contra la búsqueda exhaustiva en 40 instancias pequeñas. La diferencia de kilómetros fue menor al 5 %." },
+    { text: "Decidí mantener la inserción secuencial: con 300 pedidos responde en menos de un segundo. Lo dejo registrado con la medición.", link: DEMO_LINK },
+  ],
+  feedback: { text: "Buena comparación con la búsqueda exhaustiva. Falta medir el costo de cambiar de ruta después de cumplir las ventanas.", publish: true },
 };
 
 const demoParticipants: DemoParticipant[] = [
@@ -350,6 +398,7 @@ const demoParticipants: DemoParticipant[] = [
     },
     shortlist: "Explica con datos por qué elige las tolerancias y muestra cómo se auditan las decisiones.",
     contact: { status: "aceptado", message: "Nos gustaría conversar sobre cómo justificaste las tolerancias de las ventanas." },
+    feedback: { text: "Justificás las tolerancias con datos y dejás trazabilidad de cada inserción. Falta una prueba con demoras reales de tráfico.", publish: true },
   },
   {
     key: "luis-herrera",
@@ -439,7 +488,87 @@ const demoProposals: SeedRecord[] = [
   },
 ];
 
+/**
+ * Evaluación de demostración: dos jurados asignados (la administradora demo y un jurado externo sin cuenta).
+ * Ana y Luis tienen dos evaluaciones finalizadas; Sofía tiene un borrador. El resultado queda publicado con puntajes
+ * visibles SOLO para esta demostración; no hay ganadores públicos (showWinners false).
+ */
+function evaluationRecords(): SeedRecord[] {
+  const externalJudge = seedId("user", "jurado-externo");
+  const judges = [
+    { uid: DEMO_UID.admin, email: DEMO_ACCOUNTS.find((account) => account.key === "admin")?.email ?? "", kind: "externo" },
+    { uid: externalJudge, email: "jurado.externo@example.test", kind: "externo" },
+  ];
+  const assignments: SeedRecord[] = judges.map((judge) => ({
+    collection: "judgeAssignments",
+    id: assignmentDocId(demoChallengeId, judge.uid),
+    data: {
+      challengeId: demoChallengeId,
+      experienceId: demoExperienceId,
+      userId: judge.uid,
+      email: judge.email,
+      kind: judge.kind,
+      status: "active",
+      assignedAt: DEMO_TIMES.created,
+      assignedByUid: DEMO_UID.admin,
+      revokedAt: null,
+      ...demoMeta,
+    },
+  }));
+
+  const scoresBy: Record<string, { judge: string; scores: Record<string, number>; finalized: boolean }[]> = {
+    "ana-martinez": [
+      { judge: DEMO_UID.admin, scores: { c1: 9, c2: 8, c3: 9, c4: 8 }, finalized: true },
+      { judge: externalJudge, scores: { c1: 8, c2: 9, c3: 8, c4: 9 }, finalized: true },
+    ],
+    "luis-herrera": [
+      { judge: DEMO_UID.admin, scores: { c1: 7, c2: 6, c3: 7, c4: 6 }, finalized: true },
+      { judge: externalJudge, scores: { c1: 6, c2: 7, c3: 6, c4: 7 }, finalized: true },
+    ],
+    "sofia-ramirez": [
+      { judge: DEMO_UID.admin, scores: { c1: 8, c2: 7, c3: 7, c4: 8 }, finalized: true },
+      { judge: externalJudge, scores: { c1: 7, c2: 8, c3: 6, c4: 7 }, finalized: true },
+    ],
+  };
+  const evaluations: SeedRecord[] = Object.entries(scoresBy).flatMap(([key, entries]) => {
+    const submissionId = participationDocId(demoChallengeId, seedId("user", key));
+    return entries.map((entry) => ({
+      collection: "evaluations",
+      id: evaluationDocId(submissionId, entry.judge),
+      data: {
+        submissionId,
+        challengeId: demoChallengeId,
+        judgeUserId: entry.judge,
+        kind: "externo",
+        scores: entry.scores,
+        total: Object.values(entry.scores).reduce((sum, value) => sum + value, 0),
+        status: entry.finalized ? "finalized" : "draft",
+        createdAt: DEMO_TIMES.changed,
+        updatedAt: DEMO_TIMES.changed,
+        finalizedAt: entry.finalized ? DEMO_TIMES.changed : null,
+        ...demoMeta,
+      },
+    }));
+  });
+
+  const results: SeedRecord[] = [{
+    collection: "results",
+    id: demoChallengeId,
+    data: {
+      challengeId: demoChallengeId,
+      status: "published",
+      showWinners: false,
+      showScores: true,
+      publishedAt: DEMO_TIMES.changed,
+      publishedByUid: DEMO_UID.admin,
+      ...demoMeta,
+    },
+  }];
+  return [...assignments, ...evaluations, ...results];
+}
+
 const demoRecords: SeedRecord[] = [
+  ...evaluationRecords(),
   ...participantRecords(demoJoven, DEMO_UID.joven, false),
   ...demoParticipants.flatMap((person) => participantRecords(person, seedId("user", person.key), true)),
   ...demoProposals,
@@ -458,6 +587,11 @@ export const SEED_RECORDS = {
   shortlists: demoOf("shortlists"),
   contactRequests: demoOf("contactRequests"),
   companyProposals: demoOf("companyProposals"),
+  checkpoints: demoOf("checkpoints"),
+  feedbacks: demoOf("feedbacks"),
+  judgeAssignments: demoOf("judgeAssignments"),
+  evaluations: demoOf("evaluations"),
+  results: demoOf("results"),
 } as const;
 
 export function validateSeedRecords(records: readonly SeedRecord[]): void {
