@@ -7,7 +7,7 @@ Esta carpeta reúne lo necesario para presentar la demo: el relato, las cuentas,
 ## Dónde corre
 
 - Proyecto Firebase: `c3-platform-demo`, el mismo que usa la aplicación. Decisión del responsable (3-nov-2026), registrada en [AGENTS §15](../../AGENTS.md).
-- Dataset: `docs/demo/seed-manifest.json` (generado con `scripts/seed-manifest.mjs`). Versión 4 del seed (rúbrica ponderada). En `c3-platform-demo` está cargada la v3; la v4 espera autorización para su carga remota (plan §8). No contiene credenciales.
+- Dataset: `docs/demo/seed-manifest.json` (generado con `scripts/seed-manifest.mjs`). Versión 4 del seed (rúbrica ponderada). Cargada en `c3-platform-demo` el 4-nov-2026 (plan §8). No contiene credenciales.
 
 ## Cuentas
 
@@ -60,7 +60,7 @@ Firebase Auth no envía correos en la demo: la recuperación de contraseña no e
 - Dos jurados asignados: la administradora demo y un jurado externo sin cuenta.
 - Ana, Luis y Sofía tienen dos evaluaciones finalizadas cada una (de jurados distintos), así que las tres soluciones están completas. Diego tiene un borrador de entrega que no es visible para la empresa.
 - El resultado está publicado con puntajes visibles **solo para esta demostración**; no muestra ganadores públicos. La empresa ve el promedio sobre 100 y la matriz por criterio. Con la rúbrica ponderada 20/30/25/25, Sofía promedia 72,5 y Ana, 85.
-- Estos datos están en el seed (`src/lib/seed/seed-data.ts`). En el remoto está la v3, sin pesos; la v4 los pondera 20/30/25/25 y espera su carga remota (plan §8).
+- Estos datos están en el seed (`src/lib/seed/seed-data.ts`). En `c3-platform-demo` están desde la v4, con la rúbrica ponderada 20/30/25/25 (plan §8).
 
 ## Pendiente antes de presentar
 

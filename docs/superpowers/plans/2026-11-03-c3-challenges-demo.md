@@ -144,7 +144,7 @@ Artifact «C3» de tipo **Design System** (`https://claude.ai/artifact/8fjePTGra
 - Decisiones: congelación de resultados al publicar; canal de contacto simulado tras la aceptación; contacto con equipos a través de la líder; rúbrica ponderada 20/30/25/25; terminología «challenge»; bitácora solo agrega; correo visible solo para administración; recuperación de contraseña «Próximamente»; reglas por servidor con pruebas de reglas.
 - Privacidad: el tablero entrega un token por fila (el id interno no sale); los jurados no ven el contenido de las soluciones antes del cierre; `RATE_LIMIT_SALT` se valida en el check de Vercel.
 - Retroalimentación solo con el challenge publicado; defensa congelada al cerrar entregas.
-- `SEED_VERSION = 4` (rúbrica ponderada). **Pendiente:** cargar la v4 en `c3-platform-demo` (dry-run, respaldo y `update`) con autorización. Hasta entonces, el remoto tiene la v3, sin pesos.
+- `SEED_VERSION = 4` (rúbrica ponderada). **Cargada en `c3-platform-demo` el 4-nov-2026** (dry-run, respaldo `C:\Users\chris\.c3-demo\backup-seed-update-v4-2026-11-04.json` y `update`): 55 documentos actualizados, sin creaciones ni conflictos. Verificación en solo lectura: 55 iguales al seed v4.
 - Lo que no entra en este PR está en [PENDIENTES-REALES](../../PENDIENTES-REALES.md): dashboard de empresa, configuración del challenge, consentimientos de la inscripción, challenges demo adicionales, auditoría de admin, banner de entorno, revisión visual y E2E pendientes.
 
 **Código y pruebas (3-nov-2026, sin commits en ese momento):**
