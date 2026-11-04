@@ -2,6 +2,25 @@
 
 Este archivo mantiene **solo decisiones y trabajos no cerrados**. Actualizar la condición de cierre al resolverlos; no copiar aquí narrativas de implementaciones anteriores. El alcance implementado y las rutas están en [README](../README.md).
 
+## Prioridad máxima — demo integral del 4-nov-2026 (update del 3-nov)
+
+Plan, inventario y estado por tarea: [plan 2026-11-03](superpowers/plans/2026-11-03-c3-challenges-demo.md). Fuente de decisiones: [UPDATE-2026-11-03](UPDATE-2026-11-03-demo-integral.md).
+
+| Asunto | Situación conocida | Para cerrar |
+| --- | --- | --- |
+| Firebase remoto y cuentas demo | Proyecto de la demo: **`c3-platform-demo`** (decisión del responsable, 3-nov-2026; excepción explícita a AGENTS §7, registrada en §15). **Hecho:** seed v2 aplicado con respaldo previo fuera del repo (`C:\Users\chris\.c3-demo\backup-seed-v1-2026-11-03.json`); cuentas `joven@`, `empresa@` y `admin@demo.c3.com.sv` creadas con UID fijo; claim de administración y vínculo verificados en solo lectura. **Pendiente:** confirmar si el sitio `demo.plat.c3.com.sv` lee este proyecto; decidir sobre `c3-challenges-demo` (creado por error, sin uso; su eliminación requiere confirmación); rotar la clave de la cuenta de servicio tras el ensayo y guardarla fuera del repositorio y de carpetas sincronizadas | Confirmaciones del responsable; borrar la clave local al terminar |
+| Seed v2 frente a datos v1 | **Hecho (3-nov-2026):** modo `update` con respaldo previo y `apply` que se niega ante versiones anteriores. Aplicado en `c3-platform-demo` | Ninguno |
+| Dataset de demostración completo | **Hecho en remoto:** 1 organización, 6 perfiles sin cuenta, 7 inscripciones, 5 participaciones, 5 entregas (4 enviadas, 1 borrador), 3 defensas, 2 listas cortas, 2 solicitudes de contacto y 3 propuestas. **Pendiente:** evaluaciones con puntajes y bitácora (J5), que el tablero todavía no muestra | Modelar evaluaciones y bitácora, con el mismo criterio de demo |
+| Contacto con datos | Las solicitudes funcionan, pero no existe canal de contacto tras «aceptado» (ni correo ni mensaje interno) | Decidir el canal y la retención (PRIVACIDAD); hasta entonces, la empresa no ve datos de la persona |
+| Contacto con equipos | Solo entregas individuales. Un equipo no puede recibir solicitud de contacto | Definir a quién se contacta de un equipo |
+| Rúbrica con pesos | El modelo valida puntajes enteros de 1 a 10 por criterio; el update pide 20/30/25/25 % | Decidir si se añade ponderación al modelo o se mantienen puntajes iguales |
+| Plazo de la defensa | Se puede registrar o cambiar sin fecha límite | Decidir si se congela al cerrar entregas o la evaluación |
+| Impeccable | Plugin disponible en `C:\Users\chris\.claude\plugins\marketplaces\impeccable` (v4.8.0). `npx impeccable install` no se ha ejecutado: escribe configuración en el repo | Revisar su salida y confirmar; luego registrar la invocación en AGENTS |
+| Voz de la interfaz | El update pide voseo; el README del artifact de diseño pide tuteo | Se aplica el voseo del update; el artifact no se corrige |
+| Filtros de `/explorar` | **Hecho:** tipo, línea, estado y «solo demo», en el cliente (`FiltrosExplorar`). La guía de estilo decía «sin filtros en el MVP»; esa decisión queda superada por el update | Ninguno |
+| E2E y revisión visual | Los paneles nuevos (talento, defensa, contactos) no tienen prueba E2E ni revisión a 390 px y 1280 px | Añadir especificación en `e2e/` y revisar en navegador |
+| Next.js 16.4.0 | `next build` muestra el aviso de seguridad y se detiene la primera vez; al repetir compila | Actualización aparte, con revisión de compatibilidad (no incluida en la demo) |
+
 ## Prioridad alta — estabilidad y experiencia de producto
 
 | Asunto | Situación conocida | Para cerrar |
