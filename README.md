@@ -179,7 +179,7 @@ En producción, ejecuta el mismo script con credenciales de servicio autorizadas
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo |
 | `npm run build` | Build de producción |
-| `npm run test:e2e` (escritorio y móvil, incluye el build de producción) | 107 superadas, 1 omitida (ya existente) |
+| `npm run test:e2e` (escritorio y móvil, incluye el build de producción) | 217 superadas, 0 fallidas, 23 omitidas: cada prueba declara su proyecto (escritorio o móvil) |
 | `npm run check:vercel-env` | Valida las variables requeridas para un deploy de Vercel |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint (configuración de Next.js) |
