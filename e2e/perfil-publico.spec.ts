@@ -108,7 +108,7 @@ test.describe("Activar y compartir", () => {
 
   test("las inscripciones sin aprobar no aparecen en el perfil público", async ({ page }) => {
     const person = await personWithDetails("pendiente");
-    await api(person.token, "POST", `/api/retos/${pendingChallenge.challengeId}/inscripcion`, { mode: "individual" });
+    await api(person.token, "POST", `/api/retos/${pendingChallenge.challengeId}/inscripcion`, { mode: "individual", confirmedEligibility: true, acceptedRules: true });
     await loginAt(page, person);
     const path = await activate(page);
     await page.goto(path);

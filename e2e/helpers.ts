@@ -125,7 +125,7 @@ export async function linkRepresentative(admin: string, organizationName: string
 
 /** Inscribe a la cuenta en el challenge y C3 la aprueba. Devuelve el id de la inscripción. */
 export async function enrollApproved(admin: string, account: Account, challenge: PublishedChallenge): Promise<string> {
-  await api(account.token, "POST", `/api/retos/${challenge.challengeId}/inscripcion`, { mode: "individual" });
+  await api(account.token, "POST", `/api/retos/${challenge.challengeId}/inscripcion`, { mode: "individual", confirmedEligibility: true, acceptedRules: true });
   const enrollmentId = `${challenge.experienceId}__${account.uid}`;
   await api(admin, "PATCH", `/api/admin/inscripciones/${enrollmentId}`, { status: "approved" });
   return enrollmentId;

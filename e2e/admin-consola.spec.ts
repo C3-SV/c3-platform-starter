@@ -15,7 +15,7 @@ test.beforeAll(async () => {
   challenge = await createPublishedChallenge(token);
   pendingOwner = await createAccount("pendiente-admin");
   // Una inscripción sin revisar: es el pendiente que el resumen y el menú deben mostrar.
-  await api(pendingOwner.token, "POST", `/api/retos/${challenge.challengeId}/inscripcion`, { mode: "individual" });
+  await api(pendingOwner.token, "POST", `/api/retos/${challenge.challengeId}/inscripcion`, { mode: "individual", confirmedEligibility: true, acceptedRules: true });
 });
 
 test.describe("Entrada y URL por sección", () => {

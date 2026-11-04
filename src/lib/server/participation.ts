@@ -97,6 +97,8 @@ export interface DeliveryView {
   canEdit: boolean;
   state: DeliveryState;
   submission: SubmissionView | null;
+  /** Estado de la evaluación para la persona: pendiente hasta el cierre, en revisión mientras evalúa el jurado, publicado cuando C3 publica. */
+  evaluation: { state: "pendiente" | "en_revision" | "publicado"; result: Awaited<ReturnType<typeof resultForSubmission>> };
 }
 
 interface SubmissionContext {
@@ -161,7 +163,15 @@ function parseMode(raw: unknown, allows: ParticipationMode[]): ParticipationMode
 }
 
 /** Inscripción en un challenge, individual o por equipo. Una por experiencia; la revisa C3. */
-export async function enrollInChallenge(db: Firestore, actor: Actor, challengeId: string, rawMode: unknown, now: Date): Promise<EnrollmentView> {
+export async function enrollInChallenge(
+  db: Firestore,
+  actor: Actor,
+  challengeId: string,
+  rawMode: unknown,
+  now: Date,
+  /** Confirmaciones de la inscripción (J2, J3). La API las exige siempre; si se pasan, se registran con la inscripción. */
+  consent?: { eligibility: unknown; rules: unknown },
+): Promise<EnrollmentView> {
   const challenge = await loadChallenge(db, challengeId);
   if (challenge.status !== "published") throw notFound();
   const experience = await loadExperience(db, challenge.experienceId);
@@ -171,6 +181,12 @@ export async function enrollInChallenge(db: Firestore, actor: Actor, challengeId
     throw new HttpError(409, "inscripcion_cerrada", "Las inscripciones de esta experiencia no están abiertas.");
   }
   const mode = parseMode(rawMode, challenge.allows);
+  if (consent && (consent.eligibility !== true || consent.rules !== true)) {
+    throw new ValidationFailure([
+      ...(consent.eligibility === true ? [] : [{ field: "confirmedEligibility", message: "Confirmá que cumplís los requisitos de elegibilidad." }]),
+      ...(consent.rules === true ? [] : [{ field: "acceptedRules", message: "Aceptá las reglas del challenge y el uso de tus datos para evaluar." }]),
+    ]);
+  }
 
   const ref = db.collection(ENROLLMENTS).doc(enrollmentDocId(experience.id, actor.uid));
   const stamp = now.toISOString();
@@ -182,6 +198,7 @@ export async function enrollInChallenge(db: Firestore, actor: Actor, challengeId
     status: "pending" as EnrollmentStatus,
     createdAt: stamp,
     updatedAt: stamp,
+    ...(consent ? { confirmedEligibilityAt: stamp, acceptedRulesAt: stamp } : {}),
   };
   await db.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(ref);
@@ -480,6 +497,9 @@ export async function getDelivery(db: Firestore, actor: Actor, challengeId: stri
     ? await db.collection(SUBMISSIONS).doc(context.submissionId).get()
     : null;
   const submission = toSubmission(submissionSnapshot?.data());
+  const result = context.eligible ? await resultForSubmission(db, challenge.id, context.submissionId) : null;
+  const closed = challenge.submissionClosesAt !== null && now.getTime() >= Date.parse(challenge.submissionClosesAt);
+  const evaluationState = result ? "publicado" : submission?.status === "submitted" && closed ? "en_revision" : "pendiente";
 
   return {
     challenge: {
@@ -500,6 +520,7 @@ export async function getDelivery(db: Firestore, actor: Actor, challengeId: stri
     canEdit: context.canEdit,
     state: deliveryState(submission, challenge.submissionClosesAt, now),
     submission,
+    evaluation: { state: evaluationState, result },
   };
 }
 
