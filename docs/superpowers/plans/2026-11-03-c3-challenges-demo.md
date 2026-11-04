@@ -88,9 +88,9 @@ Artifact «C3» de tipo **Design System** (`https://claude.ai/artifact/8fjePTGra
 1. **Firebase remoto (Task 4–5) — proyecto decidido por el responsable el 3-nov-2026: `c3-platform-demo`** (el que ya existe en su cuenta; decisión explícita, excepción a AGENTS §7 registrada en §15).
    - **Estado del proyecto (solo lectura, 3-nov-2026):** tiene una app web «C3 Platform» y la base `(default)` en Firestore Standard. No se verificó si Auth tiene habilitado Email/Password, ni si el sitio `demo.plat.c3.com.sv` lee este proyecto.
    - **Creado por error y sin uso:** `c3-challenges-demo`. Sigue en la cuenta; su eliminación queda pendiente de confirmación del responsable.
-   - **Carga remota de v3 (pendiente de autorización):** `demo-reset --apply` con respaldo fuera del repo (los ids de solicitud de contacto cambiaron) y después `seed` en modo `update` con respaldo y `--allow-update`. Verificar en solo lectura. Nada de esto se ha ejecutado.
+   - **Carga remota de v3 (ejecutada el 4-nov-2026, con autorización del responsable):** `demo-reset --apply` con respaldo fuera del repo y después `seed` en modo `update` con respaldo. Detalle en §8. Verificada en solo lectura.
    - Dominio de correo: `demo.c3.com.sv` (cuentas `joven@`, `empresa@`, `admin@`). Firebase Auth no envía correos en la demo; la recuperación de contraseña no está disponible.
-2. **Actualización del seed:** resuelta en código con `update` (con respaldo y `--allow-update`), y `apply` se niega ante versiones anteriores. Aplicar v3 en remoto requiere la autorización del punto 1.
+2. **Actualización del seed:** resuelta en código con `update` (con respaldo y `--allow-update`), y `apply` se niega ante versiones anteriores. v3 ya está aplicada en remoto (§8).
 3. **Rúbrica con pesos:** el update pide 20 / 30 / 25 / 25 %. El modelo valida puntajes enteros de **0 hasta el máximo de cada criterio** (la rúbrica admite máximos de 1 a 10), sin pesos. Se usaron cuatro criterios de 10 puntos. Decidir si se añade ponderación al modelo.
 4. **Canal de contacto:** sin correo ni teléfono visibles. Falta definir cómo se comparten datos tras «aceptado» (¿correo en la plataforma, mensaje interno, o solo C3 como facilitador?).
 5. **Contacto con equipos:** hoy solo entregas individuales. Falta definir a quién se contacta de un equipo.
@@ -110,13 +110,13 @@ Artifact «C3» de tipo **Design System** (`https://claude.ai/artifact/8fjePTGra
   - `npm test` (unitarias): 168 de 168 pasan.
   - `npm run test:rules` (emulador Auth + Firestore, reglas y pruebas de servidor): 128 de 128 pasan, incluidas las pruebas de regresión de §9.
   - `next build`: compila; el aviso de seguridad de Next.js 16.4.0 interrumpe el primer intento de forma intermitente, ya registrado en [PENDIENTES](../../PENDIENTES-REALES.md).
-- **No ejecutado:** `seed` en modo dry-run contra el remoto y reset remoto. Requieren autorización por operación (§5, punto 1).
+- **Remoto:** `seed` en dry-run, reset y `seed` en modo `update` se ejecutaron contra `c3-platform-demo` el 4-nov-2026, con autorización del responsable (§8).
 
 ---
 
 ## 7. Próximos tramos (orden del update, prioridad empresa)
 
-1. Carga remota de v3 con autorización explícita del responsable (§5, punto 1).
+1. Comprobar en `demo.plat.c3.com.sv` que lee `c3-platform-demo` y muestra v3 (§8).
 2. Flujo directo de propuesta a challenge en estados (E1) y listado de inscritos sin entrega (E4).
 3. Estado de evaluación visible para la persona (J8) y progreso en Mi challenge (J4).
 4. Decisión sobre la congelación de resultados (§5, punto 6).
@@ -132,6 +132,13 @@ Artifact «C3» de tipo **Design System** (`https://claude.ai/artifact/8fjePTGra
 - Cuentas `joven@`, `empresa@` y `admin@demo.c3.com.sv` creadas con UID fijos (`c3-demo-joven`, `c3-demo-empresa`, `c3-demo-admin`). Claim `c3Admin` solo en admin. La empresa queda vinculada a la organización demo. Contraseñas en `C:\Users\chris\.c3-demo\credenciales-demo.txt`, fuera del repo.
 - Verificado en solo lectura: UIDs, claims, vínculo y conteos. No se modificaron los datos previos del proyecto (1 inscripción, 1 participación, 1 asignación de jurado, 1 perfil público, 1 bitácora y 4 cuentas existentes).
 - Pendiente de decisión: si el sitio `demo.plat.c3.com.sv` lee este proyecto; y qué hacer con `c3-challenges-demo` (creado por error, sin datos).
+
+**Remoto v3 (4-nov-2026, con la autorización del responsable para cargar el seed):**
+- Credencial: la cuenta de servicio de `c3-platform-demo`, guardada fuera del repo. Se comprobó su `project_id` antes de operar; su contenido no se mostró ni se guardó.
+- Simulación del reset: 38 documentos de demostración. Después, `demo-reset --apply` con respaldo `C:\Users\chris\.c3-demo\backup-reset-v2-2026-11-04.json` (38 documentos). No se tocaron cuentas de Auth ni experiencias históricas.
+- Simulación del seed tras el reset: sin conflictos y 55 escrituras previstas (51 creaciones y 4 actualizaciones). Después, `seed --mode update --allow-update` con respaldo `C:\Users\chris\.c3-demo\backup-seed-update-v3-2026-11-04.json` (4 documentos: el challenge demo y 3 experiencias históricas que solo cambian `seedVersion`). Código de salida 0.
+- Verificación en solo lectura: `crear 0, actualizar 0, existentes 55, conflictos 0`.
+- Pendiente: comprobar que `demo.plat.c3.com.sv` lee `c3-platform-demo` y muestra v3. No se ha hecho en el navegador.
 
 **Código y pruebas (3-nov-2026, sin commits en ese momento):**
 - Corregido: `fail()` del seed no cortaba la ejecución, y un `apply` con conflictos o versiones anteriores escribía igual. Ahora `fail()` sale con código 1, y se comprobó en emulador que no hay escrituras.

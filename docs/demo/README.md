@@ -7,7 +7,7 @@ Esta carpeta reúne lo necesario para presentar la demo: el relato, las cuentas,
 ## Dónde corre
 
 - Proyecto Firebase: `c3-platform-demo`, el mismo que usa la aplicación. Decisión del responsable (3-nov-2026), registrada en [AGENTS §15](../../AGENTS.md).
-- Dataset: `docs/demo/seed-manifest.json` (generado con `scripts/seed-manifest.mjs`). Versión 2 del seed. No contiene credenciales.
+- Dataset: `docs/demo/seed-manifest.json` (generado con `scripts/seed-manifest.mjs`). Versión 3 del seed, cargada en `c3-platform-demo` el 4-nov-2026 (plan §8). No contiene credenciales.
 
 ## Cuentas
 
@@ -32,7 +32,7 @@ Firebase Auth no envía correos en la demo: la recuperación de contraseña no e
 ## Recorrido de 60 segundos (joven)
 
 1. Explorar challenges con los filtros de tipo, línea y estado.
-2. Entrar como joven. En Mi challenge: la bitácora con dos avances (seed local; carga remota pendiente), la entrega enviada y la defensa.
+2. Entrar como joven. En Mi challenge: la bitácora con dos avances (cargada en remoto el 4-nov-2026), la entrega enviada y la defensa.
 3. Mostrar la solicitud de contacto de la empresa: aceptar o declinar. Aclarar que aceptar no es una oferta de empleo.
 4. Mostrar que la retroalimentación sin publicar no aparece; solo se ve la publicada.
 
@@ -55,12 +55,12 @@ Firebase Auth no envía correos en la demo: la recuperación de contraseña no e
 
 `scripts/demo-reset.mjs` lista, por defecto, los documentos de demostración del seed que borraría. No escribe nada en simulación. Con `--apply`, `--confirm-project` y `--backup-file` (ruta fuera del repo), guarda un respaldo JSON y después borra. Nunca toca cuentas de Auth, perfiles de personas reales ni experiencias históricas con procedencia (la Copa 2026 y las ediciones anteriores de C3).
 
-## Estado de la evaluación en la demo (seed local; carga remota pendiente)
+## Estado de la evaluación en la demo (cargado en remoto el 4-nov-2026)
 
 - Dos jurados asignados: la administradora demo y un jurado externo sin cuenta.
 - Ana, Luis y Sofía tienen dos evaluaciones finalizadas cada una (de jurados distintos), así que las tres soluciones están completas. Diego tiene un borrador de entrega que no es visible para la empresa.
 - El resultado está publicado con puntajes visibles **solo para esta demostración**; no muestra ganadores públicos. La empresa ve el promedio y la matriz por criterio.
-- Estos datos están en el seed local (`src/lib/seed/seed-data.ts`). El registro de ejecución remota del plan (§8) no los incluye: antes de presentar, cargarlos en `c3-platform-demo` con autorización expresa y verificarlos en solo lectura.
+- Estos datos están en el seed (`src/lib/seed/seed-data.ts`) y en `c3-platform-demo` desde el 4-nov-2026, verificados en solo lectura (plan §8).
 
 ## Pendiente antes de presentar
 
