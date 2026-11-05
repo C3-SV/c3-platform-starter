@@ -1,16 +1,16 @@
-/**
- * Ciclo de vida de una experiencia (reglas PURAS; la autorización vive en el servidor).
- * Estados guardados: draft, published, closed, cancelled. Que las inscripciones estén abiertas o cerradas
- * NO es un estado guardado: sale de la ventana (registrationOpensAt / registrationClosesAt) y de la hora.
+/*
+ * Experience lifecycle (PURE rules; authorization lives on the server). Stored statuses: draft, published,
+ * closed, cancelled. Open or closed enrollment is NOT stored: it comes from the window
+ * (registrationOpensAt / registrationClosesAt) and the current time.
  */
 import { formatDateTime } from "./format.ts";
 import { primaryLineOf } from "./presentation.ts";
 import type { Experience, ExperienceKind, ExperienceStatus } from "./types.ts";
 import type { ExperienceInput, FieldIssue, RegistrationActionInput } from "./validation.ts";
 
-/** Tipos que son una sesión con fecha, modalidad y lugar; para publicarlos esos datos son obligatorios. */
+/** Kinds that are a session with date, modality and venue; those are required to publish them. */
 export const SESSION_KINDS: readonly ExperienceKind[] = ["taller", "charla", "encuentro"];
-/** Tipos que se esperan con al menos un challenge técnico. */
+/** Kinds expected to have at least one technical challenge. */
 export const CHALLENGE_KINDS: readonly ExperienceKind[] = ["competencia", "hackathon", "challenge_empresarial"];
 
 export interface EnrollmentCounts {
@@ -18,12 +18,12 @@ export interface EnrollmentCounts {
   approved: number;
   rejected: number;
   cancelled: number;
-  /** Pendientes + aprobadas: las que ocupan cupo. */
+  /** Pending + approved: the ones that take a spot. */
   active: number;
   total: number;
 }
 
-/** Datos que hacen falta para decidir qué se puede cambiar y qué sigue. Los calcula el servidor. */
+/** Data needed to decide what can change and what comes next. The server computes it. */
 export interface ExperienceStats {
   challenges: number;
   enrollments: EnrollmentCounts;
@@ -45,19 +45,19 @@ export function countEnrollments(statuses: Iterable<string>): EnrollmentCounts {
   return counts;
 }
 
-/** Cupos libres, o null si la experiencia no tiene límite. Nunca negativo. */
+/** Spots left, or null if the experience has no limit. Never negative. */
 export function spotsLeft(experience: Pick<Experience, "capacity">, enrollments: Pick<EnrollmentCounts, "active">): number | null {
   const capacity = experience.capacity ?? null;
   return capacity === null ? null : Math.max(0, capacity - enrollments.active);
 }
 
 // ---------------------------------------------------------------------------------------------
-// Etapa visible para el administrador
+// Stage shown to admins
 // ---------------------------------------------------------------------------------------------
 
 export type RegistrationPhase = "upcoming" | "open" | "closed";
 
-/** Fase de la ventana de inscripción. Sin fechas, la ventana está abierta. */
+/** Enrollment window phase. Without dates, the window is open. */
 export function registrationPhase(experience: Pick<Experience, "registrationOpensAt" | "registrationClosesAt">, now: Date): RegistrationPhase {
   const opens = experience.registrationOpensAt ? Date.parse(experience.registrationOpensAt) : null;
   const closes = experience.registrationClosesAt ? Date.parse(experience.registrationClosesAt) : null;
@@ -80,7 +80,7 @@ export interface LifecycleView {
   label: string;
 }
 
-/** Etapa operativa para Admin; más fina que el estado público (que usa presentExperienceState). */
+/** Operational stage for Admin; finer than the public state (which uses presentExperienceState). */
 export function lifecycleOf(experience: Pick<Experience, "status" | "registrationOpensAt" | "registrationClosesAt" | "startsAt" | "endsAt">, now: Date): LifecycleView {
   switch (experience.status) {
     case "draft": return { stage: "borrador", label: "Borrador" };
@@ -97,12 +97,12 @@ export function lifecycleOf(experience: Pick<Experience, "status" | "registratio
 }
 
 // ---------------------------------------------------------------------------------------------
-// Transiciones de estado
+// Status transitions
 // ---------------------------------------------------------------------------------------------
 
-/**
- * Transiciones permitidas. draft → closed existe para registrar una experiencia histórica sin pasar por
- * «publicada» (así nunca abre inscripciones). Una experiencia concluida no vuelve a ningún otro estado.
+/*
+ * Allowed transitions. draft to closed exists to record a historical experience without going through
+ * published (so it never opens enrollment). A closed experience never goes back to any other status.
  */
 export const STATUS_TRANSITIONS: Record<ExperienceStatus, readonly ExperienceStatus[]> = {
   draft: ["published", "closed", "cancelled"],
@@ -111,7 +111,7 @@ export const STATUS_TRANSITIONS: Record<ExperienceStatus, readonly ExperienceSta
   cancelled: ["draft"],
 };
 
-/** Rechazo con código estable y mensaje para la persona; `issues` marca campos concretos. */
+/** Refusal with a stable code and a message for the person; `issues` points at specific fields. */
 export interface Refusal {
   ok: false;
   code: string;
@@ -127,7 +127,7 @@ function refuse(code: string, message: string, issues?: FieldIssue[]): Refusal {
   return { ok: false, code, message, ...(issues ? { issues } : {}) };
 }
 
-/** Datos mínimos para que una experiencia sea publicable. Solo mira lo que cambia la experiencia del público. */
+/** Minimum data for an experience to be publishable. Only looks at what changes the public experience. */
 export function publishIssues(
   experience: Pick<Experience, "kind" | "modality" | "startsAt" | "endsAt" | "location" | "registrationClosesAt">,
   now: Date,
@@ -153,8 +153,8 @@ export function publishIssues(
 const PUBLISHED_RESULTS = refuse("resultados_publicados", "Ya hay resultados oficiales publicados: no puede volver a borrador ni cancelarse. Solo se puede marcar como concluida.");
 
 /**
- * Valida un cambio de estado. `totalEnrollments` incluye pendientes, aprobadas, rechazadas y canceladas;
- * `publishedResults` indica si algún challenge de la experiencia ya tiene resultados oficiales publicados.
+ * Validates a status change. `totalEnrollments` counts pending, approved, rejected and cancelled ones;
+ * `publishedResults` says whether any challenge of the experience already has published official results.
  */
 export function checkStatusTransition(
   experience: Pick<Experience, "status" | "kind" | "modality" | "startsAt" | "endsAt" | "location" | "registrationClosesAt">,
@@ -182,7 +182,7 @@ export function checkStatusTransition(
   return ok;
 }
 
-/** Los challenges usan las mismas transiciones, sin requisitos de publicación propios. */
+/** Challenges use the same transitions, with no publishing requirements of their own. */
 export function checkChallengeStatusTransition(from: ExperienceStatus, to: ExperienceStatus, publishedResults = false): Check {
   if (from === to) return ok;
   if (from === "closed") return refuse("reto_historico", "Un challenge concluido es histórico: no se reabre ni vuelve a publicarse.");
@@ -192,14 +192,14 @@ export function checkChallengeStatusTransition(from: ExperienceStatus, to: Exper
 }
 
 // ---------------------------------------------------------------------------------------------
-// Apertura y cierre manual de inscripciones
+// Manual opening and closing of enrollment
 // ---------------------------------------------------------------------------------------------
 
 export type RegistrationWindowResult =
   | { ok: true; registrationOpensAt: string | null; registrationClosesAt: string | null }
   | Refusal;
 
-/** Calcula la nueva ventana al abrir o cerrar inscripciones a mano. No escribe nada. */
+/** Computes the new window when enrollment is opened or closed by hand. Writes nothing. */
 export function applyRegistrationAction(
   experience: Pick<Experience, "status" | "registrationOpensAt" | "registrationClosesAt" | "endsAt">,
   input: RegistrationActionInput,
@@ -241,22 +241,22 @@ export function applyRegistrationAction(
     ]);
   }
   closesAt = closesAt ?? null;
-  // Al abrir, la apertura es ahora; si ya había abierto antes (reapertura), se conserva la fecha original.
+  // Opening sets the open date to now; on a reopening, the original date is kept.
   const opensAt = phase === "closed" ? experience.registrationOpensAt : stamp;
   return { ok: true, registrationOpensAt: opensAt, registrationClosesAt: closesAt };
 }
 
 // ---------------------------------------------------------------------------------------------
-// Qué se puede editar
+// What can be edited
 // ---------------------------------------------------------------------------------------------
 
-/** Campos cuyo cambio puede invalidar inscripciones o dejar inconsistente el historial. */
+/** Fields whose change could invalidate enrollments or leave the history inconsistent. */
 export const GUARDED_FIELDS = ["kind", "modality", "startsAt", "endsAt", "registrationOpensAt", "registrationClosesAt", "capacity"] as const;
 export type GuardedField = (typeof GUARDED_FIELDS)[number];
 
 /**
- * Campos bloqueados y el motivo. Una experiencia concluida o cancelada conserva su calendario y cupos
- * como registro histórico; con challenges o inscripciones, el tipo ya no cambia.
+ * Locked fields and why. A closed or cancelled experience keeps its calendar and spots as a historical record;
+ * with challenges or enrollments, the kind can't change anymore.
  */
 export function lockedFields(
   experience: Pick<Experience, "status">,
@@ -286,7 +286,7 @@ function sameText(a: string | null | undefined, b: string | null | undefined): b
   return (a ?? null) === (b ?? null);
 }
 
-/** Campos de la entrada que difieren de lo guardado. Sirve para actualizar solo lo modificado y auditarlo. */
+/** Input fields that differ from what's stored, so only changes are written and audited. */
 export function changedFields(existing: Experience, input: ExperienceInput): string[] {
   const changed: string[] = [];
   if (existing.title !== input.title) changed.push("title");
@@ -305,10 +305,12 @@ export function changedFields(existing: Experience, input: ExperienceInput): str
   if (!sameText(existing.demoNote, input.demoNote)) changed.push("demoNote");
   if (!sameText(existing.sourceUrl, input.sourceUrl)) changed.push("sourceUrl");
   if (!sameText(existing.sourceLabel, input.sourceLabel)) changed.push("sourceLabel");
+  if (!sameText(existing.coverImageUrl, input.coverImageUrl)) changed.push("coverImageUrl");
+  if (!sameText(existing.coverImageAlt, input.coverImageAlt)) changed.push("coverImageAlt");
   return changed;
 }
 
-/** Motivos por campo que impiden aplicar la edición (bloqueos, cupos por debajo de lo ocupado, datos mínimos de una publicada). */
+/** Per-field reasons that block the edit (locks, spots below those taken, minimum data of a published one). */
 export function editIssues(
   existing: Experience,
   input: ExperienceInput,
@@ -329,14 +331,14 @@ export function editIssues(
     });
   }
   if (existing.status === "published") {
-    // Una experiencia publicada no puede quedar sin los datos de una sesión; su ventana de inscripción sí puede cerrarse.
+    // A published experience can't lose its session data; its enrollment window can still close.
     issues.push(...publishIssues(input, now, { checkRegistrationWindow: false }).filter((issue) => !issues.some((other) => other.field === issue.field)));
   }
   return issues;
 }
 
 // ---------------------------------------------------------------------------------------------
-// Próximas acciones para Admin
+// Next actions for Admin
 // ---------------------------------------------------------------------------------------------
 
 export interface NextAction {
@@ -344,7 +346,7 @@ export interface NextAction {
   text: string;
 }
 
-/** Hasta tres pendientes de la experiencia, ordenados por urgencia. Vacío si no hay nada por hacer. */
+/** Up to three pending items for the experience, by urgency. Empty if there's nothing to do. */
 export function nextActionsOf(experience: Experience, stats: ExperienceStats, now: Date): NextAction[] {
   const actions: NextAction[] = [];
   const push = (tone: NextAction["tone"], text: string) => actions.push({ tone, text });

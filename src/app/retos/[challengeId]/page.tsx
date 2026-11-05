@@ -2,10 +2,12 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CoverImage } from "@/components/CoverImage";
+import { EnrollmentCta } from "@/components/EnrollmentCta";
+import { Migas } from "@/components/Migas";
 import { SiteShell } from "@/components/SiteShell";
 import { StatePill } from "@/components/StatePill";
-import { EnrollmentCta } from "@/components/EnrollmentCta";
-import { experienceLabel } from "@/lib/domain/presentation";
+import { experienceLabel, lineTextColorOf, primaryLineOf } from "@/lib/domain/presentation";
 import { formatDate, formatDeadline, formatDateTime, modalityLabel } from "@/lib/domain/format";
 import { database } from "@/lib/server/context";
 import { getPublicChallenge } from "@/lib/server/catalog";
@@ -14,7 +16,7 @@ import { HttpError } from "@/lib/server/errors";
 
 export const dynamic = "force-dynamic";
 
-// La misma lectura sirve al título de la pestaña y a la página (una consulta por petición).
+// One read serves both the tab title and the page (a single query per request).
 const loadChallenge = cache((challengeId: string) => getPublicChallenge(database(), challengeId, new Date()));
 
 export async function generateMetadata({ params }: { params: Promise<{ challengeId: string }> }): Promise<Metadata> {
@@ -27,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ challenge
   }
 }
 
-/** V03 · Detalle de challenge. Solo muestra challenges publicados (la experiencia también debe estar publicada). */
+/** Challenge detail (V03). Only published challenges of published experiences are shown. */
 export default async function RetoPage({ params }: { params: Promise<{ challengeId: string }> }) {
   const { challengeId } = await params;
   let detail;
@@ -37,168 +39,178 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
     if (error instanceof HttpError && error.status === 404) notFound();
     throw error;
   }
-  const { challenge, experience, state } = detail;
+  const { challenge, experience, cover, state } = detail;
   const winners = await publicWinners(database(), challengeId);
   const registrationOpen = state.label === "Abierto";
   const modality = modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize);
+  const line = primaryLineOf(experience);
+  const weighted = challenge.rubric.length > 0 && challenge.rubric.every((criterion) => typeof criterion.weight === "number");
 
   return (
     <SiteShell>
-
-      <div style={{ background: "var(--c3-navy)", padding: "8px clamp(16px, 4vw, 48px) 56px" }}>
-        <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span className="c3-etiqueta" style={{ color: "var(--c3-conecta-claro)" }}>{experienceLabel(experience)}</span>
-            <StatePill state={state} />
-          </div>
-          <h1 className="c3-titulo" style={{ margin: 0, maxWidth: 900, fontSize: 40, lineHeight: 1.1, fontWeight: 700, color: "#ffffff" }}>
-            {challenge.title}
-          </h1>
-          <div style={{ display: "flex", gap: 40, flexWrap: "wrap", alignItems: "flex-end" }}>
-            <Meta label="Organización responsable" value={challenge.organizationName} />
-            <Meta label="Modalidad" value={modality} />
-            {challenge.submissionClosesAt ? (
-              <Meta label="Cierre de entregas" value={formatDeadline(challenge.submissionClosesAt) ?? ""} />
-            ) : null}
-            <EnrollmentCta enrollHref={`/retos/${challenge.id}/inscripcion`} registrationOpen={registrationOpen} variant="hero" />
-          </div>
-        </div>
-      </div>
-
-      <main id="contenido" className="c3-page c3-ancho" style={{ padding: "clamp(16px, 4vw, 48px)" }}>
-        <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
-          <div style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
-            <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
-              <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>El problema</h2>
-              <Paragraphs text={challenge.problem} />
-            </section>
-
-            <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 20 }}>
-              <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Qué tenés que entregar</h2>
-              <ol style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 20 }} className="c3-dos-columnas">
-                {challenge.deliverables.map((item, index) => (
-                  <li key={item} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Entregable {index + 1}</span>
-                    <span style={{ fontSize: 16, lineHeight: 1.6 }}>{item}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-
-            <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 20 }}>
-              <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Cómo se evalúa</h2>
-              <p style={{ fontSize: 16, lineHeight: 1.6, color: "var(--c3-texto-suave)" }}>
-                La rúbrica es pública antes de inscribirte. Los jurados evalúan de forma independiente y C3 publica el resultado consolidado.
-              </p>
-              <div style={{ border: "1px solid var(--c3-borde)", borderRadius: 12, overflow: "hidden" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 20px", background: "var(--c3-superficie-sutil)" }}>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>Criterio</span>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>Puntos</span>
-                </div>
-                {challenge.rubric.map((criterion) => (
-                  <div key={criterion.id} style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "16px 20px", borderTop: "1px solid var(--c3-borde)" }}>
-                    <span style={{ fontSize: 16 }}>{criterion.label}</span>
-                    <span style={{ fontSize: 16, fontWeight: 600, whiteSpace: "nowrap" }}>0 – {criterion.maxScore}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          {winners.length > 0 ? (
-            <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }} aria-labelledby="titulo-ganadores">
-              <h2 id="titulo-ganadores" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Ganadores y reconocimientos</h2>
-              {winners.map((winner) => (
-                <div key={`${winner.recognition}-${winner.name}`} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ fontSize: 16, fontWeight: 500 }}>
-                    {winner.profileSlug ? <Link href={`/personas/${winner.profileSlug}`}>{winner.name ?? "Ver perfil"}</Link> : (winner.name ?? "Solución sin nombre")}
+      <main id="contenido">
+        <section className="c3-detail-head">
+          <div className="c3-frame">
+            <Migas items={[{ label: "Explorar", href: "/explorar" }, { label: "Challenge" }]} />
+            <div className="c3-detail-head__grid">
+              <div className="c3-detail-head__text">
+                <div className="c3-chips">
+                  <span className="c3-exp__line" style={{ color: lineTextColorOf(line) }}>
+                    <span className={`c3-dot c3-dot--${line}`} aria-hidden="true" />{experienceLabel(experience)}
                   </span>
-                  <span className="c3-pill c3-pill--exito">{winner.recognition}</span>
+                  <StatePill state={state} />
+                  {experience.isDemo ? <span className="c3-pill c3-pill--advertencia">Demo · no oficial</span> : null}
                 </div>
-              ))}
-            </section>
-          ) : null}
-
-          <aside style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
-            <div className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-              <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Inscripción</span>
-              <p style={{ fontSize: 16, lineHeight: 1.6 }}>
-                Necesitás una cuenta C3 para inscribirte. La inscripción la revisa C3 antes de habilitarte.
-              </p>
-              <EnrollmentCta enrollHref={`/retos/${challenge.id}/inscripcion`} registrationOpen={registrationOpen} variant="aside" />
-              <div style={{ height: 1, background: "var(--c3-borde)" }} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {experience.registrationClosesAt ? (
-                  <Row label="Inscripciones cierran" value={formatDate(experience.registrationClosesAt) ?? ""} />
-                ) : null}
-                <Row label="Equipo" value={modality} />
-                <Row label="Aprobación" value="Revisión de C3" />
+                <h1>{challenge.title}</h1>
+                <p className="c3-lead" style={{ maxWidth: "60ch" }}>{challenge.summary}</p>
+                <dl className="c3-meta-list">
+                  <div className="c3-meta"><dt>Organización responsable</dt><dd>{challenge.organizationName}</dd></div>
+                  <div className="c3-meta"><dt>Modalidad</dt><dd>{modality}</dd></div>
+                  {challenge.submissionClosesAt ? (
+                    <div className="c3-meta"><dt>Cierre de entregas</dt><dd>{formatDeadline(challenge.submissionClosesAt)}</dd></div>
+                  ) : null}
+                </dl>
+              </div>
+              <div className="c3-detail-head__action">
+                <EnrollmentCta enrollHref={`/retos/${challenge.id}/inscripcion`} registrationOpen={registrationOpen} variant="hero" />
               </div>
             </div>
+            {cover ? <CoverImage cover={cover} frameClassName="c3-cover-band" className="c3-cover-band__img" sizes="(max-width: 1180px) 100vw, 1100px" priority /> : null}
+          </div>
+        </section>
 
-            <div style={{ background: "var(--c3-conecta)", borderRadius: 12, padding: 24, display: "flex", flexDirection: "column", gap: 12 }}>
-              <span className="c3-etiqueta" style={{ color: "#ffffff" }}>¿Tenés un problema así?</span>
-              <p style={{ fontSize: 16, lineHeight: 1.6, color: "#ffffff" }}>
-                Contanos la necesidad técnica de tu equipo y C3 la convierte en un challenge como este.
-              </p>
-              <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 20px" }}>Proponer un challenge</Link>
+        <section className="c3-detail">
+          <div className="c3-frame c3-detail__grid">
+            <div className="c3-detail__main">
+              <section className="c3-block" aria-labelledby="titulo-problema">
+                <span className="c3-eyebrow">Contexto</span>
+                <h2 id="titulo-problema">El problema</h2>
+                {challenge.problem.split(/\n{2,}/).map((paragraph) => (
+                  <p key={paragraph.slice(0, 40)} className="c3-long-text">{paragraph.trim()}</p>
+                ))}
+                {experience.demoNote ? <p className="c3-demo-note">{experience.demoNote}</p> : null}
+              </section>
+
+              <section className="c3-block" aria-labelledby="titulo-entregables">
+                <span className="c3-eyebrow">Entregables</span>
+                <h2 id="titulo-entregables">Qué tienes que entregar</h2>
+                <ul className="c3-deliverables">
+                  {challenge.deliverables.map((item) => (
+                    <li key={item} className="c3-deliverable">
+                      <span className="c3-deliverable__icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                          <path d="M14 3v5h5M9 13h6M9 17h4" />
+                        </svg>
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="c3-block" aria-labelledby="titulo-rubrica">
+                <span className="c3-eyebrow">Evaluación</span>
+                <h2 id="titulo-rubrica">Cómo se evalúa</h2>
+                <p className="c3-block__intro">La rúbrica es pública antes de inscribirte. Los jurados evalúan de forma independiente y C3 publica el resultado consolidado.</p>
+                <div className="c3-table-frame">
+                  <table className="c3-rubric">
+                    <thead>
+                      <tr>
+                        <th scope="col">Criterio</th>
+                        <th scope="col" className="c3-num">Puntos</th>
+                        {weighted ? <th scope="col" className="c3-num">Peso</th> : null}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {challenge.rubric.map((criterion) => (
+                        <tr key={criterion.id}>
+                          <td>{criterion.label}</td>
+                          <td className="c3-num">0 a {criterion.maxScore}</td>
+                          {weighted ? (
+                            <td className="c3-num">
+                              <span className="c3-weight">
+                                <span className="c3-weight__bar" aria-hidden="true"><i style={{ width: `${criterion.weight}%` }} /></span>
+                                {criterion.weight}%
+                              </span>
+                            </td>
+                          ) : null}
+                        </tr>
+                      ))}
+                    </tbody>
+                    {weighted ? (
+                      <tfoot>
+                        <tr><td>Total ponderado</td><td className="c3-num" colSpan={2}>0 a 100</td></tr>
+                      </tfoot>
+                    ) : null}
+                  </table>
+                </div>
+              </section>
+
+              {winners.length > 0 ? (
+                <section className="c3-block" aria-labelledby="titulo-ganadores">
+                  <span className="c3-eyebrow">Resultados</span>
+                  <h2 id="titulo-ganadores">Ganadores y reconocimientos</h2>
+                  <ul className="c3-record-list">
+                    {winners.map((winner) => (
+                      <li key={`${winner.recognition}-${winner.name}`}>
+                        <span>
+                          {winner.profileSlug ? <Link href={`/personas/${winner.profileSlug}`}>{winner.name ?? "Ver perfil"}</Link> : (winner.name ?? "Solución sin nombre")}
+                        </span>
+                        <span className="c3-pill c3-pill--exito">{winner.recognition}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
             </div>
 
-            <div className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-              <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Calendario</span>
-              {experience.registrationOpensAt ? (
-                <CalendarItem title="Inscripciones abren" detail={formatDateTime(experience.registrationOpensAt) ?? ""} />
+            <aside className="c3-detail__aside" aria-label="Inscripción y calendario">
+              <div className="c3-side-card">
+                <span className="c3-eyebrow">Inscripción</span>
+                <p>Necesitas una cuenta C3 para inscribirte. La inscripción la revisa C3 antes de habilitarte.</p>
+                <EnrollmentCta enrollHref={`/retos/${challenge.id}/inscripcion`} registrationOpen={registrationOpen} variant="aside" />
+                <div className="c3-divider" />
+                <dl className="c3-rows">
+                  {experience.registrationClosesAt ? (
+                    <div className="c3-row"><dt>Inscripciones cierran</dt><dd>{formatDate(experience.registrationClosesAt)}</dd></div>
+                  ) : null}
+                  <div className="c3-row"><dt>Equipo</dt><dd>{modality}</dd></div>
+                  <div className="c3-row"><dt>Aprobación</dt><dd>Revisión de C3</dd></div>
+                </dl>
+              </div>
+
+              {experience.registrationOpensAt || experience.registrationClosesAt || challenge.submissionClosesAt ? (
+                <div className="c3-side-card">
+                  <span className="c3-eyebrow">Calendario</span>
+                  <ol className="c3-timeline">
+                    {experience.registrationOpensAt ? <Milestone title="Inscripciones abren" detail={formatDateTime(experience.registrationOpensAt) ?? ""} /> : null}
+                    {experience.registrationClosesAt ? <Milestone title="Inscripciones cierran" detail={formatDateTime(experience.registrationClosesAt) ?? ""} /> : null}
+                    {challenge.submissionClosesAt ? <Milestone title="Cierre de entregas" detail={formatDateTime(challenge.submissionClosesAt) ?? ""} /> : null}
+                  </ol>
+                </div>
               ) : null}
-              {experience.registrationClosesAt ? (
-                <CalendarItem title="Inscripciones cierran" detail={formatDateTime(experience.registrationClosesAt) ?? ""} />
-              ) : null}
-              {challenge.submissionClosesAt ? (
-                <CalendarItem title="Cierre de entregas" detail={formatDateTime(challenge.submissionClosesAt) ?? ""} />
-              ) : null}
-            </div>
-          </aside>
-        </div>
+
+              <div className="c3-mini-cta">
+                <div className="c3-rings" aria-hidden="true"><span /><span /><span /><i /><i /><i /></div>
+                <span className="c3-etiqueta">Para empresas</span>
+                <h3>¿Tienes un problema así?</h3>
+                <p>Cuéntanos la necesidad técnica de tu equipo y C3 la convierte en un challenge como este.</p>
+                <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco">Proponer un challenge</Link>
+              </div>
+            </aside>
+          </div>
+        </section>
       </main>
     </SiteShell>
   );
 }
 
-function Meta({ label, value }: { label: string; value: string }) {
+function Milestone({ title, detail }: { title: string; detail: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 12, fontWeight: 500, color: "var(--c3-conecta-claro)" }}>{label}</span>
-      <span style={{ fontSize: 16, fontWeight: 500, color: "#ffffff" }}>{value}</span>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-      <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 600, textAlign: "right" }}>{value}</span>
-    </div>
-  );
-}
-
-function CalendarItem({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-      <div style={{ width: 10, height: 10, borderRadius: 999, background: "var(--c3-accion)", marginTop: 7, flexShrink: 0 }} />
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <span style={{ fontSize: 16, fontWeight: 500 }}>{title}</span>
-        <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>{detail}</span>
-      </div>
-    </div>
-  );
-}
-
-function Paragraphs({ text }: { text: string }) {
-  return (
-    <>
-      {text.split(/\n{2,}/).map((paragraph) => (
-        <p key={paragraph.slice(0, 40)} style={{ fontSize: 18, lineHeight: 1.6 }}>{paragraph.trim()}</p>
-      ))}
-    </>
+    <li className="c3-milestone">
+      <span className="c3-milestone__dot" aria-hidden="true" />
+      <span className="c3-milestone__text"><b>{title}</b><span>{detail}</span></span>
+    </li>
   );
 }

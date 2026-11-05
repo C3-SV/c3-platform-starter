@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { CoverImage } from "@/components/CoverImage";
 import { apiRequest, ApiError } from "@/lib/client/api";
+import { isAllowedCoverUrl } from "@/lib/domain/coverImage";
 import { lockedFields, type ExperienceStats, type GuardedField } from "@/lib/domain/lifecycle";
 import { KIND_LINE, LINE_NAME, MODALITY_LABEL, primaryLineOf } from "@/lib/domain/presentation";
 import type { Experience, ExperienceKind, ExperienceLine, ExperienceModality } from "@/lib/domain/types";
@@ -10,7 +12,7 @@ export interface CreatedMessage {
   text: string;
 }
 
-/** Convierte un valor de datetime-local (hora local de la persona administradora) a ISO. */
+/** Converts a datetime-local value (the admin's local time) to ISO. */
 function toIso(value: string): string | null {
   if (!value) return null;
   const date = new Date(value);
@@ -37,7 +39,7 @@ const KIND_OPTIONS: { value: ExperienceKind; label: string }[] = [
 const LINES: ExperienceLine[] = ["compite", "crea", "conecta"];
 const MODALITIES: ExperienceModality[] = ["presencial", "virtual", "hibrida"];
 
-/** Valor de un datetime-local (hora local de la persona administradora) a partir de un instante ISO. */
+/** datetime-local value (the admin's local time) for an ISO instant. */
 function toLocalInput(iso: string | null | undefined): string {
   if (!iso) return "";
   const date = new Date(iso);
@@ -46,9 +48,9 @@ function toLocalInput(iso: string | null | undefined): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-/**
- * ISO que se envía al guardar. Si la persona no tocó el campo, se conserva el instante original: el
- * datetime-local solo llega al minuto y recortarlo contaría como un cambio de calendario.
+/*
+ * ISO sent on save. If the field wasn't touched, the original instant is kept: datetime-local only goes
+ * down to the minute, and trimming it would count as a calendar change.
  */
 function isoFor(local: string, original: string | null | undefined): string | null {
   if (original && toLocalInput(original) === local) return original;
@@ -56,8 +58,8 @@ function isoFor(local: string, original: string | null | undefined): string | nu
 }
 
 /**
- * Formulario de experiencia: crea (en borrador) o edita una existente. Una experiencia nueva no aparece en el sitio
- * hasta publicarla; al editar, lo que no se puede cambiar por el estado o la participación queda bloqueado con su motivo.
+ * Experience form: creates one (as a draft) or edits an existing one. A new experience isn't on the site until it's
+ * published; when editing, what the status or participation won't allow is locked with its reason.
  */
 export function ExperienceForm({
   experience = null,
@@ -76,7 +78,7 @@ export function ExperienceForm({
   const [title, setTitle] = useState(experience?.title ?? "");
   const [kind, setKind] = useState<ExperienceKind>(experience?.kind ?? "competencia");
   const [line, setLine] = useState<ExperienceLine>(experience ? primaryLineOf(experience) : KIND_LINE["competencia"]);
-  // Mientras la persona no elija la línea, acompaña al tipo (un taller suele ser de Crea, una charla de Conecta).
+  // Until the line is chosen it follows the kind (a workshop is usually Crea, a talk Conecta).
   const [lineChosen, setLineChosen] = useState(editing);
   const [secondary, setSecondary] = useState<ExperienceLine[]>(
     (experience?.secondaryLines ?? []).filter((item) => item !== (experience ? primaryLineOf(experience) : null)),
@@ -93,13 +95,15 @@ export function ExperienceForm({
   const [demoNote, setDemoNote] = useState(experience?.demoNote ?? "");
   const [sourceUrl, setSourceUrl] = useState(experience?.sourceUrl ?? "");
   const [sourceLabel, setSourceLabel] = useState(experience?.sourceLabel ?? "");
+  const [coverUrl, setCoverUrl] = useState(experience?.coverImageUrl ?? "");
+  const [coverAlt, setCoverAlt] = useState(experience?.coverImageAlt ?? "");
   const [issues, setIssues] = useState<{ field: string; message: string }[] | undefined>();
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const locks = experience && stats ? lockedFields(experience, stats) : {};
   const experienceId = experience?.id;
 
-  // Al abrir una experiencia para editarla, el formulario entra en pantalla y el foco va al nombre.
+  // Opening an experience to edit scrolls the form into view and focuses the name.
   useEffect(() => {
     if (!experienceId) return;
     rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -147,6 +151,8 @@ export function ExperienceForm({
         demoNote,
         sourceUrl,
         sourceLabel,
+        coverImageUrl: coverUrl,
+        coverImageAlt: coverAlt,
       };
       if (experience) {
         await apiRequest(`/api/admin/experiencias/${experience.id}`, { method: "PUT", body });
@@ -166,6 +172,8 @@ export function ExperienceForm({
         setDemoNote("");
         setSourceUrl("");
         setSourceLabel("");
+        setCoverUrl("");
+        setCoverAlt("");
         setSecondary([]);
         onSaved("Experiencia guardada como borrador. Publicala cuando esté lista.");
       }
@@ -296,6 +304,16 @@ export function ExperienceForm({
         </div>
       </fieldset>
 
+      <CoverFields
+        idPrefix="exp"
+        url={coverUrl}
+        alt={coverAlt}
+        onUrl={setCoverUrl}
+        onAlt={setCoverAlt}
+        issues={issues}
+        help="Opcional. Una imagen ya publicada en un sitio de C3 (c3.com.sv o sus subdominios), con https://."
+      />
+
       <button type="submit" className="c3-btn c3-btn--primario" disabled={busy}>
         {busy ? "Guardando…" : editing ? "Guardar cambios" : "Guardar borrador"}
       </button>
@@ -308,8 +326,10 @@ export interface ExperienceOption {
   title: string;
 }
 
-/** Formulario de challenge. Se crea dentro de una experiencia existente, en borrador. */
-/** Formulario de challenge. `defaultOrganizationId` llega desde una propuesta aceptada (E1): la organización ya viene elegida. */
+/**
+ * Challenge form: creates a draft inside an existing experience. `defaultOrganizationId` comes from an accepted
+ * proposal (E1), so the organization is already chosen.
+ */
 export function ChallengeForm({
   experiences,
   organizations,
@@ -322,7 +342,7 @@ export function ChallengeForm({
   defaultOrganizationId?: string;
 }) {
   const [selectedExperienceId, setExperienceId] = useState("");
-  // La experiencia activa es la elegida o, mientras no se elija, la primera disponible (las experiencias llegan después del primer render).
+  // The active experience is the chosen one or, until then, the first available (experiences arrive after the first render).
   const experienceId = experiences.some((item) => item.id === selectedExperienceId)
     ? selectedExperienceId
     : (experiences[0]?.id ?? "");
@@ -338,6 +358,8 @@ export function ChallengeForm({
   const [teamMin, setTeamMin] = useState(2);
   const [teamMax, setTeamMax] = useState(4);
   const [closes, setCloses] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
+  const [coverAlt, setCoverAlt] = useState("");
   const [issues, setIssues] = useState<{ field: string; message: string }[] | undefined>();
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -372,6 +394,8 @@ export function ChallengeForm({
           teamMinSize: team ? teamMin : null,
           teamMaxSize: team ? teamMax : null,
           submissionClosesAt: toIso(closes),
+          coverImageUrl: coverUrl,
+          coverImageAlt: coverAlt,
         },
       });
       setTitle("");
@@ -380,6 +404,8 @@ export function ChallengeForm({
       setDeliverables("");
       setRubric("");
       setCloses("");
+      setCoverUrl("");
+      setCoverAlt("");
       onCreated("Challenge guardado como borrador. Publicalo para que aparezca en el catálogo.");
     } catch (error) {
       if (error instanceof ApiError) {
@@ -464,10 +490,74 @@ export function ChallengeForm({
         <input id="ret-cierre" className="c3-campo" type="datetime-local" value={closes} onChange={(e) => setCloses(e.target.value)} />
       </Field>
 
+      <CoverFields
+        idPrefix="ret"
+        url={coverUrl}
+        alt={coverAlt}
+        onUrl={setCoverUrl}
+        onAlt={setCoverAlt}
+        issues={issues}
+        help="Opcional. Si lo dejas vacío, el challenge usa la portada de su experiencia. Solo imágenes de sitios de C3, con https://."
+      />
+
       <button type="submit" className="c3-btn c3-btn--primario" disabled={busy}>
         {busy ? "Guardando…" : "Guardar borrador"}
       </button>
     </form>
+  );
+}
+
+/** Cover link and description, with a preview of how cards will crop it. Only C3 hosts are previewed. */
+function CoverFields({
+  idPrefix,
+  url,
+  alt,
+  onUrl,
+  onAlt,
+  issues,
+  help,
+}: {
+  idPrefix: string;
+  url: string;
+  alt: string;
+  onUrl: (value: string) => void;
+  onAlt: (value: string) => void;
+  issues: { field: string; message: string }[] | undefined;
+  help: string;
+}) {
+  const link = url.trim();
+  const previewable = isAllowedCoverUrl(link);
+  return (
+    <fieldset style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 16 }}>
+      <legend className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)", marginBottom: 12 }}>Portada</legend>
+      <Field id={`${idPrefix}-portada-url`} label="Enlace de la imagen" help={help} error={issueFor(issues, "coverImageUrl")}>
+        <input id={`${idPrefix}-portada-url`} className="c3-campo" inputMode="url" value={url} onChange={(e) => onUrl(e.target.value)} />
+      </Field>
+      {link ? (
+        <Field id={`${idPrefix}-portada-alt`} label="Descripción de la imagen" help="Para lectores de pantalla. Describe lo que se ve, sin repetir el título." error={issueFor(issues, "coverImageAlt")}>
+          <input id={`${idPrefix}-portada-alt`} className="c3-campo" maxLength={160} value={alt} onChange={(e) => onAlt(e.target.value)} />
+        </Field>
+      ) : null}
+      {link ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span className="c3-etiqueta-campo">Vista previa</span>
+          <div style={{ position: "relative", height: 180, overflow: "hidden", display: "grid", placeItems: "center", padding: 16, textAlign: "center", border: "1px solid var(--c3-borde)", borderRadius: "var(--c3-radius-card)", background: "var(--c3-superficie-sutil)", color: "var(--c3-texto-suave)", fontSize: 14 }}>
+            {previewable ? (
+              <CoverImage
+                key={link}
+                cover={{ url: link, alt: alt.trim() || "Vista previa de la portada" }}
+                className="c3-exp__cover"
+                sizes="480px"
+                fallback={<span><b>No pudimos mostrar esta imagen.</b> Revisa el enlace; mientras tanto, las tarjetas usan el ícono de la línea.</span>}
+              />
+            ) : (
+              <span>La vista previa aparece cuando el enlace es de un sitio de C3.</span>
+            )}
+          </div>
+          <span className="c3-ayuda">Así se recorta en las tarjetas de Inicio, Explorar y la página de la línea.</span>
+        </div>
+      ) : null}
+    </fieldset>
   );
 }
 

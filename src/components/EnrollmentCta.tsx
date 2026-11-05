@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useSession } from "@/lib/auth/AuthProvider";
 
 /**
- * Llamado a la inscripción de V03 (challenge) y de la página de experiencia. Un visitante pasa por V04 y vuelve a la
- * inscripción. Una persona con sesión va directamente a V06. `closedLabel` explica por qué no se puede entrar.
+ * Enrollment call to action on the challenge (V03) and experience pages. A visitor goes through sign in (V04) and
+ * comes back; a signed-in person goes straight to enrollment (V06). `closedLabel` says why enrollment is closed.
  */
 export function EnrollmentCta({
   enrollHref,
@@ -33,11 +33,11 @@ export function EnrollmentCta({
 
   if (session.status === "signed-in") {
     return variant === "hero" ? (
-      <Link href={enrollHref} className="c3-btn c3-btn--primario" style={{ padding: "16px 28px", marginLeft: "auto" }}>
-        {label}
+      <Link href={enrollHref} className="c3-btn c3-btn--primario">
+        {label} <span className="c3-arrow" aria-hidden="true">↗</span>
       </Link>
     ) : (
-      <Link href={enrollHref} className="c3-btn c3-btn--primario" style={{ padding: "16px 20px" }}>
+      <Link href={enrollHref} className="c3-btn c3-btn--primario">
         Inscribirme
       </Link>
     );
@@ -45,18 +45,18 @@ export function EnrollmentCta({
 
   if (variant === "hero") {
     return (
-      <Link href={`/acceso?modo=registro&next=${next}`} className="c3-btn c3-btn--primario" style={{ padding: "16px 28px", marginLeft: "auto" }}>
-        {label}
+      <Link href={`/acceso?modo=registro&next=${next}`} className="c3-btn c3-btn--primario">
+        {label} <span className="c3-arrow" aria-hidden="true">↗</span>
       </Link>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <Link href={`/acceso?modo=registro&next=${next}`} className="c3-btn c3-btn--primario" style={{ padding: "16px 20px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <Link href={`/acceso?modo=registro&next=${next}`} className="c3-btn c3-btn--primario">
         Crear cuenta e inscribirme
       </Link>
-      <Link href={`/acceso?next=${next}`} className="c3-btn c3-btn--contorno" style={{ padding: "16px 20px" }}>
+      <Link href={`/acceso?next=${next}`} className="c3-btn c3-btn--contorno">
         Ya tengo cuenta
       </Link>
     </div>

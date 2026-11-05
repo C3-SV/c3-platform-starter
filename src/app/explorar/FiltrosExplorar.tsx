@@ -1,25 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
-import { StatePill } from "@/components/StatePill";
-import { lineColorOf, lineTextColorOf, type PresentedState } from "@/lib/domain/presentation";
+import { useEffect, useRef, useState } from "react";
+import { CatalogCard, CatalogCardSkeleton, type CatalogCardData } from "@/components/CatalogCard";
 import type { ExperienceKind, ExperienceLine } from "@/lib/domain/types";
-
-/** Tarjeta del catálogo ya preparada en el servidor. Solo datos serializables. */
-export interface ExploreCard {
-  key: string;
-  href: string;
-  kind: ExperienceKind;
-  line: ExperienceLine;
-  label: string;
-  state: PresentedState;
-  title: string;
-  summary: string;
-  footer: string;
-  detail: string | null;
-  demo: boolean;
-}
 
 const TIPOS: { value: ExperienceKind; label: string }[] = [
   { value: "competencia", label: "Competencia" },
@@ -41,20 +24,25 @@ const ESTADOS: { value: Estado; label: string }[] = [
   { value: "concluido", label: "Concluido" },
 ];
 
-/** Estado visible de la tarjeta, mapeado al filtro. «En evaluación» y «En desarrollo» solo aparecen con «Cualquier estado». */
-function estadoOf(card: ExploreCard): Estado | "otro" {
+/** Cards are revealed in batches as the reader scrolls; the catalog itself is already loaded. */
+const BATCH = 6;
+
+/** Maps the visible card state to the filter. "En evaluación" and "En desarrollo" only show with "Cualquier estado". */
+function estadoOf(card: CatalogCardData): Estado | "otro" {
   if (card.state.label === "Abierto") return "abierto";
   if (card.state.label === "Próximo") return "proximo";
   if (card.state.label === "Concluido") return "concluido";
   return "otro";
 }
 
-/** Filtros de tipo, línea, estado y demo sobre el catálogo público. No cambia qué existe: solo cuáles se muestran. */
-export function FiltrosExplorar({ cards }: { cards: ExploreCard[] }) {
+/** Type, line, state and demo filters over the public catalog. It never changes what exists, only what is shown. */
+export function FiltrosExplorar({ cards }: { cards: CatalogCardData[] }) {
   const [tipo, setTipo] = useState<"todos" | ExperienceKind>("todos");
   const [linea, setLinea] = useState<"todas" | ExperienceLine>("todas");
   const [estado, setEstado] = useState<Estado>("todos");
   const [soloDemo, setSoloDemo] = useState(false);
+  const [limit, setLimit] = useState(BATCH);
+  const sentinel = useRef<HTMLDivElement>(null);
 
   const visibles = cards.filter((card) => {
     if (tipo !== "todos" && card.kind !== tipo) return false;
@@ -63,41 +51,59 @@ export function FiltrosExplorar({ cards }: { cards: ExploreCard[] }) {
     if (soloDemo && !card.demo) return false;
     return true;
   });
-
+  const shown = visibles.slice(0, limit);
+  const hasMore = visibles.length > shown.length;
   const hayFiltros = tipo !== "todos" || linea !== "todas" || estado !== "todos" || soloDemo;
 
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!hasMore || !node) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) setLimit((current) => current + BATCH);
+    }, { rootMargin: "200px 0px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, limit]);
+
+  // Any filter change starts again from the first batch.
+  const filtered = <T,>(setter: (value: T) => void) => (value: T) => {
+    setter(value);
+    setLimit(BATCH);
+  };
+
   return (
-    <section aria-label="Filtros del catálogo" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <form className="c3-card" style={{ padding: 20, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, alignItems: "end" }} onSubmit={(event) => event.preventDefault()}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <section aria-label="Filtros del catálogo">
+      <form className="c3-filters" onSubmit={(event) => event.preventDefault()}>
+        <div className="c3-field-group">
           <label htmlFor="filtro-tipo" className="c3-etiqueta-campo">Tipo</label>
-          <select id="filtro-tipo" className="c3-campo" value={tipo} onChange={(event) => setTipo(event.target.value as "todos" | ExperienceKind)}>
+          <select id="filtro-tipo" className="c3-campo" value={tipo} onChange={(event) => filtered(setTipo)(event.target.value as "todos" | ExperienceKind)}>
             <option value="todos">Todos los tipos</option>
             {TIPOS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div className="c3-field-group">
           <label htmlFor="filtro-linea" className="c3-etiqueta-campo">Línea</label>
-          <select id="filtro-linea" className="c3-campo" value={linea} onChange={(event) => setLinea(event.target.value as "todas" | ExperienceLine)}>
+          <select id="filtro-linea" className="c3-campo" value={linea} onChange={(event) => filtered(setLinea)(event.target.value as "todas" | ExperienceLine)}>
             <option value="todas">Todas las líneas</option>
             {LINEAS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div className="c3-field-group">
           <label htmlFor="filtro-estado" className="c3-etiqueta-campo">Estado</label>
-          <select id="filtro-estado" className="c3-campo" value={estado} onChange={(event) => setEstado(event.target.value as Estado)}>
+          <select id="filtro-estado" className="c3-campo" value={estado} onChange={(event) => filtered(setEstado)(event.target.value as Estado)}>
             {ESTADOS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 44, fontSize: 14 }}>
-          <input type="checkbox" checked={soloDemo} onChange={(event) => setSoloDemo(event.target.checked)} />
+        <label className="c3-checkbox">
+          <input type="checkbox" checked={soloDemo} onChange={(event) => filtered(setSoloDemo)(event.target.checked)} />
           Solo datos demostrativos
         </label>
       </form>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <p role="status" style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
-          Mostrando {visibles.length} de {cards.length} {cards.length === 1 ? "experiencia" : "experiencias"}.
+      <div className="c3-results__bar">
+        <p role="status" className="c3-results__count">
+          Mostrando <b>{shown.length}</b> de <b>{visibles.length}</b> {visibles.length === 1 ? "experiencia" : "experiencias"}
+          {hayFiltros ? ` · ${cards.length} en total` : ""}
         </p>
         {hayFiltros ? (
           <button
@@ -108,6 +114,7 @@ export function FiltrosExplorar({ cards }: { cards: ExploreCard[] }) {
               setLinea("todas");
               setEstado("todos");
               setSoloDemo(false);
+              setLimit(BATCH);
             }}
           >
             Quitar filtros
@@ -116,32 +123,19 @@ export function FiltrosExplorar({ cards }: { cards: ExploreCard[] }) {
       </div>
 
       {visibles.length === 0 ? (
-        <div className="c3-card" style={{ padding: 24 }}>
-          <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>Ninguna experiencia coincide con estos filtros. Probá quitar alguno.</p>
-        </div>
+        <p className="c3-empty-card">Ninguna experiencia coincide con estos filtros. Prueba quitar alguno.</p>
       ) : (
-        <div className="c3-grilla-tarjetas">
-          {visibles.map((card) => (
-            <Link key={card.key} href={card.href} className="c3-tarjeta-enlace">
-              <div style={{ height: 6, background: lineColorOf(card.line) }} />
-              <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span className="c3-etiqueta" style={{ color: lineTextColorOf(card.line) }}>{card.label}</span>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    {card.demo ? <span className="c3-etiqueta" style={{ color: "var(--c3-advertencia)" }}>DEMO</span> : null}
-                    <StatePill state={card.state} />
-                  </div>
-                </div>
-                <div className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{card.title}</div>
-                <div style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>{card.summary}</div>
-                <div style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--c3-borde)", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontSize: 14, fontWeight: 500 }}>{card.footer}</span>
-                  {card.detail ? <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>{card.detail}</span> : null}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <>
+          <div className="c3-featured__grid">
+            {shown.map((card) => <CatalogCard key={card.key} card={card} />)}
+            {hasMore ? Array.from({ length: Math.min(3, visibles.length - shown.length) }, (_, index) => <CatalogCardSkeleton key={index} />) : null}
+          </div>
+          {hasMore ? (
+            <div ref={sentinel} className="c3-catalog__status">Cargando más experiencias…</div>
+          ) : visibles.length > BATCH ? (
+            <p className="c3-catalog__status">Ya viste todas las experiencias.</p>
+          ) : null}
+        </>
       )}
     </section>
   );

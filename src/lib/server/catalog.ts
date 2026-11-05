@@ -1,9 +1,10 @@
-/**
- * Servicios de experiencias y challenges. Reciben la base de datos y la hora como parámetros para
- * poder probarse contra el emulador. Cada función verifica permisos antes de leer o escribir.
+/*
+ * Experience and challenge services. They take the database and the time as parameters so they can be
+ * tested against the emulator. Every function checks permissions before reading or writing.
  */
 import type { DocumentData, Firestore, Query, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { parseCommercialPackageId } from "../domain/commercial.ts";
+import { challengeCoverOf, type CoverImage } from "../domain/coverImage.ts";
 import { presentState, type PresentedState } from "../domain/presentation.ts";
 import { experienceLinesOf, normalizeExperienceMetadata, presentExperienceState, type ExperienceLine } from "../domain/catalog.ts";
 import {
@@ -43,15 +44,15 @@ export interface PublicExperience {
   challenges: PublicChallengeSummary[];
 }
 
-/** Detalle público de una experiencia, con lo necesario para decidir si se puede inscribir. */
+/** Public experience detail, with what's needed to decide whether someone can enroll. */
 export interface PublicExperienceDetail extends PublicExperience {
   registration: {
-    /** Inscripciones abiertas y con cupo. */
+    /** Enrollment open and with spots left. */
     open: boolean;
-    /** Cupos libres, o null si no hay límite. */
+    /** Spots left, or null if there's no limit. */
     spotsLeft: number | null;
     full: boolean;
-    /** La experiencia no tiene challenges publicados, así que la persona se inscribe a la experiencia misma. */
+    /** No published challenges, so the person enrolls in the experience itself. */
     direct: boolean;
   };
 }
@@ -70,12 +71,16 @@ export interface PublicChallengeSummary {
   demoNote: string | null;
   sourceUrl: string | null;
   sourceLabel: string | null;
+  /** Its own cover, or the experience's when it has none. */
+  cover: CoverImage | null;
   state: PresentedState;
 }
 
 export interface PublicChallenge {
   challenge: Challenge;
   experience: Experience;
+  /** Its own cover, or the experience's when it has none. */
+  cover: CoverImage | null;
   state: PresentedState;
 }
 
@@ -95,11 +100,17 @@ function toExperience(id: string, data: DocumentData): Experience {
     modality: data.modality ?? null,
     location: data.location ?? null,
     capacity: typeof data.capacity === "number" ? data.capacity : null,
+    ...coverFieldsOf(data),
     registrationOpensAt: data.registrationOpensAt ?? null,
     registrationClosesAt: data.registrationClosesAt ?? null,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
+}
+
+/** Stored cover fields, kept as they are; public views read them through coverOf. */
+function coverFieldsOf(data: DocumentData) {
+  return { coverImageUrl: data.coverImageUrl ?? null, coverImageAlt: data.coverImageAlt ?? null };
 }
 
 function toChallenge(id: string, data: DocumentData): Challenge {
@@ -118,6 +129,7 @@ function toChallenge(id: string, data: DocumentData): Challenge {
     teamMaxSize: data.teamMaxSize ?? null,
     status: data.status,
     submissionClosesAt: data.submissionClosesAt ?? null,
+    ...coverFieldsOf(data),
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
@@ -136,6 +148,7 @@ function summarize(challenge: Challenge, experience: Experience, now: Date): Pub
     submissionClosesAt: challenge.submissionClosesAt,
     lines: experienceLinesOf(experience),
     ...metadata,
+    cover: challengeCoverOf(challenge, experience),
     state: presentState(challenge.status, windowOf(experience), now),
   };
 }
@@ -177,13 +190,13 @@ function statsFrom(enrollments: QueryDocumentSnapshot[], challengeCount: number)
   return { challenges: challengeCount, enrollments: countEnrollments(enrollments.map((doc) => doc.data().status as string)) };
 }
 
-/** Convierte un rechazo de las reglas de dominio en el error HTTP con el motivo completo. */
+/** Turns a domain-rule refusal into the HTTP error with the full reason. */
 function refusalError(refusal: Refusal): HttpError {
   const detail = refusal.issues?.map((issue) => issue.message) ?? [];
   return new HttpError(409, refusal.code, [refusal.message, ...detail].join(" "));
 }
 
-/** Valores guardados de los datos propios de la experiencia (sin estado ni auditoría). */
+/** Stored values of the experience's own data (no status or audit fields). */
 function experienceFields(input: ExperienceInput) {
   return {
     title: input.title,
@@ -201,13 +214,15 @@ function experienceFields(input: ExperienceInput) {
     demoNote: input.demoNote,
     sourceUrl: input.sourceUrl,
     sourceLabel: input.sourceLabel,
+    coverImageUrl: input.coverImageUrl,
+    coverImageAlt: input.coverImageAlt,
   };
 }
 
-/** Valores de calendario y clasificación que se guardan en la bitácora cuando cambian (sin textos largos). */
+/** Calendar and classification values logged in the audit trail when they change (no long texts). */
 const AUDITED_FIELDS = ["title", "kind", "primaryLine", "startsAt", "endsAt", "modality", "capacity", "registrationOpensAt", "registrationClosesAt"] as const;
 
-/** Crea una experiencia en borrador. Solo administradores de C3. */
+/** Creates a draft experience. C3 admins only. */
 export async function createExperience(db: Firestore, actor: Actor, rawInput: unknown, now: Date): Promise<Experience> {
   requireAdmin(actor);
   const input = parseExperienceInput(rawInput);
@@ -233,9 +248,8 @@ export async function createExperience(db: Firestore, actor: Actor, rawInput: un
 }
 
 /**
- * Edita los datos de una experiencia. Actualiza solo los campos que cambian y conserva todo lo demás
- * (estado, demo, autoría, datos de seed). Los campos que podrían invalidar inscripciones se bloquean según
- * el estado y la participación; ver lockedFields en el dominio.
+ * Edits an experience. Only changed fields are written; everything else (status, demo, authorship, seed data) stays.
+ * Fields that could invalidate enrollments are locked by status and participation; see lockedFields in the domain.
  */
 export async function updateExperience(db: Firestore, actor: Actor, id: string, rawInput: unknown, now: Date): Promise<Experience> {
   requireAdmin(actor);
@@ -268,7 +282,7 @@ export async function updateExperience(db: Firestore, actor: Actor, id: string, 
   return loadExperience(db, id);
 }
 
-/** Cambia el estado guardado respetando las transiciones permitidas (borrador, publicada, concluida, cancelada). */
+/** Changes the stored status following the allowed transitions (draft, published, closed, cancelled). */
 export async function setExperienceStatus(db: Firestore, actor: Actor, id: string, rawInput: unknown, now: Date): Promise<Experience> {
   requireAdmin(actor);
   const { status } = parseStatusInput(rawInput);
@@ -295,8 +309,8 @@ export async function setExperienceStatus(db: Firestore, actor: Actor, id: strin
 }
 
 /**
- * Abre o cierra las inscripciones de una experiencia publicada ajustando su ventana de fechas.
- * Cerrar fija el cierre en este momento; abrir fija la apertura (y, tras un cierre, exige una nueva fecha de cierre).
+ * Opens or closes enrollment for a published experience by adjusting its date window. Closing sets the close to now;
+ * opening sets the open date (and, after a close, needs a new close date).
  */
 export async function setExperienceRegistration(db: Firestore, actor: Actor, id: string, rawInput: unknown, now: Date): Promise<Experience> {
   requireAdmin(actor);
@@ -325,7 +339,7 @@ export async function setExperienceRegistration(db: Firestore, actor: Actor, id:
   return loadExperience(db, id);
 }
 
-/** Crea un challenge en borrador dentro de una experiencia existente. */
+/** Creates a draft challenge inside an existing experience. */
 export async function createChallenge(db: Firestore, actor: Actor, rawInput: unknown, now: Date): Promise<Challenge> {
   requireAdmin(actor);
   const input = parseChallengeInput(rawInput, now);
@@ -353,6 +367,8 @@ export async function createChallenge(db: Firestore, actor: Actor, rawInput: unk
     teamMinSize: input.teamMinSize,
     teamMaxSize: input.teamMaxSize,
     submissionClosesAt: input.submissionClosesAt,
+    coverImageUrl: input.coverImageUrl,
+    coverImageAlt: input.coverImageAlt,
     status: "draft" satisfies ExperienceStatus,
     createdAt: stamp,
     updatedAt: stamp,
@@ -369,7 +385,7 @@ export async function createChallenge(db: Firestore, actor: Actor, rawInput: unk
   return toChallenge(ref.id, data);
 }
 
-/** Cambia el estado de un challenge. Un challenge concluido es histórico y no se reabre. */
+/** Changes a challenge's status. A closed challenge is historical and never reopens. */
 export async function setChallengeStatus(db: Firestore, actor: Actor, id: string, rawInput: unknown, now: Date): Promise<Challenge> {
   requireAdmin(actor);
   const { status } = parseStatusInput(rawInput);
@@ -392,16 +408,16 @@ export async function setChallengeStatus(db: Firestore, actor: Actor, id: string
   return loadChallenge(db, id);
 }
 
-/** Experiencias y challenges con el recuento de inscripciones y challenges de cada experiencia, para el listado de Admin. */
+/** Experiences and challenges with each experience's enrollment and challenge counts, for the Admin list. */
 export interface AdminCatalog {
   experiences: Experience[];
   challenges: Challenge[];
-  /** Indexado por id de experiencia. */
+  /** Keyed by experience id. */
   stats: Record<string, ExperienceStats>;
   organizations: { id: string; name: string }[];
 }
 
-/** Vista completa para el administrador, incluidos borradores. */
+/** Full view for admins, drafts included. */
 export async function listAdminCatalog(
   db: Firestore,
   actor: Actor,
@@ -441,7 +457,7 @@ function byCreatedDesc<T extends { createdAt: string }>(a: T, b: T): number {
   return b.createdAt.localeCompare(a.createdAt);
 }
 
-/** Catálogo público: solo experiencias publicadas y challenges publicados dentro de ellas. */
+/** Public catalog: only published experiences and the published challenges inside them. */
 export async function listPublicCatalog(db: Firestore, now: Date): Promise<PublicExperience[]> {
   const [experienceSnap, challengeSnap] = await Promise.all([
     db.collection(EXPERIENCES).where("status", "in", ["published", "closed"]).get(),
@@ -459,7 +475,7 @@ export async function listPublicCatalog(db: Firestore, now: Date): Promise<Publi
   }));
 }
 
-/** Detalle público de un challenge. Devuelve 404 si el challenge o su experiencia no están publicados. */
+/** Public challenge detail. 404 if the challenge or its experience isn't published. */
 export async function getPublicChallenge(db: Firestore, challengeId: string, now: Date): Promise<PublicChallenge> {
   const challenge = await loadChallenge(db, challengeId);
   if (challenge.status !== "published" && challenge.status !== "closed") throw notFound();
@@ -468,13 +484,14 @@ export async function getPublicChallenge(db: Firestore, challengeId: string, now
   return {
     challenge,
     experience,
+    cover: challengeCoverOf(challenge, experience),
     state: presentState(challenge.status, windowOf(experience), now),
   };
 }
 
 /**
- * Detalle público de una experiencia publicada o concluida. Devuelve 404 si es borrador o cancelada.
- * Incluye si se puede inscribir directamente (sin challenges publicados) y cuántos cupos quedan.
+ * Public detail of a published or closed experience; 404 for drafts and cancelled ones. Includes whether people
+ * enroll directly (no published challenges) and how many spots are left.
  */
 export async function getPublicExperience(db: Firestore, experienceId: string, now: Date): Promise<PublicExperienceDetail> {
   const experience = await loadExperience(db, experienceId);

@@ -111,13 +111,15 @@ test.describe("Evaluar desde el espacio de empresa", () => {
     await expect(page.getByText("Como jurado", { exact: true })).toBeVisible();
   });
 
-  test("la representante sin asignación ve las soluciones pero no puede evaluarlas", async ({ page }) => {
+  test("la representante vinculada evalúa los challenges de su organización sin asignación", async ({ page }) => {
     await loginAt(page, representante, "/empresa");
-    // Las soluciones se ven en la ficha del talento, no volcadas en la tarjeta del challenge.
+    // Solutions live in the talent panel, not dumped into the challenge card.
     await page.getByRole("button", { name: "Ver talento y lista corta" }).first().click();
     await expect(page.getByText("Solución de prueba: ruteo con ventanas horarias")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Evaluar soluciones", exact: true })).toHaveCount(0);
-    await expect(page.getByText("C3 te asigna como jurado de este challenge.")).toBeVisible();
+    /* Since #27 a linked representative evaluates as the company judge without an assignment;
+       revocation is covered in tests/emulator/evaluation.test.ts. */
+    await expect(page.getByRole("link", { name: "Evaluar soluciones", exact: true })).toHaveAttribute("href", `/mi-c3/evaluar/${orgChallenge.challengeId}`);
+    await expect(page.getByText("C3 te asigna como jurado de este challenge.")).toHaveCount(0);
   });
 });
 
@@ -162,7 +164,7 @@ test.describe("Un solo marco para toda la app", () => {
     await page.getByRole("main").getByRole("link", { name: "Entrar", exact: true }).click();
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/mi-c3/retos/${challenge.challengeId}$`));
   });
 });
@@ -178,15 +180,19 @@ test.describe("Cabecera pública", () => {
     for (const nombre of ["Explorar", "Compite", "Crea", "Conecta", "Para empresas"]) {
       await expect(principal.getByRole("link", { name: nombre, exact: true })).toBeVisible();
     }
-    await expect(principal.getByText("Líneas", { exact: true })).toBeVisible();
+    await expect(principal.getByText("Conoce C3", { exact: true })).toBeVisible();
   });
 
-  test("en escritorio la navegación va en línea, sin «Inicio»", async ({ page }, testInfo) => {
+  test("en escritorio la navegación va en línea, sin «Inicio», con las líneas en «Conoce C3»", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "escritorio", "La navegación en línea se comprueba en escritorio.");
     await page.goto("/explorar");
     const principal = page.getByRole("navigation", { name: "Principal" });
-    await expect(principal.getByRole("link")).toHaveText(["Explorar", "Compite", "Crea", "Conecta", "Para empresas"]);
+    await expect(principal.getByRole("link")).toHaveText(["Explorar", "Para empresas"]);
     await expect(principal.getByRole("link", { name: "Inicio" })).toHaveCount(0);
+    await principal.getByRole("button", { name: "Conoce C3", exact: true }).click();
+    for (const nombre of ["Compite", "Crea", "Conecta"]) {
+      await expect(principal.getByRole("link", { name: nombre, exact: true })).toBeVisible();
+    }
   });
 });
 

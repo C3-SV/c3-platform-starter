@@ -154,7 +154,7 @@ export async function loginAt(page: Page, account: Pick<Account, "email" | "pass
   await page.goto(next ? `/acceso?next=${encodeURIComponent(next)}` : "/acceso");
   await page.locator("#l-correo").fill(account.email);
   await page.locator("#l-pass").fill(account.password);
-  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
   await expect(page).toHaveURL(next ? new RegExp(`${escapeForRegExp(next)}$`) : /\/mi-c3$/);
 }
 
@@ -177,13 +177,21 @@ export async function signOutUi(page: Page): Promise<void> {
     await salir.first().click({ timeout: 2_000 });
   }).toPass({ timeout: 30_000 });
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("link", { name: "Iniciar sesión", exact: true })).toBeVisible();
 }
 
-/** En pantallas pequeñas la navegación del sitio público está plegada: se abre con «Menú». En escritorio no hace nada. */
+/**
+ * Shows every public site link: on small screens it opens «Menú»; on desktop it opens the «Conoce C3» dropdown,
+ * where Compite, Crea and Conecta live.
+ */
 export async function openSiteMenu(page: Page): Promise<void> {
   const menu = page.getByRole("button", { name: "Menú", exact: true });
-  if (await menu.isVisible()) await menu.click();
+  if (await menu.isVisible()) {
+    await menu.click();
+    return;
+  }
+  const lines = page.getByRole("button", { name: "Conoce C3", exact: true });
+  if (await lines.isVisible()) await lines.click();
 }
 
 /** Abre una sección de la consola de administración desde su menú (plegado en pantallas pequeñas). */

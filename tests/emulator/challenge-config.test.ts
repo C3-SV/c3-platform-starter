@@ -72,6 +72,19 @@ test("quien administra el challenge lo configura; otra empresa y una persona par
   assert.equal((await updateChallengeConfig(db, admin, challengeId, { summary: "Resumen ajustado por C3 para el challenge." }, now)).summary, "Resumen ajustado por C3 para el challenge.");
 });
 
+test("la representante no cambia la portada del challenge: la configuración ignora esos campos", async () => {
+  const { db, challengeId } = await scenario();
+  await updateChallengeConfig(db, representante, challengeId, {
+    summary: "Resumen actualizado por la empresa del challenge.",
+    coverImageUrl: "https://c3.com.sv/portada-empresa.png",
+    coverImageAlt: "Portada que intenta poner la empresa",
+  }, now);
+  const stored = (await db.collection("challenges").doc(challengeId).get()).data();
+  assert.equal(stored?.summary, "Resumen actualizado por la empresa del challenge.");
+  assert.equal(stored?.coverImageUrl ?? null, null);
+  assert.equal(stored?.coverImageAlt ?? null, null);
+});
+
 test("la configuración se valida y se cierra con el plazo de entregas", async () => {
   const { db, challengeId } = await scenario();
   await assert.rejects(updateChallengeConfig(db, representante, challengeId, { summary: "corto" }, now), (error) => error instanceof ValidationFailure);
