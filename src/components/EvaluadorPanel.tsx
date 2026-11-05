@@ -31,7 +31,7 @@ function statusOf(solution: Solution): SolutionStatus {
   return solution.mine.status === "finalized" ? "finalized" : "draft";
 }
 
-/** Nombre de quien entregó (persona o equipo), disponible después del cierre; antes, la etiqueta «Solución N». */
+/** Nombre de quien entregó (persona o equipo); si no hay nombre, la etiqueta «Solución N». */
 function tituloDe(solution: Solution): string {
   return solution.name ?? solution.label;
 }
@@ -57,9 +57,9 @@ function formatNumber(value: number): string {
 }
 
 /**
- * Espacio de evaluación para jurados asignados: rúbrica, borrador y finalización. Antes del cierre, solo lectura.
+ * Espacio de evaluación para jurados asignados: rúbrica, borrador y finalización única. Las entregas abiertas no bloquean la evaluación.
  * Es la única pantalla de evaluación (jurado externo o representante de la empresa): `/mi-c3/evaluar/[id]`.
- * Antes del cierre las soluciones aparecen como «Solución 1»…; después del cierre, con el nombre de la persona o del equipo.
+ * Cada solución muestra el nombre de la persona o del equipo, con «Solución N» como referencia.
  */
 export function EvaluadorPanel({ challengeId }: { challengeId: string }) {
   return (
@@ -170,7 +170,6 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
     );
   }
 
-  const pending = !workspace.canEvaluate;
   const rubric = workspace.challenge.rubric;
   const weighted = isWeighted(rubric);
   const finalized = workspace.solutions.filter((solution) => statusOf(solution) === "finalized").length;
@@ -207,11 +206,11 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
         </dl>
       </section>
 
-      {pending ? (
-        <div className="c3-alerta c3-alerta--advertencia" role="status">
-          <strong>Esperá el cierre de entregas</strong>
+      {workspace.entregasAbiertas ? (
+        <div className="c3-alerta c3-alerta--info" role="status">
+          <strong>Las entregas siguen abiertas</strong>
           <span style={{ fontSize: 14, lineHeight: 1.5 }}>
-            Las soluciones se pueden evaluar cuando cierran las entregas{workspace.challenge.submissionClosesAt ? `, el ${formatDateTime(workspace.challenge.submissionClosesAt)}` : ""}. Hasta entonces todavía pueden cambiar.
+            Podés evaluar ya. Una solución puede cambiar{closes ? ` hasta el cierre, ${closes}` : " hasta el cierre"}.
           </span>
         </div>
       ) : null}
@@ -256,7 +255,7 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
           <div className="c3-evaluacion__soluciones">
             {workspace.solutions.map((solution) => {
               const status = statusOf(solution);
-              const locked = pending || status === "finalized";
+              const locked = status === "finalized";
               const values = scoresFor(solution);
               const total = status === "finalized" && solution.mine ? { value: solution.mine.total, complete: true } : totalWhileEditing(values, rubric);
               const titleId = `solucion-${solution.id}-titulo`;
@@ -280,12 +279,8 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
                       </div>
                       <StatePill state={SOLUTION_STATE[status]} />
                     </div>
-                    {pending ? (
-                      <p className="c3-ayuda">El contenido aparece cuando cierran las entregas.</p>
-                    ) : (
-                      <p className="c3-evaluacion__texto">{solution.text}</p>
-                    )}
-                    {!pending && solution.links.length > 0 ? (
+                    <p className="c3-evaluacion__texto">{solution.text}</p>
+                    {solution.links.length > 0 ? (
                       <ul className="c3-evaluacion__enlaces" aria-label={`Enlaces de ${tituloDe(solution)}`}>
                         {solution.links.map((link) => (
                           <li key={link}>
@@ -351,9 +346,7 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
                     </div>
 
                     {locked ? (
-                      <span className="c3-ayuda">
-                        {status === "finalized" ? `Finalizada. Total: ${solution.mine?.total} de ${workspace.maxTotal}.` : "Esperá el cierre de entregas para evaluar."}
-                      </span>
+                      <span className="c3-ayuda">Finalizada. Total: {solution.mine?.total} de {workspace.maxTotal}.</span>
                     ) : confirming === solution.id ? (
                       <div className="c3-evaluacion__confirmar" role="group" aria-label={`Confirmar la finalización de ${tituloDe(solution)}`}>
                         <p>

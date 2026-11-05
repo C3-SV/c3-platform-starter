@@ -195,7 +195,7 @@ function EmpresaContenido() {
                       challenge.evaluation.assigned ? (
                         <Link href={evaluationHref(challenge.id)} className="c3-btn c3-btn--contorno">Evaluar soluciones</Link>
                       ) : (
-                        <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>Para evaluar, C3 te asigna como jurado de este challenge.</span>
+                        <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>La evaluación no está disponible para tu cuenta en este challenge.</span>
                       )
                     ) : null}
                     <button

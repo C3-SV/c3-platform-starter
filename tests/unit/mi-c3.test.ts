@@ -73,12 +73,14 @@ test("una inscripción a una experiencia sin reto: pendiente espera a C3 y aprob
   assert.deepEqual(classifyEnrollment({ ...approved, status: "cancelled" }, now), { group: "finalizada", reason: "cancelada" });
 });
 
-test("jurado: evaluar solo cuando cerró el plazo y quedan soluciones por finalizar", () => {
-  const base: AssignmentFacts = { canEvaluate: true, solutions: 4, finalized: 1 };
-  assert.deepEqual(classifyAssignment({ ...base, canEvaluate: false }), { group: "espera", reason: "esperando_cierre" });
+test("jurado: evalúa mientras haya soluciones por finalizar; «completa» solo cuando cerraron las entregas", () => {
+  const base: AssignmentFacts = { canEvaluate: true, entregasAbiertas: false, solutions: 4, finalized: 1 };
+  assert.deepEqual(classifyAssignment({ ...base, canEvaluate: false }), { group: "finalizada", reason: "no_disponible" });
   assert.deepEqual(classifyAssignment(base), { group: "atencion", reason: "evaluar" });
   assert.deepEqual(classifyAssignment({ ...base, finalized: 4 }), { group: "finalizada", reason: "completa" });
+  assert.deepEqual(classifyAssignment({ ...base, finalized: 4, entregasAbiertas: true }), { group: "en_curso", reason: "al_dia" });
   assert.deepEqual(classifyAssignment({ ...base, solutions: 0, finalized: 0 }), { group: "finalizada", reason: "sin_soluciones" });
+  assert.deepEqual(classifyAssignment({ ...base, solutions: 0, finalized: 0, entregasAbiertas: true }), { group: "espera", reason: "esperando_soluciones" });
 });
 
 test("organizar: cada elemento cae en un solo grupo y los conteos coinciden", () => {
@@ -90,7 +92,7 @@ test("organizar: cada elemento cae en un solo grupo y los conteos coinciden", ()
       enrollment({ delivery: { state: "entregada", canEdit: false } }),
       enrollment({ status: "cancelled", delivery: null }),
     ],
-    [{ canEvaluate: false, solutions: 0, finalized: 0 }],
+    [{ canEvaluate: true, entregasAbiertas: true, solutions: 0, finalized: 0 }],
     now,
   );
   assert.deepEqual(overview.counts, { atencion: 2, espera: 2, en_curso: 1, finalizada: 1 });
@@ -121,7 +123,7 @@ test("el mensaje cubre los casos sin inscripciones, en curso y varias acciones",
   assert.equal(overviewMessage(organizeParticipation([], [], now)), "Todavía no participás en ninguna experiencia.");
   const active = organizeParticipation([enrollment({ delivery: { state: "entregada", canEdit: false } })], [], now);
   assert.equal(overviewMessage(active), "No tenés acciones pendientes. Tenés 1 participación en curso.");
-  const several = organizeParticipation([enrollment(), enrollment()], [{ canEvaluate: true, solutions: 2, finalized: 0 }], now);
+  const several = organizeParticipation([enrollment(), enrollment()], [{ canEvaluate: true, entregasAbiertas: false, solutions: 2, finalized: 0 }], now);
   assert.equal(overviewMessage(several), "Tenés 3 acciones que requieren tu atención.");
   const finished = organizeParticipation([enrollment({ status: "cancelled", delivery: null })], [], now);
   assert.equal(overviewMessage(finished), "No tenés acciones pendientes.");

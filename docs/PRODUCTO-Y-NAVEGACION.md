@@ -47,7 +47,7 @@ Una cuenta puede participar, evaluar, representar una organización y administra
 
 - Se calcula en el servidor con el **uid del token verificado**; nunca acepta un identificador por parámetro. `admin` sale del claim `c3Admin`; las organizaciones, de los vínculos de C3; `judge`, de las asignaciones activas.
 - La interfaz solo **decide qué enlaces mostrar** (`appNavigation`, `accountMenu`, `spacesOf` en `src/lib/domain/capabilities.ts`); cada ruta vuelve a autorizar. `parseCapabilities` ante cualquier forma inesperada devuelve cero capacidades.
-- **La evaluación no tiene ítem de menú:** vive en Mi C3 («Como jurado»); `/empresa` ofrece «Evaluar soluciones» en los challenges cuyo jurado asignó C3. La representante vinculada evalúa los challenges de su organización sin asignación previa de C3.
+- **La evaluación no tiene ítem de menú:** vive en Mi C3 («Como jurado»); `/empresa` ofrece «Evaluar soluciones» en los challenges de sus organizaciones con soluciones enviadas. La representante vinculada evalúa esos challenges sin asignación previa de C3, desde que el challenge está publicado; si C3 le revocó la asignación, el acceso se corta y el panel lo indica.
 - Mi C3 muestra «Tus espacios» (empresa, administración) como tarjetas cuando la cuenta los tiene.
 
 ## 4. Reglas transversales

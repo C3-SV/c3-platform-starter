@@ -14,20 +14,15 @@ export function canSubmit(args: {
     && Number.isFinite(now) && Number.isFinite(limit) && now < limit;
 }
 
+/** Un jurado asignado evalúa una entrega enviada de un challenge publicado, sin esperar al cierre de entregas (igual que el servidor). */
 export function canEvaluate(args: {
   challengeStatus: ExperienceStatus;
   submissionStatus: SubmissionStatus;
-  submissionClosesAt: string;
-  now: string;
   assignedJudge: boolean;
 }): boolean {
-  const limit = Date.parse(args.submissionClosesAt);
-  const now = Date.parse(args.now);
-  return args.challengeStatus !== "cancelled"
-    && args.challengeStatus !== "draft"
+  return args.challengeStatus === "published"
     && args.submissionStatus === "submitted"
-    && args.assignedJudge
-    && Number.isFinite(now) && Number.isFinite(limit) && now >= limit;
+    && args.assignedJudge;
 }
 
 export function canSeeResult(args: {
