@@ -1,7 +1,7 @@
 /**
  * Jurados, evaluaciones, consolidación y publicación oficial (Corte 5).
- * Un jurado —externo o representante autorizado por C3— evalúa solo las soluciones de sus challenges asignados,
- * sin ver quién las entregó y solo cuando cierran las entregas. C3 publica; nada se publica solo.
+ * Un jurado —externo o representante autorizado por C3— evalúa las soluciones de sus challenges asignados desde que
+ * el challenge está publicado, aunque las entregas sigan abiertas. C3 publica después del cierre; nada se publica solo.
  */
 import type { Auth } from "firebase-admin/auth";
 import type { DocumentData, Firestore } from "firebase-admin/firestore";
@@ -18,7 +18,7 @@ import {
 } from "../domain/evaluation.ts";
 import { ValidationFailure } from "../domain/validation.ts";
 import { requireAdmin, type Actor } from "./auth.ts";
-import { loadChallenge } from "./catalog.ts";
+import { loadChallenge, loadExperience } from "./catalog.ts";
 import { HttpError, notFound } from "./errors.ts";
 import { RESULTS, SUBMISSIONS, TEAMS, USERS } from "./ids.ts";
 import { publicSlugOf } from "./publicProfiles.ts";
@@ -169,6 +169,17 @@ export async function revokeJudge(db: Firestore, actor: Actor, assignmentId: str
   await ref.update({ status: "revoked", revokedAt: now.toISOString() });
 }
 
+/** Las entregas siguen abiertas hasta la fecha de cierre; sin fecha, se consideran abiertas. Solo indica si una solución puede cambiar. */
+export function entregasAbiertasEn(submissionClosesAt: string | null, now: Date): boolean {
+  return submissionClosesAt === null || now.getTime() < Date.parse(submissionClosesAt);
+}
+
+/** Una experiencia concluida o cancelada es histórica: no recibe evaluaciones (AGENTS §5). */
+async function evaluableExperience(db: Firestore, challenge: { experienceId: string }): Promise<boolean> {
+  const experience = await loadExperience(db, challenge.experienceId).catch(() => null);
+  return experience?.status === "published";
+}
+
 /** Challenges asignados a la persona autenticada, con su avance de evaluación. */
 export async function myAssignments(db: Firestore, actor: Actor, now: Date) {
   const evaluable = await evaluableChallenges(db, actor.uid);
@@ -182,27 +193,33 @@ export async function myAssignments(db: Firestore, actor: Actor, now: Date) {
       challengeId: data.challengeId,
       title: challenge?.title ?? "Challenge",
       kind: data.kind as JudgeKind,
-      canEvaluate: challenge ? now.getTime() >= Date.parse(challenge.submissionClosesAt ?? "9999-01-01") : false,
+      // Puede evaluar desde que el challenge y su experiencia están publicados; las entregas abiertas solo indican que una solución puede cambiar.
+      canEvaluate: challenge !== null && challenge.status === "published" && (await evaluableExperience(db, challenge)),
+      entregasAbiertas: challenge ? entregasAbiertasEn(challenge.submissionClosesAt, now) : false,
       solutions: solutions.length,
       finalized,
     };
   }));
 }
 
-/** Espacio de evaluación: soluciones anónimas del challenge, rúbrica y mis evaluaciones. Solo jurados asignados. */
+/**
+ * Espacio de evaluación: soluciones del challenge, rúbrica y mis evaluaciones. Solo jurados asignados.
+ * Se evalúa desde que el challenge está publicado: el contenido y el nombre de cada solución se ven siempre.
+ * `entregasAbiertas` indica que todavía pueden llegar o cambiar soluciones. Nunca se devuelve el uid de quien entregó.
+ */
 export async function evaluationWorkspace(db: Firestore, actor: Actor, challengeId: string, now: Date) {
   const challenge = await loadChallenge(db, challengeId);
-  if (challenge.status !== "published") throw notFound();
+  if (challenge.status !== "published" || !(await evaluableExperience(db, challenge))) throw notFound();
   const assignment = await activeAssignment(db, challengeId, actor.uid);
   if (!assignment) throw new HttpError(403, "sin_asignacion", "No tenés asignado este challenge como jurado.");
-  const canEvaluate = challenge.submissionClosesAt !== null && now.getTime() >= Date.parse(challenge.submissionClosesAt);
   const solutions = await submittedSubmissions(db, challengeId);
+  const names = await Promise.all(solutions.map((solution) => nameOf(db, solution)));
   const mine = await db.collection(EVALUATIONS).where("challengeId", "==", challengeId).where("judgeUserId", "==", actor.uid).get();
   const byId = new Map(mine.docs.map((doc) => [doc.data().submissionId as string, doc.data()]));
   return {
     challenge: { id: challenge.id, title: challenge.title, rubric: challenge.rubric, submissionClosesAt: challenge.submissionClosesAt },
     kind: assignment.kind as JudgeKind,
-    canEvaluate,
+    entregasAbiertas: entregasAbiertasEn(challenge.submissionClosesAt, now),
     maxTotal: maxTotal(challenge.rubric),
     solutions: solutions.map((solution, index) => {
       const evaluation = byId.get(solution.id);
@@ -210,9 +227,10 @@ export async function evaluationWorkspace(db: Firestore, actor: Actor, challenge
         // Alias estable: el id real de la solución lleva el uid de quien la entregó.
         id: solutionAlias(index),
         label: `Solución ${index + 1}`,
-        // Hasta el cierre de entregas el jurado no ve el contenido de las soluciones.
-        text: canEvaluate ? solution.text : null,
-        links: canEvaluate ? solution.links : [],
+        // Nombre real de la persona o del equipo, visible para el jurado asignado.
+        name: names[index],
+        text: solution.text,
+        links: solution.links,
         mine: evaluation
           ? { scores: evaluation.scores as Record<string, number>, total: evaluation.total as number, status: evaluation.status as "draft" | "finalized", comment: (evaluation.comment as string | null | undefined) ?? null }
           : null,
@@ -221,7 +239,7 @@ export async function evaluationWorkspace(db: Firestore, actor: Actor, challenge
   };
 }
 
-/** Alias público de una solución dentro de su challenge: «s1», «s2»… según el orden de envío (estable tras el cierre). */
+/** Alias público de una solución dentro de su challenge: «s1», «s2»… según el orden de envío (estable: una solución enviada no cambia de posición). */
 export function solutionAlias(index: number): string {
   return `s${index + 1}`;
 }
@@ -235,14 +253,13 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
   const target = position ? solutions[Number(position) - 1] : undefined;
   if (!target) throw notFound("La solución no existe o todavía no fue enviada.");
   const submissionId = target.id;
-  if (challenge.status !== "published") throw notFound();
+  if (challenge.status !== "published" || !(await evaluableExperience(db, challenge))) throw notFound();
   const assignment = await activeAssignment(db, challengeId, actor.uid);
   if (!assignment) throw new HttpError(403, "sin_asignacion", "No tenés asignado este challenge como jurado.");
-  if (challenge.submissionClosesAt === null || now.getTime() < Date.parse(challenge.submissionClosesAt)) {
-    throw new HttpError(409, "entregas_abiertas", "Todavía no se puede evaluar: las entregas siguen abiertas.");
-  }
+  // Nadie evalúa su propia solución; en equipo, quien la envió es la líder.
+  if (target.userId === actor.uid) throw new HttpError(403, "autoevaluacion", "No podés evaluar tu propia solución.");
 
-  const ref = db.collection(EVALUATIONS).doc(evaluationDocId(submissionId, actor.uid));
+  const ref =db.collection(EVALUATIONS).doc(evaluationDocId(submissionId, actor.uid));
   const scores = parseScores(body.scores, challenge.rubric);
   const finalize = body.finalize === true;
   // Comentario interno del jurado: lo ve solo C3. No es la retroalimentación que la empresa publica a la persona.
@@ -258,6 +275,8 @@ export async function saveEvaluation(db: Firestore, actor: Actor, challengeId: s
     const results = (await transaction.get(db.collection(RESULTS).doc(challengeId))).data();
     if (results?.status === "published") throw new HttpError(409, "resultados_publicados", "Los resultados ya están publicados: las evaluaciones quedaron congeladas.");
     if (existing?.status === "finalized") throw new HttpError(409, "ya_finalizada", "Esta evaluación ya está finalizada.");
+    // Toca la entrega para que una edición concurrente de la persona se reintente y vea esta evaluación (AGENTS §5).
+    transaction.set(db.collection(SUBMISSIONS).doc(submissionId), { lastEvaluatedAt: stamp }, { merge: true });
     transaction.set(ref, {
       submissionId,
       challengeId,
@@ -301,7 +320,7 @@ async function resultsDoc(db: Firestore, challengeId: string): Promise<DocumentD
 }
 
 /** Tablero interno: soluciones, evaluaciones finalizadas, promedio y condición de publicación. Sin autorización: lo usan las lecturas ya filtradas. */
-async function boardFor(db: Firestore, challengeId: string): Promise<ResultsBoard> {
+async function boardFor(db: Firestore, challengeId: string, now: Date = new Date()): Promise<ResultsBoard> {
   const challenge = await loadChallenge(db, challengeId);
   const solutions = await submittedSubmissions(db, challengeId);
   const evaluations = await db.collection(EVALUATIONS).where("challengeId", "==", challengeId).get();
@@ -332,9 +351,11 @@ async function boardFor(db: Firestore, challengeId: string): Promise<ResultsBoar
   const notReady = rows.filter((row) => !solutionReady(row.finalizedJudges)).length;
   const blockedReason = rows.length === 0
     ? "Todavía no hay soluciones enviadas para publicar."
-    : notReady > 0
-      ? `Solo ${rows.length - notReady} de ${rows.length} soluciones tienen las dos evaluaciones finalizadas.`
-      : null;
+    : entregasAbiertasEn(challenge.submissionClosesAt, now)
+      ? "Las entregas siguen abiertas: los resultados se publican después del cierre."
+      : notReady > 0
+        ? `Solo ${rows.length - notReady} de ${rows.length} soluciones tienen las dos evaluaciones finalizadas.`
+        : null;
 
   return {
     challengeId,
@@ -350,9 +371,9 @@ async function boardFor(db: Firestore, challengeId: string): Promise<ResultsBoar
 }
 
 /** Tablero de C3. Solo administradores. */
-export async function resultsBoard(db: Firestore, actor: Actor, challengeId: string): Promise<ResultsBoard> {
+export async function resultsBoard(db: Firestore, actor: Actor, challengeId: string, now: Date = new Date()): Promise<ResultsBoard> {
   requireAdmin(actor);
-  return boardFor(db, challengeId);
+  return boardFor(db, challengeId, now);
 }
 
 /** Reconocimiento (ganador, finalista, mención) o ninguno. Solo antes de publicar. */
@@ -365,11 +386,16 @@ export async function setRecognition(db: Firestore, actor: Actor, challengeId: s
   await ref.set({ challengeId, status: "draft", recognitions: { [submissionId]: recognition } }, { merge: true });
 }
 
-/** Publicación oficial por C3. Bloqueada hasta que cada solución tenga dos evaluaciones finalizadas. */
+/** Publicación oficial por C3. Solo después del cierre de entregas y con dos evaluaciones finalizadas por solución. */
 export async function publishResults(db: Firestore, actor: Actor, challengeId: string, rawInput: unknown, now: Date): Promise<void> {
   requireAdmin(actor);
-  const board = await resultsBoard(db, actor, challengeId);
+  const board = await resultsBoard(db, actor, challengeId, now);
   if (board.status === "published") throw new HttpError(409, "ya_publicado", "Los resultados ya están publicados.");
+  // Evaluar ya no exige el cierre, así que publicar sí: con entregas abiertas pueden llegar soluciones sin evaluar.
+  const challenge = await loadChallenge(db, challengeId);
+  if (entregasAbiertasEn(challenge.submissionClosesAt, now)) {
+    throw new HttpError(409, "entregas_abiertas", "Las entregas siguen abiertas: los resultados se publican después del cierre.");
+  }
   if (!board.canPublish) throw new HttpError(409, "publicacion_bloqueada", board.blockedReason ?? "No se puede publicar todavía.");
   const input = typeof rawInput === "object" && rawInput !== null ? (rawInput as Record<string, unknown>) : {};
   const stamp = now.toISOString();

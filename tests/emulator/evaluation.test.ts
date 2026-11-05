@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createChallenge, createExperience, setChallengeStatus, setExperienceStatus } from "../../src/lib/server/catalog.ts";
 import { getCapabilities } from "../../src/lib/server/capabilities.ts";
 import { createOrganization, linkRepresentative } from "../../src/lib/server/companies.ts";
+import { USERS } from "../../src/lib/server/ids.ts";
 import { HttpError } from "../../src/lib/server/errors.ts";
 import { ValidationFailure } from "../../src/lib/domain/validation.ts";
 import { enrollInChallenge, getDelivery, reviewEnrollment, saveDelivery } from "../../src/lib/server/participation.ts";
@@ -71,12 +72,13 @@ async function scenario() {
   const challenge = await createChallenge(db, admin, challengeInput(experience.id), now);
   await setExperienceStatus(db, admin, experience.id, { status: "published" }, now);
   await setChallengeStatus(db, admin, challenge.id, { status: "published" }, now);
-  for (const person of [joven, otra]) {
+  for (const [person, displayName] of [[joven, "Ana Martínez"], [otra, "Luis Herrera"]] as const) {
+    await db.collection(USERS).doc(person.uid).set({ displayName }, { merge: true });
     const enrollment = await enrollInChallenge(db, person, challenge.id, "individual", now);
     await reviewEnrollment(db, admin, enrollment.id, "approved", now);
     await saveDelivery(db, person, challenge.id, delivery, duringDeadline);
   }
-  return { db, challengeId: challenge.id };
+  return { db, challengeId: challenge.id, experienceId: experience.id };
 }
 
 beforeEach(async () => {
@@ -97,29 +99,84 @@ test("solo C3 asigna jurados por correo; una cuenta inexistente o un tipo invál
   assert.equal(judges[0].kind, "empresa");
 });
 
-test("una persona sin asignación no ve el espacio de evaluación; antes del cierre no se puede evaluar", async () => {
+test("una persona sin asignación no ve el espacio; el jurado evalúa con las entregas todavía abiertas", async () => {
   const { db, challengeId } = await scenario();
   const auth = testAuth();
   await createAuthUser(juez1.email, juez1.uid);
   await assignJudge(db, auth, admin, challengeId, juez1.email, "externo", now);
   await assert.rejects(evaluationWorkspace(db, noJuez, challengeId, afterDeadline), expectHttp(403, "sin_asignacion"));
   const beforeClose = await evaluationWorkspace(db, juez1, challengeId, duringDeadline);
-  assert.equal(beforeClose.canEvaluate, false);
+  assert.equal(beforeClose.entregasAbiertas, true);
   const [solution] = beforeClose.solutions;
-  assert.equal(solution.text, null, "antes del cierre el jurado no ve el contenido de la solución");
-  assert.deepEqual(solution.links, []);
-  await assert.rejects(saveEvaluation(db, juez1, challengeId, solution.id, { scores: { c1: 5, c2: 5 } }, duringDeadline), expectHttp(409, "entregas_abiertas"));
+  assert.equal(solution.text, delivery.text, "con entregas abiertas el jurado ya ve el contenido");
+  assert.deepEqual(solution.links, delivery.links);
+  assert.deepEqual([...beforeClose.solutions.map((item) => item.name)].sort(), ["Ana Martínez", "Luis Herrera"], "y ya ve los nombres");
+  await saveEvaluation(db, juez1, challengeId, solution.id, { scores: { c1: 5, c2: 5 } }, duringDeadline);
+  const draft = (await evaluationWorkspace(db, juez1, challengeId, duringDeadline)).solutions[0].mine;
+  assert.equal(draft?.status, "draft");
 });
 
-test("después del cierre el jurado ve soluciones anónimas, guarda borradores y finaliza una sola vez", async () => {
+test("publicar exige que las entregas hayan cerrado, aunque evaluar ya no lo exija", async () => {
+  const { db, challengeId } = await scenario();
+  const auth = testAuth();
+  await createAuthUser(juez1.email, juez1.uid);
+  await assignJudge(db, auth, admin, challengeId, juez1.email, "externo", now);
+  const board = await resultsBoard(db, admin, challengeId, duringDeadline);
+  assert.equal(board.canPublish, false);
+  assert.match(board.blockedReason ?? "", /siguen abiertas/);
+  await assert.rejects(publishResults(db, admin, challengeId, {}, duringDeadline), expectHttp(409, "entregas_abiertas"));
+});
+
+test("nadie evalúa su propia solución", async () => {
+  const { db, challengeId } = await scenario();
+  const auth = testAuth();
+  await createAuthUser(joven.email, joven.uid);
+  await assignJudge(db, auth, admin, challengeId, joven.email, "externo", now);
+  const workspace = await evaluationWorkspace(db, joven, challengeId, duringDeadline);
+  const propia = workspace.solutions.find((item) => item.name === "Ana Martínez");
+  assert.ok(propia, "la solución de Ana aparece en el espacio");
+  await assert.rejects(saveEvaluation(db, joven, challengeId, propia.id, { scores: { c1: 9, c2: 9 }, finalize: true }, afterDeadline), expectHttp(403, "autoevaluacion"));
+});
+
+test("una evaluación fija el texto de la entrega: quien ya fue evaluada no la cambia, las demás sí hasta el cierre", async () => {
+  const { db, challengeId } = await scenario();
+  const auth = testAuth();
+  await createAuthUser(juez1.email, juez1.uid);
+  await assignJudge(db, auth, admin, challengeId, juez1.email, "externo", now);
+  const workspace = await evaluationWorkspace(db, juez1, challengeId, duringDeadline);
+  const ana = workspace.solutions.find((item) => item.name === "Ana Martínez");
+  assert.ok(ana, "la solución de Ana aparece en el espacio");
+  await saveEvaluation(db, juez1, challengeId, ana.id, { scores: { c1: 5, c2: 5 } }, duringDeadline);
+
+  const cambio = { ...delivery, text: "Texto nuevo después de la evaluación." };
+  await assert.rejects(saveDelivery(db, joven, challengeId, cambio, duringDeadline), expectHttp(409, "entrega_evaluada"));
+  assert.equal((await getDelivery(db, joven, challengeId, duringDeadline)).canEdit, false);
+  assert.equal((await getDelivery(db, joven, challengeId, duringDeadline)).evaluada, true);
+
+  await saveDelivery(db, otra, challengeId, { ...delivery, text: "Luis edita antes del cierre, sin evaluaciones." }, duringDeadline);
+  assert.equal((await getDelivery(db, otra, challengeId, duringDeadline)).canEdit, true);
+});
+
+test("una experiencia cancelada no recibe evaluaciones", async () => {
+  const { db, challengeId, experienceId } = await scenario();
+  const auth = testAuth();
+  await createAuthUser(juez1.email, juez1.uid);
+  await assignJudge(db, auth, admin, challengeId, juez1.email, "externo", now);
+  await setExperienceStatus(db, admin, experienceId, { status: "cancelled" }, duringDeadline);
+  await assert.rejects(evaluationWorkspace(db, juez1, challengeId, duringDeadline), expectHttp(404));
+  await assert.rejects(saveEvaluation(db, juez1, challengeId, "s1", { scores: { c1: 5, c2: 5 } }, duringDeadline), expectHttp(404));
+});
+
+test("después del cierre el jurado ve las soluciones con nombre, guarda borradores y finaliza una sola vez", async () => {
   const { db, challengeId } = await scenario();
   const auth = testAuth();
   await createAuthUser(juez1.email, juez1.uid);
   await assignJudge(db, auth, admin, challengeId, juez1.email, "externo", now);
   const workspace = await evaluationWorkspace(db, juez1, challengeId, afterDeadline);
-  assert.equal(workspace.canEvaluate, true);
+  assert.equal(workspace.entregasAbiertas, false);
   assert.deepEqual(workspace.solutions.map((item) => item.label), ["Solución 1", "Solución 2"]);
-  assert.equal(JSON.stringify(workspace).includes(joven.uid), false, "la evaluación no muestra quién entregó");
+  assert.deepEqual([...workspace.solutions.map((item) => item.name)].sort(), ["Ana Martínez", "Luis Herrera"], "después del cierre se ven los nombres");
+  assert.equal(JSON.stringify(workspace).includes(joven.uid), false, "la evaluación no muestra el uid de quien entregó");
   assert.deepEqual(workspace.solutions.map((item) => item.id), ["s1", "s2"]);
 
   const [first, second] = workspace.solutions;
@@ -183,16 +240,16 @@ test("la publicación queda bloqueada hasta que cada solución tenga dos evaluac
   for (const judge of [juez1, juez2]) {
     await saveEvaluation(db, judge, challengeId, first.id, { scores: { c1: 8, c2: judge.uid === juez1.uid ? 7 : 9 }, finalize: true }, afterDeadline);
   }
-  let board = await resultsBoard(db, admin, challengeId);
+  let board = await resultsBoard(db, admin, challengeId, afterDeadline);
   assert.equal(board.canPublish, false);
   assert.match(board.blockedReason ?? "", /Solo 1 de 2/, "la primera solución ya está lista con dos jurados");
   await assert.rejects(publishResults(db, admin, challengeId, {}, afterDeadline), expectHttp(409, "publicacion_bloqueada"));
 
   await saveEvaluation(db, juez1, challengeId, second.id, { scores: { c1: 6, c2: 6 }, finalize: true }, afterDeadline);
-  board = await resultsBoard(db, admin, challengeId);
+  board = await resultsBoard(db, admin, challengeId, afterDeadline);
   assert.match(board.blockedReason ?? "", /Solo 1 de 2/);
   await saveEvaluation(db, juez2, challengeId, second.id, { scores: { c1: 7, c2: 7 }, finalize: true }, afterDeadline);
-  board = await resultsBoard(db, admin, challengeId);
+  board = await resultsBoard(db, admin, challengeId, afterDeadline);
   assert.equal(board.canPublish, true);
   assert.equal(board.rows[0].average, 16, "promedio de 15 y 17 con dos jurados");
 });
@@ -214,7 +271,7 @@ test("C3 asigna ganador y publica; el participante ve su resultado solo después
   const otraSolution = (await db.collection("submissions").where("userId", "==", otra.uid).get()).docs[0].id;
   assert.equal(await resultForSubmission(db, challengeId, participantSolution), null, "sin publicar no hay resultado");
   // Los reconocimientos y resultados usan el id real de la solución, que solo C3 ve en el tablero.
-  const board = await resultsBoard(db, admin, challengeId);
+  const board = await resultsBoard(db, admin, challengeId, afterDeadline);
   const winnerSolution = board.rows[0].submissionId;
   await setRecognition(db, admin, challengeId, winnerSolution, "ganador");
   await assert.rejects(setRecognition(db, joven, challengeId, winnerSolution, "finalista"), expectHttp(403));
@@ -292,7 +349,7 @@ test("Mi challenge muestra el estado de evaluación y, con puntajes publicados, 
   assert.equal(mine.evaluation.result?.average, 14);
   assert.deepEqual(mine.evaluation.result?.criteria?.map((item) => item.average), [8, 6]);
   assert.equal(JSON.stringify(mine).includes("Buen manejo"), false, "el comentario interno nunca llega a la persona");
-  const board = await resultsBoard(db, admin, challengeId);
+  const board = await resultsBoard(db, admin, challengeId, afterDeadline);
   assert.equal(board.rows[0].evaluations.some((item) => item.comment === "Buen manejo de casos límite."), true, "C3 sí ve el comentario");
   await assert.rejects(
     saveEvaluation(db, juez1, challengeId, first.id, { scores: { c1: 8, c2: 6 }, comment: "x".repeat(1001) }, afterDeadline),

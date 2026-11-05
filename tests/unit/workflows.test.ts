@@ -10,11 +10,12 @@ test("solo inscripción aprobada entrega antes del cierre", () => {
   assert.equal(canSubmit({challengeStatus:"published",enrollmentStatus:"approved",submissionClosesAt:close,now:close}),false);
 });
 
-test("no se evalúa una entrega que aún puede cambiar", () => {
-  assert.equal(canEvaluate({challengeStatus:"published",submissionStatus:"submitted",submissionClosesAt:close,now:"2026-11-01T17:59:59-06:00",assignedJudge:true}),false);
-  assert.equal(canEvaluate({challengeStatus:"published",submissionStatus:"submitted",submissionClosesAt:close,now:close,assignedJudge:true}),true);
-  assert.equal(canEvaluate({challengeStatus:"published",submissionStatus:"draft",submissionClosesAt:close,now:close,assignedJudge:true}),false);
-  assert.equal(canEvaluate({challengeStatus:"published",submissionStatus:"submitted",submissionClosesAt:close,now:close,assignedJudge:false}),false);
+test("un jurado asignado evalúa una entrega enviada aunque las entregas sigan abiertas", () => {
+  assert.equal(canEvaluate({challengeStatus:"published",submissionStatus:"submitted",assignedJudge:true}),true);
+  assert.equal(canEvaluate({challengeStatus:"published",submissionStatus:"draft",assignedJudge:true}),false);
+  assert.equal(canEvaluate({challengeStatus:"published",submissionStatus:"submitted",assignedJudge:false}),false);
+  assert.equal(canEvaluate({challengeStatus:"cancelled",submissionStatus:"submitted",assignedJudge:true}),false);
+  assert.equal(canEvaluate({challengeStatus:"closed",submissionStatus:"submitted",assignedJudge:true}),false);
 });
 
 test("la publicación oficial controla visibilidad", () => {

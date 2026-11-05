@@ -8,8 +8,6 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
  */
 export const BASE = "http://localhost:3100";
 const AUTH = "http://127.0.0.1:9099";
-const FIRESTORE = "http://127.0.0.1:8080";
-const PROJECT = "demo-c3-platform";
 
 export const PASSWORD = "clave-prueba-123";
 
@@ -129,24 +127,6 @@ export async function enrollApproved(admin: string, account: Account, challenge:
   const enrollmentId = `${challenge.experienceId}__${account.uid}`;
   await api(admin, "PATCH", `/api/admin/inscripciones/${enrollmentId}`, { status: "approved" });
   return enrollmentId;
-}
-
-/** Cambia un campo de texto de un documento con la API REST del emulador de Firestore (reglas de «owner»). */
-export async function setField(collection: string, id: string, field: string, value: string): Promise<void> {
-  const response = await fetch(
-    `${FIRESTORE}/v1/projects/${PROJECT}/databases/(default)/documents/${collection}/${id}?updateMask.fieldPaths=${field}`,
-    {
-      method: "PATCH",
-      headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
-      body: JSON.stringify({ fields: { [field]: { stringValue: value } } }),
-    },
-  );
-  if (!response.ok) throw new Error(`Firestore ${collection}/${id}: ${response.status} ${await response.text()}`);
-}
-
-/** Adelanta el cierre de entregas de un challenge para poder evaluarlo (en el navegador el reloj no se controla). */
-export async function closeSubmissions(challengeId: string): Promise<void> {
-  await setField("challenges", challengeId, "submissionClosesAt", "2026-10-02T00:00:00.000Z");
 }
 
 /** Entra con correo y contraseña. Sin `next` se espera llegar a Mi C3. */
