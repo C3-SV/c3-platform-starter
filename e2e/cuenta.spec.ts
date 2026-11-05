@@ -91,7 +91,7 @@ test.describe("Cuenta", () => {
     await page.goto("/acceso");
     await page.locator("#l-correo").fill(email);
     await page.locator("#l-pass").fill(newPassword);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expect(page).toHaveURL(/\/mi-c3$/);
   });
 

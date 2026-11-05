@@ -154,7 +154,7 @@ test.describe("Acceso", () => {
     await page.getByRole("main").getByRole("link", { name: "Entrar", exact: true }).click();
     await page.locator("#l-correo").fill(admin.email);
     await page.locator("#l-pass").fill(admin.password);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/entregas$/);
     await expect(page.getByRole("heading", { level: 1, name: "Entregas" })).toBeVisible();
   });

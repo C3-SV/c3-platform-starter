@@ -33,7 +33,7 @@ test.describe.serial("Corte 6: perfil y trayectoria", () => {
     await page.goto("/acceso?next=/trayectoria");
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expectSignedIn(page);
     await page.goto("/cuenta");
 
@@ -60,7 +60,7 @@ test.describe.serial("Corte 6: perfil y trayectoria", () => {
     await page.goto("/acceso?next=/mi-c3");
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expectSignedIn(page);
     await page.goto("/mi-c3");
     const navigation = page.getByRole("navigation", { name: isMobile ? "Navegación móvil" : "Principal" });

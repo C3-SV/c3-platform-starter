@@ -17,7 +17,7 @@ async function login(page: Page, email: string, password: string, next = "/") {
   await page.goto(`/acceso?next=${encodeURIComponent(next)}`);
   await page.locator("#l-correo").fill(email);
   await page.locator("#l-pass").fill(password);
-  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 }
 
 test.describe.serial("Corte 1: primer challenge", () => {
@@ -108,7 +108,7 @@ test.describe.serial("Corte 1: primer challenge", () => {
     await page.goto("/acceso");
     await page.locator("#l-correo").fill(joven.email);
     await page.locator("#l-pass").fill("contraseña-equivocada");
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expect(page.getByRole("alert").filter({ hasText: "No pudimos iniciar sesión" })).toBeVisible();
     await expect(page.getByText("El correo o la contraseña no coinciden.")).toBeVisible();
   });

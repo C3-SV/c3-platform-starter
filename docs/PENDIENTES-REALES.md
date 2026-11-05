@@ -20,7 +20,8 @@ Cerrado: las reglas y funciones del [update](UPDATE-2026-11-03-demo-integral.md)
 | Diferencias menores con el update | La zona horaria solo se muestra en el detalle del challenge y en el panel de empresa; `/explorar` ofrece Abierto, Próximo y Concluido (el update pide Abierto, Concluido y Demo); bitácora y defensa en un challenge no publicado responden 404 (el update pide 409) | Alinear con el responsable |
 | Scripts del seed | `seed:dry-run` y `seed:apply` de `package.json` no pasan `--project` | Usar las líneas completas del README; cambiar `package.json` solo por decisión del responsable |
 | Next.js 16.4.0 | `next build` muestra un aviso de seguridad y se detiene de forma intermitente; al repetir compila | Actualización aparte con revisión de compatibilidad |
-| Voz de la interfaz | El update pide voseo y el README del artifact de diseño pide tuteo | Se aplica el voseo; el artifact no se corrige |
+| Voz de la interfaz | Decisión del 4-nov-2026: «tú» (D11 de [PRODUCTO](PRODUCTO-Y-NAVEGACION.md)); reemplaza el voseo del update. El sitio público ya migró; la app, la consola y los mensajes del servidor siguen en voseo | Migrar en cada fase del rediseño visual |
+| Rediseño visual por fases | Sitio público implementado (rama `feat/public-pages-redesign`). Faltan participante, empresa y consola; el canvas de empresa es anterior a la evaluación por la representante (#27) | Actualizar ese canvas e implementar fase por fase |
 
 ## Estabilidad y producto
 

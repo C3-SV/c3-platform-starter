@@ -1,23 +1,47 @@
-/** Pie de V01. El texto es el de la vista; el dato de fundación viene del README del proyecto. */
 import Link from "next/link";
 import { C3BrandMark } from "@/components/BrandMark";
+import { loginHref } from "@/lib/domain/navigation";
 
+/** Site footer: brand and founding date, then links to participate, for companies and for the account. */
 export function Footer() {
   return (
-    <footer style={{ background: "var(--c3-navy)", padding: "40px clamp(16px, 4vw, 48px)" }}>
-      <div className="c3-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
-            <C3BrandMark className="c3-brand-mark--footer" />
-          </Link>
-          <span style={{ fontSize: 14, color: "#a9b8d0" }}>Competitive Coding Club · Fundado en octubre de 2024</span>
+    <footer className="c3-footer">
+      <div className="c3-frame">
+        <div className="c3-footer__grid">
+          <div className="c3-footer__brand">
+            <Link href="/" className="c3-logo" aria-label="C3, ir al inicio">
+              <C3BrandMark className="c3-brand-mark--footer" tone="white" />
+            </Link>
+            <p>Competitive Coding Club · El Salvador. Fundado en octubre de 2024.</p>
+          </div>
+          <nav aria-label="Participa">
+            <h2>Participa</h2>
+            <ul>
+              <li><Link href="/explorar">Explorar challenges</Link></li>
+              <li><Link href="/compite">Compite</Link></li>
+              <li><Link href="/crea">Crea</Link></li>
+              <li><Link href="/conecta">Conecta</Link></li>
+            </ul>
+          </nav>
+          <nav aria-label="Empresas">
+            <h2>Empresas</h2>
+            <ul>
+              <li><Link href="/empresa/proponer">Proponer un challenge</Link></li>
+              <li><Link href="/conecta">Cómo funciona Conecta</Link></li>
+            </ul>
+          </nav>
+          <nav aria-label="Tu cuenta">
+            <h2>Tu cuenta</h2>
+            <ul>
+              <li><Link href={loginHref()}>Iniciar sesión</Link></li>
+              <li><Link href={loginHref({ mode: "registro" })}>Crear cuenta</Link></li>
+            </ul>
+          </nav>
         </div>
-        <nav aria-label="Pie de página" className="c3-footer__nav">
-          <Link href="/compite">Compite</Link>
-          <Link href="/crea">Crea</Link>
-          <Link href="/conecta">Conecta</Link>
-          <Link href="/explorar">Explorar</Link>
-        </nav>
+        <div className="c3-footer__base">
+          <span>© 2026 C3 · Competitive Coding Club</span>
+          <span>Hecho en El Salvador</span>
+        </div>
       </div>
     </footer>
   );

@@ -1,179 +1,140 @@
 import Link from "next/link";
-import { LineBrandMark } from "@/components/BrandMark";
 import { SiteShell } from "@/components/SiteShell";
-import { StatePill } from "@/components/StatePill";
-import { experienceLabel, lineColorOf, lineTextColorOf, primaryLineOf, type PresentedState } from "@/lib/domain/presentation";
-import { modalityLabel, sessionSummary } from "@/lib/domain/format";
-import type { ExperienceLine } from "@/lib/domain/types";
+import { catalogCards } from "@/components/catalogCardData";
 import { database } from "@/lib/server/context";
 import { listPublicCatalog } from "@/lib/server/catalog";
+import { FeaturedGrid } from "./FeaturedGrid";
+import { HomeOrbit } from "./HomeOrbit";
 
 export const dynamic = "force-dynamic";
 
-interface FeaturedItem {
-  key: string;
-  href: string;
-  line: ExperienceLine;
-  label: string;
-  state: PresentedState;
-  title: string;
-  footer: string;
-}
+const LINES = [
+  { href: "/compite", key: "compite", title: "Compite", text: "Mide tus habilidades en competencias y challenges técnicos." },
+  { href: "/crea", key: "crea", title: "Crea", text: "Convierte ideas en proyectos." },
+  { href: "/conecta", key: "conecta", title: "Conecta", text: "Muestra tus capacidades a empresas." },
+] as const;
 
-/** V01 · Home. Las experiencias destacadas salen del catálogo público real. */
+const STEPS = [
+  { title: "Eliges un challenge", text: "De Compite, Crea o Conecta.", icon: ["M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z", "m20 20-3.5-3.5"] },
+  { title: "Te inscribes", text: "Solo o en equipo.", icon: ["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z", "M19 8v6M22 11h-6"] },
+  { title: "Entregas tu solución", text: "Y documentas tu proceso.", icon: ["M12 15V3M7 8l5-5 5 5", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"] },
+  { title: "Recibes tu evaluación", text: "Un jurado revisa cada solución y C3 publica los resultados.", icon: ["M12 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12z", "M15.5 13 17 22l-5-3-5 3 1.5-9"] },
+];
+
+/** Home (V01). Featured experiences come from the real public catalog. */
 export default async function HomePage() {
   const catalog = await listPublicCatalog(database(), new Date());
-  // Cada challenge publicado y cada experiencia sin challenges (talleres, charlas, encuentros) es una tarjeta destacada.
-  const featured: FeaturedItem[] = catalog
-    .flatMap((item): FeaturedItem[] => {
-      const line = primaryLineOf(item.experience);
-      const label = experienceLabel(item.experience);
-      if (item.challenges.length === 0) {
-        return [{
-          key: item.experience.id,
-          href: `/experiencias/${item.experience.id}`,
-          line,
-          label,
-          state: item.state,
-          title: item.experience.title,
-          footer: sessionSummary(item.experience) ?? "Experiencia C3",
-        }];
-      }
-      return item.challenges.map((challenge) => ({
-        key: challenge.id,
-        href: `/retos/${challenge.id}`,
-        line,
-        label,
-        state: challenge.state,
-        title: challenge.title,
-        footer: `${challenge.organizationName} · ${modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize)}`,
-      }));
-    })
-    .slice(0, 3);
+  const cards = catalogCards(catalog);
 
   return (
     <SiteShell>
-
       <main id="contenido">
-      <section style={{ background: "var(--c3-navy)", padding: "56px clamp(16px, 4vw, 48px) 72px" }}>
-        <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 40 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 860 }}>
-            <span className="c3-etiqueta" style={{ color: "var(--c3-compite-claro)" }}>Competitive Coding Club · El Salvador</span>
-            <h1 className="c3-titulo" style={{ fontSize: "clamp(36px, 7vw, 56px)", lineHeight: 1.05, fontWeight: 800, color: "#ffffff" }}>
-              Problemas reales. Talento que demuestra lo que sabe.
-            </h1>
-            <p style={{ fontSize: 18, lineHeight: 1.6, color: "#a9b8d0" }}>
-              Las empresas plantean necesidades. C3 diseña y opera challenges que permiten observar cómo el talento joven construye, decide y defiende sus soluciones.
-            </p>
-          </div>
-
-          <div className="c3-home-caminos" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 24 }}>
-            <div style={{ background: "#17294a", border: "1px solid #2c3f63", borderRadius: 20, padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
-              <span className="c3-etiqueta" style={{ color: "var(--c3-compite-claro)" }}>Soy estudiante o joven técnico</span>
-              <div className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: "#ffffff" }}>
-                Demostrá lo que sabés construir
-              </div>
-              <p style={{ fontSize: 16, lineHeight: 1.6, color: "#a9b8d0" }}>
-                Explorá challenges, participá, documentá tu proceso y convertí tu trabajo en evidencia.
-              </p>
-              <div style={{ marginTop: "auto", paddingTop: 8 }}>
-                <Link href="/explorar" className="c3-btn" style={{ background: "#2c62b0", color: "#ffffff", padding: "16px 28px", display: "inline-flex" }}>
-                  Explorar challenges
-                </Link>
+        <section className="c3-hero">
+          <div className="c3-frame c3-hero__grid">
+            <div className="c3-hero__text">
+              <span className="c3-eyebrow">Competitive Coding Club · El Salvador</span>
+              <h1>El talento se ve <em>en acción.</em></h1>
+              <p className="c3-lead">Participa en challenges donde tus ideas, tu proceso y lo que construyes hablan por ti. C3 conecta ese trabajo con oportunidades reales.</p>
+              <div className="c3-actions">
+                <Link href="/explorar" className="c3-btn c3-btn--primario">Explorar challenges <span className="c3-arrow" aria-hidden="true">↗</span></Link>
+                <Link href="/empresa/proponer" className="c3-btn c3-btn--contorno">Para empresas</Link>
               </div>
             </div>
-
-            <div style={{ background: "var(--c3-conecta)", borderRadius: 20, padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
-              <span className="c3-etiqueta" style={{ color: "#ffffff" }}>Soy una empresa</span>
-              <div className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: "#ffffff" }}>
-                Descubrí talento con evidencia, no solo con currículums
-              </div>
-              <p style={{ fontSize: 16, lineHeight: 1.6, color: "#ffffff" }}>
-                Contanos una necesidad y C3 la convierte en un challenge que te permite comparar capacidades.
-              </p>
-              <div style={{ marginTop: "auto", paddingTop: 8 }}>
-                <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 28px", display: "inline-flex" }}>
-                  Proponer un challenge
-                </Link>
-              </div>
-            </div>
+            <HomeOrbit />
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="c3-page" style={{ padding: "72px clamp(16px, 4vw, 48px) 40px" }}>
-        <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 720 }}>
-            <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tres formas de participar</h2>
-            <p style={{ fontSize: 16, lineHeight: 1.6, color: "var(--c3-texto-suave)" }}>
-              C3 nació de la programación competitiva y hoy conecta competencia, construcción y empresas.
-            </p>
-          </div>
-          <div className="c3-grilla-tres" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 24 }}>
-            {[
-              { href: "/compite", line: "var(--c3-compite)", title: "Compite", color: "var(--c3-compite)", text: "Challenges y competencia técnica para medirte contra otros y mejorar.", example: "Ejemplo: Copa Salvadoreña de Programación." },
-              { href: "/crea", line: "var(--c3-crea)", title: "Crea", color: "var(--c3-crea-texto)", text: "Construcción real: convertí lo que sabés en proyectos y soluciones.", example: "Ejemplo: Hackathon de Turismo Creativo." },
-              { href: "/conecta", line: "var(--c3-conecta)", title: "Conecta", color: "var(--c3-conecta)", text: "El puente entre talento, empresas e instituciones, con challenges que plantean las propias empresas.", example: "Ejemplo: C3 Challenges." },
-            ].map((item) => (
-              <Link key={item.title} href={item.href} className="c3-card c3-line-choice" style={{ overflow: "hidden", textDecoration: "none", color: "inherit" }}>
-                <div style={{ height: 6, background: item.line }} />
-                <div className="c3-line-choice__body">
-                  <LineBrandMark line={item.title.toLowerCase() as "compite" | "crea" | "conecta"} className="c3-line-mark--choice" decorative />
-                  <span className="c3-titulo" style={{ fontSize: 22, fontWeight: 600, color: item.color }}>{item.title}</span>
-                  <span style={{ fontSize: 16, lineHeight: 1.6 }}>{item.text}</span>
-                  <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>{item.example}</span>
-                </div>
+        <div className="c3-frame">
+          <div className="c3-lines">
+            {LINES.map((line) => (
+              <Link key={line.key} href={line.href} className="c3-line-card">
+                <span className={`c3-dot c3-dot--${line.key}`} aria-hidden="true" />
+                <h2 className="c3-line-card__title">{line.title}</h2>
+                <p>{line.text}</p>
+                <span className="c3-line-card__go">Conocer {line.title} <span aria-hidden="true">↗</span></span>
               </Link>
             ))}
           </div>
         </div>
-      </section>
 
-      <section className="c3-page" style={{ padding: "40px clamp(16px, 4vw, 48px) 72px" }}>
-        <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
-            <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias destacadas</h2>
-            <Link href="/explorar" style={{ fontSize: 14, fontWeight: 500 }}>Ver todas</Link>
+        <section className="c3-paths" aria-labelledby="titulo-caminos">
+          <div className="c3-frame">
+            <div className="c3-section-head">
+              <span className="c3-eyebrow">Dos caminos</span>
+              <h2 id="titulo-caminos">¿Por dónde empiezas?</h2>
+              <p>Talento que quiere demostrar lo que sabe y empresas que quieren verlo en acción.</p>
+            </div>
+            <div className="c3-paths__grid">
+              <article className="c3-path-card">
+                <div className="c3-path-card__brand"><span className="c3-dot c3-dot--compite" aria-hidden="true" /><span className="c3-etiqueta" style={{ color: "var(--c3-compite)" }}>Soy estudiante o joven técnico</span></div>
+                <h3>Demuestra lo que sabes construir</h3>
+                <p>Explora challenges, participa, documenta tu proceso y convierte tu trabajo en evidencia.</p>
+                <div className="c3-path-card__action"><Link href="/explorar" className="c3-btn c3-btn--primario">Explorar challenges <span className="c3-arrow" aria-hidden="true">↗</span></Link></div>
+              </article>
+              <article className="c3-path-card c3-path-card--dark">
+                <div className="c3-path-card__brand"><span className="c3-dot c3-dot--conecta" aria-hidden="true" /><span className="c3-etiqueta">Soy una empresa</span></div>
+                <h3>Descubre talento con evidencia, no solo con currículums</h3>
+                <p>Cuéntanos una necesidad y C3 la convierte en un challenge que te permite comparar capacidades.</p>
+                <div className="c3-path-card__action"><Link href="/empresa/proponer" className="c3-btn c3-btn--blanco">Proponer un challenge</Link></div>
+              </article>
+            </div>
+            <div className="c3-band">
+              <div className="c3-band__head">
+                <span className="c3-eyebrow">Así funciona</span>
+                <h3>De la idea a la evidencia, en cuatro pasos</h3>
+              </div>
+              <ol className="c3-steps">
+                {STEPS.map((step, index) => (
+                  <li key={step.title} className="c3-step">
+                    <span className="c3-step__icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        {step.icon.map((d) => <path key={d} d={d} />)}
+                      </svg>
+                    </span>
+                    <span className="c3-step__body">
+                      <span className="c3-step__number">Paso {index + 1}</span>
+                      <b>{step.title}</b>
+                      <span className="c3-step__text">{step.text}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </div>
-          {featured.length === 0 ? (
-            <div className="c3-card" style={{ padding: 24 }}>
-              <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>Todavía no hay experiencias publicadas. Volvé pronto.</p>
-            </div>
-          ) : (
-            <div className="c3-grilla-tarjetas">
-              {featured.map((item) => (
-                <Link key={item.key} href={item.href} className="c3-tarjeta-enlace">
-                  <div style={{ height: 6, background: lineColorOf(item.line) }} />
-                  <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                      <span className="c3-etiqueta" style={{ color: lineTextColorOf(item.line) }}>{item.label}</span>
-                      <StatePill state={item.state} />
-                    </div>
-                    <div className="c3-titulo" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 600 }}>{item.title}</div>
-                    <div style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--c3-borde)", fontSize: 14, color: "var(--c3-texto-suave)" }}>
-                      {item.footer}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
 
-      <section style={{ background: "var(--c3-conecta)", padding: "56px clamp(16px, 4vw, 48px)" }}>
-        <div className="c3-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 700 }}>
-            <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: "#ffffff" }}>
-              ¿Querés ver cómo resuelve problemas el talento joven?
-            </h2>
-            <p style={{ fontSize: 16, lineHeight: 1.6, color: "#ffffff" }}>
-              No necesitás un brief perfecto. Describí la situación con tus palabras y C3 se encarga de convertirla en un challenge.
-            </p>
+        <section className="c3-featured" aria-labelledby="titulo-destacadas">
+          <div className="c3-frame">
+            <div className="c3-featured__head">
+              <div className="c3-section-head">
+                <span className="c3-eyebrow">Experiencias destacadas</span>
+                <h2 id="titulo-destacadas">Lo que está pasando en C3</h2>
+              </div>
+              <Link href="/explorar" className="c3-featured__all">Ver todas <span aria-hidden="true">↗</span></Link>
+            </div>
+            {cards.length === 0 ? (
+              <p className="c3-empty-card">Todavía no hay experiencias publicadas. Vuelve pronto.</p>
+            ) : (
+              <FeaturedGrid cards={cards} />
+            )}
           </div>
-          <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco" style={{ padding: "16px 28px" }}>Proponer un challenge</Link>
-        </div>
-      </section>
+        </section>
+
+        <section className="c3-cta">
+          <div className="c3-frame">
+            <div className="c3-cta__panel">
+              <div className="c3-rings" aria-hidden="true"><span /><span /><span /><i /><i /><i /></div>
+              <div className="c3-cta__text">
+                <span className="c3-etiqueta">Para empresas</span>
+                <h2>¿Quieres ver cómo resuelve problemas el talento joven?</h2>
+                <p>No necesitas un brief perfecto. Describe la situación con tus palabras y C3 se encarga de convertirla en un challenge.</p>
+              </div>
+              <div className="c3-cta__action">
+                <Link href="/empresa/proponer" className="c3-btn c3-btn--blanco">Proponer un challenge <span className="c3-arrow" aria-hidden="true">↗</span></Link>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </SiteShell>
   );

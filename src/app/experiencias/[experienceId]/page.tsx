@@ -1,8 +1,9 @@
-import { cache } from "react";
+import { cache, type CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EnrollmentCta } from "@/components/EnrollmentCta";
+import { Migas } from "@/components/Migas";
 import { SiteShell } from "@/components/SiteShell";
 import { StatePill } from "@/components/StatePill";
 import { formatDate, formatDateTime, formatSession, modalityLabel } from "@/lib/domain/format";
@@ -13,7 +14,7 @@ import { HttpError } from "@/lib/server/errors";
 
 export const dynamic = "force-dynamic";
 
-// La misma lectura sirve al título de la pestaña y a la página (una consulta por petición).
+// One read serves both the tab title and the page (a single query per request).
 const loadExperience = cache((experienceId: string) => getPublicExperience(database(), experienceId, new Date()));
 
 export async function generateMetadata({ params }: { params: Promise<{ experienceId: string }> }): Promise<Metadata> {
@@ -26,7 +27,13 @@ export async function generateMetadata({ params }: { params: Promise<{ experienc
   }
 }
 
-/** Detalle público de una experiencia. Si no tiene challenges publicados, la inscripción es a la experiencia misma. */
+const ENROLL_STEPS = [
+  { title: "Entras con tu cuenta", text: "O la creas en un minuto.", icon: ["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z", "M19 8v6M22 11h-6"] },
+  { title: "Te inscribes", text: "La participación es individual.", icon: ["M9 11l3 3L22 4", "M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"] },
+  { title: "C3 confirma tu lugar", text: "Revisa la inscripción antes de confirmarla.", icon: ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", "m9 12 2 2 4-4"] },
+];
+
+/** Public experience detail. Without published challenges, people enroll in the experience itself. */
 export default async function ExperienciaPage({ params }: { params: Promise<{ experienceId: string }> }) {
   const { experienceId } = await params;
   let detail;
@@ -41,133 +48,143 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
   const session = formatSession(experience.startsAt, experience.endsAt);
   const enrollHref = `/experiencias/${experience.id}/inscripcion`;
   const closedLabel = registration.full ? "Cupos completos" : "Inscripciones cerradas";
-  const accent = lineTextColorOf(primaryLineOf(experience));
+  const line = primaryLineOf(experience);
+  const accent = lineTextColorOf(line);
 
   return (
     <SiteShell>
-
-      <div style={{ background: "var(--c3-navy)", padding: "8px clamp(16px, 4vw, 48px) 56px" }}>
-        <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span className="c3-etiqueta" style={{ color: "var(--c3-conecta-claro)" }}>{experienceLabel(experience)}</span>
-            <StatePill state={state} />
-            {experience.isDemo ? <span className="c3-pill c3-pill--advertencia">Demo · no oficial</span> : null}
-          </div>
-          <h1 className="c3-titulo" style={{ margin: 0, maxWidth: 900, fontSize: 40, lineHeight: 1.1, fontWeight: 700, color: "#ffffff" }}>
-            {experience.title}
-          </h1>
-          <div style={{ display: "flex", gap: 40, flexWrap: "wrap", alignItems: "flex-end" }}>
-            {session ? <Meta label="Fecha y horario" value={session} /> : null}
-            {experience.modality ? <Meta label="Modalidad" value={MODALITY_LABEL[experience.modality]} /> : null}
-            {experience.location ? <Meta label="Sede o enlace" value={experience.location} /> : null}
-            {experience.capacity != null && !concluded ? (
-              <Meta label="Cupos" value={registration.spotsLeft === 0 ? "Completos" : `${registration.spotsLeft} disponibles de ${experience.capacity}`} />
-            ) : null}
-            {registration.direct && !concluded ? (
-              <EnrollmentCta enrollHref={enrollHref} registrationOpen={registration.open} variant="hero" label="Inscribirme" closedLabel={closedLabel} />
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      <main id="contenido" className="c3-page c3-ancho" style={{ padding: "clamp(16px, 4vw, 48px)" }}>
-        <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
-          <div style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
-            <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }}>
-              <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Sobre esta experiencia</h2>
-              <p style={{ fontSize: 18, lineHeight: 1.6 }}>{experience.summary}</p>
-              {experience.demoNote ? <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-advertencia)" }}>{experience.demoNote}</p> : null}
-              {experience.sourceUrl ? (
-                <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
-                  Fuente: <a href={experience.sourceUrl} rel="noopener noreferrer" style={{ color: accent }}>{experience.sourceLabel ?? experience.sourceUrl}</a>
-                </p>
-              ) : null}
-            </section>
-
-            {challenges.length > 0 ? (
-              <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 16 }} aria-labelledby="titulo-retos">
-                <h2 id="titulo-retos" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Challenges de esta experiencia</h2>
-                {challenges.map((challenge) => (
-                  <Link key={challenge.id} href={`/retos/${challenge.id}`} className="c3-tarjeta-enlace" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span className="c3-titulo" style={{ fontSize: 20, fontWeight: 600 }}>{challenge.title}</span>
-                      <StatePill state={challenge.state} />
-                    </div>
-                    <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>{challenge.summary}</span>
-                    <span style={{ fontSize: 14, fontWeight: 500 }}>
-                      {challenge.organizationName} · {modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize)}
-                    </span>
-                  </Link>
-                ))}
-              </section>
-            ) : null}
-          </div>
-
-          <aside style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
-            <div className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-              <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Inscripción</span>
-              {concluded ? (
-                <p style={{ fontSize: 16, lineHeight: 1.6 }}>Esta experiencia concluyó. Queda en el catálogo como parte de la historia de C3 y no acepta nuevas inscripciones.</p>
-              ) : registration.direct ? (
-                <>
-                  <p style={{ fontSize: 16, lineHeight: 1.6 }}>
-                    Necesitás una cuenta C3 para inscribirte. La inscripción la revisa C3 antes de confirmar tu lugar.
-                  </p>
-                  <EnrollmentCta enrollHref={enrollHref} registrationOpen={registration.open} variant="aside" closedLabel={closedLabel} />
-                </>
-              ) : (
-                <p style={{ fontSize: 16, lineHeight: 1.6 }}>Esta experiencia se inscribe desde cada uno de sus challenges. Elegí uno de la lista para ver sus requisitos.</p>
-              )}
-              <div style={{ height: 1, background: "var(--c3-borde)" }} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {experience.registrationClosesAt ? <Row label="Inscripciones cierran" value={formatDate(experience.registrationClosesAt) ?? ""} /> : null}
-                {experience.capacity != null ? <Row label="Cupos" value={String(experience.capacity)} /> : null}
-                <Row label="Participación" value="Individual" />
-                <Row label="Aprobación" value="Revisión de C3" />
+      <main id="contenido">
+        <section className="c3-detail-head">
+          <div className="c3-frame">
+            <Migas items={[{ label: "Explorar", href: "/explorar" }, { label: "Experiencia" }]} />
+            <div className="c3-detail-head__grid">
+              <div className="c3-detail-head__text">
+                <div className="c3-chips">
+                  <span className="c3-exp__line" style={{ color: accent }}><span className={`c3-dot c3-dot--${line}`} aria-hidden="true" />{experienceLabel(experience)}</span>
+                  <StatePill state={state} />
+                  {experience.isDemo ? <span className="c3-pill c3-pill--advertencia">Demo · no oficial</span> : null}
+                </div>
+                <h1>{experience.title}</h1>
+                <dl className="c3-meta-list">
+                  {session ? <div className="c3-meta"><dt>Fecha y horario</dt><dd>{session}</dd></div> : null}
+                  {experience.modality ? <div className="c3-meta"><dt>Modalidad</dt><dd>{MODALITY_LABEL[experience.modality]}</dd></div> : null}
+                  {experience.location ? <div className="c3-meta"><dt>Sede o enlace</dt><dd>{experience.location}</dd></div> : null}
+                  {experience.capacity != null && !concluded ? (
+                    <div className="c3-meta"><dt>Cupos</dt><dd>{registration.spotsLeft === 0 ? "Completos" : `${registration.spotsLeft} disponibles de ${experience.capacity}`}</dd></div>
+                  ) : null}
+                </dl>
               </div>
+              {registration.direct && !concluded ? (
+                <div className="c3-detail-head__action">
+                  <EnrollmentCta enrollHref={enrollHref} registrationOpen={registration.open} variant="hero" label="Inscribirme" closedLabel={closedLabel} />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        <section className="c3-detail">
+          <div className="c3-frame c3-detail__grid">
+            <div className="c3-detail__main">
+              <section className="c3-block" aria-labelledby="titulo-sobre">
+                <span className="c3-eyebrow">La experiencia</span>
+                <h2 id="titulo-sobre">Sobre esta experiencia</h2>
+                <p className="c3-long-text">{experience.summary}</p>
+                {experience.demoNote ? <p className="c3-demo-note">{experience.demoNote}</p> : null}
+                {experience.sourceUrl ? (
+                  <p className="c3-block__intro">
+                    Fuente: <a href={experience.sourceUrl} rel="noopener noreferrer">{experience.sourceLabel ?? experience.sourceUrl}</a>
+                  </p>
+                ) : null}
+              </section>
+
+              {challenges.length > 0 ? (
+                <section className="c3-block" aria-labelledby="titulo-retos">
+                  <span className="c3-eyebrow">Challenges</span>
+                  <h2 id="titulo-retos">Challenges de esta experiencia</h2>
+                  <ul className="c3-record-list">
+                    {challenges.map((challenge) => (
+                      <li key={challenge.id}>
+                        <span>
+                          <Link href={`/retos/${challenge.id}`}>{challenge.title}</Link>
+                          <small>{challenge.organizationName} · {modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize)}</small>
+                        </span>
+                        <StatePill state={challenge.state} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
+              {registration.direct && !concluded ? (
+                <section className="c3-block" aria-labelledby="titulo-como-inscribirte">
+                  <span className="c3-eyebrow">Inscripción</span>
+                  <h2 id="titulo-como-inscribirte">Cómo te inscribes</h2>
+                  <ol className="c3-steps" style={{ "--c3-steps": 3 } as CSSProperties}>
+                    {ENROLL_STEPS.map((step, index) => (
+                      <li key={step.title} className="c3-step">
+                        <span className="c3-step__icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            {step.icon.map((d) => <path key={d} d={d} />)}
+                          </svg>
+                        </span>
+                        <span className="c3-step__body">
+                          <span className="c3-step__number">Paso {index + 1}</span>
+                          <b>{step.title}</b>
+                          <span className="c3-step__text">{step.text}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ) : null}
             </div>
 
-            {experience.registrationOpensAt || experience.registrationClosesAt || experience.startsAt ? (
-              <div className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-                <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Calendario</span>
-                {experience.registrationOpensAt ? <CalendarItem title="Inscripciones abren" detail={formatDateTime(experience.registrationOpensAt) ?? ""} /> : null}
-                {experience.registrationClosesAt ? <CalendarItem title="Inscripciones cierran" detail={formatDateTime(experience.registrationClosesAt) ?? ""} /> : null}
-                {session ? <CalendarItem title="Sesión" detail={session} /> : null}
+            <aside className="c3-detail__aside" aria-label="Inscripción y calendario">
+              <div className="c3-side-card">
+                <span className="c3-eyebrow">Inscripción</span>
+                {concluded ? (
+                  <p>Esta experiencia concluyó. Queda en el catálogo como parte de la historia de C3 y no acepta nuevas inscripciones.</p>
+                ) : registration.direct ? (
+                  <>
+                    <p>Necesitas una cuenta C3 para inscribirte. La inscripción la revisa C3 antes de confirmar tu lugar.</p>
+                    <EnrollmentCta enrollHref={enrollHref} registrationOpen={registration.open} variant="aside" closedLabel={closedLabel} />
+                  </>
+                ) : (
+                  <p>Esta experiencia se inscribe desde cada uno de sus challenges. Elige uno de la lista para ver sus requisitos.</p>
+                )}
+                <div className="c3-divider" />
+                <dl className="c3-rows">
+                  {experience.registrationClosesAt ? <div className="c3-row"><dt>Inscripciones cierran</dt><dd>{formatDate(experience.registrationClosesAt)}</dd></div> : null}
+                  {experience.capacity != null ? <div className="c3-row"><dt>Cupos</dt><dd>{experience.capacity}</dd></div> : null}
+                  <div className="c3-row"><dt>Participación</dt><dd>Individual</dd></div>
+                  <div className="c3-row"><dt>Aprobación</dt><dd>Revisión de C3</dd></div>
+                </dl>
               </div>
-            ) : null}
-          </aside>
-        </div>
+
+              {experience.registrationOpensAt || experience.registrationClosesAt || session ? (
+                <div className="c3-side-card">
+                  <span className="c3-eyebrow">Calendario</span>
+                  <ol className="c3-timeline">
+                    {experience.registrationOpensAt ? <Milestone title="Inscripciones abren" detail={formatDateTime(experience.registrationOpensAt) ?? ""} /> : null}
+                    {experience.registrationClosesAt ? <Milestone title="Inscripciones cierran" detail={formatDateTime(experience.registrationClosesAt) ?? ""} /> : null}
+                    {session ? <Milestone title="Sesión" detail={session} /> : null}
+                  </ol>
+                </div>
+              ) : null}
+            </aside>
+          </div>
+        </section>
       </main>
     </SiteShell>
   );
 }
 
-function Meta({ label, value }: { label: string; value: string }) {
+function Milestone({ title, detail }: { title: string; detail: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 12, fontWeight: 500, color: "var(--c3-conecta-claro)" }}>{label}</span>
-      <span style={{ fontSize: 16, fontWeight: 500, color: "#ffffff" }}>{value}</span>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-      <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 600, textAlign: "right" }}>{value}</span>
-    </div>
-  );
-}
-
-function CalendarItem({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-      <div style={{ width: 10, height: 10, borderRadius: 999, background: "var(--c3-accion)", marginTop: 7, flexShrink: 0 }} />
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <span style={{ fontSize: 16, fontWeight: 500 }}>{title}</span>
-        <span style={{ fontSize: 12, color: "var(--c3-texto-suave)" }}>{detail}</span>
-      </div>
-    </div>
+    <li className="c3-milestone">
+      <span className="c3-milestone__dot" aria-hidden="true" />
+      <span className="c3-milestone__text"><b>{title}</b><span>{detail}</span></span>
+    </li>
   );
 }

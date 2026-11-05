@@ -1,48 +1,66 @@
+import type { Metadata } from "next";
 import { SiteShell } from "@/components/SiteShell";
 import { ProponerForm } from "./ProponerForm";
-import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Proponer un challenge" };
 
-/** V10 · Proponer challenge. Pública y sin cuenta. */
+const NEXT_STEPS = [
+  { title: "C3 revisa tu propuesta", text: "Vemos si el problema se puede convertir en un challenge resoluble.", icon: ["M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z", "m20 20-3.5-3.5"] },
+  { title: "Definimos el challenge juntos", text: "Alcance, entregables, rúbrica y fechas.", icon: ["M12 20h9", "M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"] },
+  { title: "Equipos entregan soluciones", text: "Las ves en tu espacio de empresa, lado a lado.", icon: ["M12 15V3M7 8l5-5 5 5", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"] },
+  { title: "Evalúas y C3 publica", text: "Calificas con la rúbrica y C3 publica el resultado oficial.", icon: ["M12 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12z", "M15.5 13 17 22l-5-3-5 3 1.5-9"] },
+];
+
+/** Proposal page (V10). Public, no account needed. */
 export default function ProponerPage() {
   return (
     <SiteShell>
-      <main id="contenido" className="c3-page c3-ancho" style={{ display: "flex", gap: 40, flexWrap: "wrap", alignItems: "flex-start", padding: "clamp(16px, 4vw, 48px)" }}>
-        <div style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: 28 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Para empresas</span>
-            <h1 className="c3-titulo" style={{ fontSize: 40, lineHeight: 1.1, fontWeight: 700 }}>Contanos qué querés descubrir en tu próximo challenge</h1>
-            <p style={{ maxWidth: 640, fontSize: 18, lineHeight: 1.6, color: "var(--c3-texto-suave)" }}>
-              No necesitás un brief perfecto. Contanos qué necesita explorar tu equipo —un problema técnico, una iniciativa propia o una forma de identificar talento— y C3 te ayuda a convertirlo en un challenge evaluable. No enviés datos personales sensibles ni información confidencial de clientes.
-            </p>
+      <main id="contenido">
+        <section className="c3-page-head">
+          <div className="c3-frame">
+            <div className="c3-page-head__text">
+              <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Para empresas</span>
+              <h1>Cuéntanos qué quieres descubrir en tu <em>próximo challenge</em></h1>
+              <p>
+                No necesitas un brief perfecto. Cuéntanos qué necesita explorar tu equipo (un problema técnico, una iniciativa propia o una forma de identificar talento)
+                y C3 te ayuda a convertirlo en un challenge evaluable. No envíes datos personales sensibles ni información confidencial de clientes.
+              </p>
+            </div>
           </div>
-          <ProponerForm />
-        </div>
+        </section>
 
-        <aside style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: 24 }}>
-          <div className="c3-card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
-            <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Qué pasa después</span>
-            {[
-              ["C3 revisa tu propuesta", "Vemos si el problema se puede convertir en un challenge resoluble."],
-              ["Definimos el challenge juntos", "Alcance, entregables, rúbrica y fechas."],
-              ["Equipos entregan soluciones", "Las ves en tu espacio de empresa, lado a lado."],
-              ["Evaluás y C3 publica", "Calificás con la rúbrica y C3 publica el resultado oficial."],
-            ].map(([title, text], index) => (
-              <div key={title} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                <div style={{ width: 28, height: 28, borderRadius: 999, background: "var(--c3-conecta)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, flexShrink: 0 }}>{index + 1}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: 16, fontWeight: 500 }}>{title}</span>
-                  <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>{text}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ background: "var(--c3-superficie-sutil)", borderRadius: 12, padding: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>No necesitás cuenta para proponer</span>
-            <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Creás una después, cuando quieras seguir tus challenges y evaluar soluciones.</span>
-          </div>
-        </aside>
+        <div className="c3-frame c3-columns">
+          <ProponerForm />
+          <aside className="c3-detail__aside" aria-label="Qué pasa después">
+            <div className="c3-side-card">
+              <span className="c3-eyebrow">Qué pasa después</span>
+              <ol className="c3-steps c3-steps--vertical">
+                {NEXT_STEPS.map((step, index) => (
+                  <li key={step.title} className="c3-step">
+                    <span className="c3-step__icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        {step.icon.map((d) => <path key={d} d={d} />)}
+                      </svg>
+                    </span>
+                    <span className="c3-step__body">
+                      <span className="c3-step__number">Paso {index + 1}</span>
+                      <b>{step.title}</b>
+                      <span className="c3-step__text">{step.text}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <div className="c3-divider" />
+              <p className="c3-no-account">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
+                </svg>
+                <span><b>No necesitas cuenta para proponer.</b> Creas una después, cuando quieras seguir tus challenges y evaluar soluciones.</span>
+              </p>
+            </div>
+          </aside>
+        </div>
       </main>
     </SiteShell>
   );
