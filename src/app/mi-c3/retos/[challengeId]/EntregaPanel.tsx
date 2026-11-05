@@ -138,7 +138,7 @@ function EntregaContenido({ challengeId }: { challengeId: string }) {
       <Migas items={[{ label: "Mi C3", href: "/mi-c3" }, { label: challenge.title }]} />
 
       <section className="c3-tarea__encabezado">
-        <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>{delivery.experience.title}</span>
+        <span className="c3-eyebrow">{delivery.experience.title}</span>
         <h1 className="c3-titulo">{challenge.title}</h1>
         <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>{challenge.organizationName}</span>
         {delivery.team ? (
@@ -148,32 +148,22 @@ function EntregaContenido({ challengeId }: { challengeId: string }) {
         ) : null}
       </section>
 
-      <div className="c3-card" style={{ padding: 16, display: "flex", alignItems: "center", gap: 8 }} aria-label="Progreso del challenge">
+      <ol className="c3-card c3-entrega__pasos" aria-label="Progreso del challenge">
         {steps.map((step, index) => (
-          <div key={step.label} style={{ flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            <div
-              aria-hidden="true"
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 999,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 12,
-                fontWeight: 600,
-                background: step.done ? "var(--c3-exito)" : step.current ? "var(--c3-accion)" : "var(--c3-superficie-sutil)",
-                color: step.done || step.current ? "#ffffff" : "var(--c3-texto-suave)",
-              }}
-            >
-              {index + 1}
-            </div>
-            <span style={{ maxWidth: "100%", fontSize: 11, fontWeight: step.current ? 600 : 500, textAlign: "center", hyphens: "auto", overflowWrap: "anywhere", color: step.done || step.current ? "var(--c3-texto)" : "var(--c3-texto-suave)" }}>
+          <li
+            key={step.label}
+            className="c3-entrega__paso"
+            data-estado={step.done ? "hecho" : step.current ? "actual" : "pendiente"}
+            aria-current={step.current ? "step" : undefined}
+          >
+            <span className="c3-entrega__numero" aria-hidden="true">{index + 1}</span>
+            <span className="c3-entrega__rotulo">
               {step.label}
+              {step.done ? <span className="c3-visualmente-oculto"> (hecho)</span> : null}
             </span>
-          </div>
+          </li>
         ))}
-      </div>
+      </ol>
 
       <div className="c3-tarea__grilla">
         <div className="c3-tarea__columna">
@@ -318,10 +308,10 @@ function EntregaContenido({ challengeId }: { challengeId: string }) {
             <Link href={`/retos/${challenge.id}/inscripcion`} className="c3-btn c3-btn--primario">Inscribirme al challenge</Link>
           ) : null}
           <StateSummary state={deliveryPresentation(state)} />
+          <RetroalimentacionCard challengeId={challenge.id} />
+          {enrollmentStatus === "approved" ? <BitacoraPanel challengeId={challenge.id} /> : null}
+          {enrollmentStatus === "approved" ? <DefensaPanel challengeId={challenge.id} submitted={submission?.status === "submitted"} canRecord={delivery.team?.role !== "integrante"} /> : null}
         </div>
-        <RetroalimentacionCard challengeId={challenge.id} />
-        {enrollmentStatus === "approved" ? <BitacoraPanel challengeId={challenge.id} /> : null}
-        {enrollmentStatus === "approved" ? <DefensaPanel challengeId={challenge.id} submitted={submission?.status === "submitted"} canRecord={delivery.team?.role !== "integrante"} /> : null}
         <aside className="c3-tarea__columna c3-tarea__lateral">
           <section className="c3-card" aria-label="Brief y criterios" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
             <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Brief y criterios</span>

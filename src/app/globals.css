@@ -641,7 +641,8 @@ textarea.c3-campo {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: var(--c3-navy);
+  background: var(--c3-superficie);
+  border-bottom: 1px solid var(--c3-borde);
 }
 
 .c3-app__contenido {
@@ -659,11 +660,44 @@ textarea.c3-campo {
   color: var(--c3-texto-suave);
 }
 
+/* Los títulos de la app usan el mismo tipo que el sitio público (el alcance de .c3-sitio no llega aquí). */
+.c3-app h1,
+.c3-app h2,
+.c3-app h3 {
+  font-family: var(--c3-font-titulo);
+  letter-spacing: -0.035em;
+  color: var(--c3-navy);
+}
+
+/* Tarjetas y objetivos táctiles de la app, con las mismas formas que el sitio público. */
+.c3-app .c3-card {
+  border-radius: var(--c3-radius-card);
+  box-shadow: var(--c3-shadow-soft);
+}
+
+.c3-app .c3-btn--small {
+  min-height: 44px;
+}
+
+.c3-empresa__paso-numero {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--c3-accion);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .c3-app__tabs {
   position: sticky;
   bottom: 0;
   z-index: 20;
   display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
   background: var(--c3-superficie);
   border-top: 1px solid var(--c3-borde);
 }
@@ -687,8 +721,34 @@ textarea.c3-campo {
   font-weight: 600;
 }
 
+/* Cabecera de la app: blanca, como la del sitio público (rediseño de noviembre de 2026). Visible desde 1024 px. */
 .c3-cabecera--app {
   display: none;
+  background: var(--c3-superficie);
+  border-bottom: 1px solid var(--c3-borde);
+}
+
+.c3-cabecera--app .c3-cabecera__enlace {
+  color: var(--c3-texto-suave);
+  padding-block: 8px;
+}
+
+.c3-cabecera--app .c3-cabecera__enlace:hover {
+  color: var(--c3-texto);
+}
+
+.c3-cabecera--app .c3-cabecera__enlace[aria-current="page"] {
+  color: var(--c3-navy);
+  box-shadow: inset 0 -3px 0 var(--c3-accion);
+}
+
+.c3-cabecera--app .c3-cabecera__avatar {
+  background: var(--c3-accion);
+}
+
+.c3-cabecera--app .c3-usuario__flecha,
+.c3-app__barra .c3-usuario__flecha {
+  color: var(--c3-texto-suave);
 }
 
 /* Contenedor de página común: ancho útil, sin marco de teléfono. */
@@ -787,12 +847,154 @@ textarea.c3-campo {
   order: -1;
 }
 
-/* Evaluación: la solución y la rúbrica lado a lado desde 1024 px; apiladas en teléfono y tablet. */
+/*
+ * Evaluación (extensión del rediseño de noviembre de 2026 a la app): encabezado con cifras, rúbrica e índice en una
+ * columna lateral, y una tarjeta por solución. Desde 1024 px la lateral queda fija a la derecha; en teléfono va primero.
+ */
+.c3-evaluacion__encabezado {
+  gap: 14px;
+}
+
+.c3-evaluacion__resumen {
+  max-width: 64ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--c3-texto-suave);
+}
+
+.c3-evaluacion__cifras {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.c3-evaluacion__cifra {
+  min-width: 0;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--c3-borde);
+  border-radius: var(--c3-radius-card);
+  background: var(--c3-superficie);
+}
+
+.c3-evaluacion__cifra dt {
+  font-size: 12px;
+  color: var(--c3-texto-suave);
+}
+
+.c3-evaluacion__cifra dd {
+  margin: 0;
+  font-family: var(--c3-font-titulo);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--c3-navy);
+}
+
+.c3-evaluacion__grilla {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.c3-evaluacion__lateral {
+  min-width: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  order: -1;
+  border: 1px solid var(--c3-borde);
+  border-radius: var(--c3-radius-card);
+  background: var(--c3-superficie);
+}
+
+.c3-evaluacion__soluciones {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.c3-evaluacion__titulo {
+  margin: 0;
+  font-family: var(--c3-font-titulo);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--c3-navy);
+}
+
+.c3-evaluacion__criterios {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.c3-evaluacion__criterios > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--c3-borde);
+}
+
+.c3-evaluacion__criterios dt {
+  font-size: 14px;
+  color: var(--c3-texto);
+}
+
+.c3-evaluacion__criterios dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.c3-evaluacion__indice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.c3-evaluacion__indice ol {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+}
+
+.c3-evaluacion__indice li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.c3-evaluacion__indice a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c3-enlace);
+}
+
 .c3-evaluacion__solucion {
-  padding: 16px;
+  padding: 20px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
+  gap: 20px;
+  border-radius: var(--c3-radius-card);
+  scroll-margin-top: 96px;
 }
 
 .c3-evaluacion__contenido {
@@ -800,6 +1002,37 @@ textarea.c3-campo {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.c3-evaluacion__cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.c3-evaluacion__texto {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.c3-evaluacion__enlaces {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+}
+
+.c3-evaluacion__enlaces a {
+  font-size: 14px;
+  font-weight: 500;
+  word-break: break-all;
 }
 
 .c3-evaluacion__rubrica {
@@ -812,10 +1045,217 @@ textarea.c3-campo {
   border: 0;
 }
 
+.c3-evaluacion__leyenda {
+  padding: 0;
+  margin-bottom: 2px;
+  font-family: var(--c3-font-titulo);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c3-texto-suave);
+}
+
+/* Cada criterio: nombre y ayuda a la izquierda; el puntaje, a la derecha, para leer la rúbrica de un vistazo. */
+.c3-evaluacion__criterio {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  column-gap: 16px;
+  row-gap: 4px;
+  align-items: center;
+}
+
+.c3-evaluacion__criterio > label {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.c3-evaluacion__criterio > .c3-ayuda {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.c3-evaluacion__criterio > .c3-campo {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.c3-evaluacion__criterio > .c3-error-campo {
+  grid-column: 1 / -1;
+}
+
+.c3-evaluacion__puntaje {
+  width: 100%;
+  min-height: 44px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.c3-evaluacion__puntaje:disabled,
+.c3-evaluacion__solucion .c3-campo:disabled {
+  background: var(--c3-superficie-sutil);
+  color: var(--c3-texto-suave);
+  cursor: not-allowed;
+}
+
+.c3-evaluacion__comentario {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.c3-evaluacion__cifra--fecha dd {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.c3-evaluacion__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--c3-borde);
+  border-radius: 12px;
+  background: var(--c3-superficie-sutil);
+  color: var(--c3-texto);
+}
+
+.c3-evaluacion__total strong {
+  font-family: var(--c3-font-titulo);
+  font-size: 18px;
+}
+
+.c3-evaluacion__acciones {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.c3-evaluacion__confirmar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--c3-advertencia);
+  border-radius: 12px;
+  background: var(--c3-advertencia-tinte);
+}
+
+/* Entrega del participante: pasos como lista ordenada (aria-current en el paso actual). */
+.c3-entrega__pasos {
+  margin: 0;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  list-style: none;
+}
+
+.c3-entrega__paso {
+  min-width: 0;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.c3-entrega__numero {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--c3-superficie-sutil);
+  color: var(--c3-texto-suave);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.c3-entrega__rotulo {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  color: var(--c3-texto-suave);
+}
+
+.c3-entrega__paso[data-estado="hecho"] .c3-entrega__numero {
+  background: var(--c3-exito);
+  color: #ffffff;
+}
+
+.c3-entrega__paso[data-estado="actual"] .c3-entrega__numero {
+  background: var(--c3-accion);
+  color: #ffffff;
+}
+
+.c3-entrega__paso[data-estado="hecho"] .c3-entrega__rotulo,
+.c3-entrega__paso[data-estado="actual"] .c3-entrega__rotulo {
+  color: var(--c3-texto);
+}
+
+.c3-entrega__paso[data-estado="actual"] .c3-entrega__rotulo {
+  font-weight: 600;
+}
+
+/* Talento: nombre de la ficha como encabezado y estado resumido en teléfono (las columnas se ocultan). */
+.c3-talento__nombre {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.c3-res-solo-movil {
+  display: none;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--c3-texto-suave);
+}
+
+@media (max-width: 639px) {
+  .c3-res-solo-movil {
+    display: block;
+    margin-top: 2px;
+  }
+}
+
+.c3-evaluacion__confirmar p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 @media (min-width: 1024px) {
+  .c3-evaluacion__grilla {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+    gap: 28px;
+  }
+
+  .c3-evaluacion__lateral {
+    order: 0;
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 96px;
+  }
+
+  .c3-evaluacion__soluciones {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   .c3-evaluacion__solucion {
     padding: 24px;
-    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
     gap: 32px;
   }
 
@@ -823,6 +1263,67 @@ textarea.c3-campo {
     padding-left: 32px;
     border-left: 1px solid var(--c3-borde);
   }
+}
+
+@media (min-width: 640px) {
+  .c3-evaluacion__cifras {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Espacio de empresa: cabecera con identidad y acciones; secciones con objetivos táctiles de 44 px. */
+.c3-empresa__cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.c3-empresa__identidad {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.c3-empresa__titulo {
+  font-size: clamp(28px, 3.6vw, 40px);
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.c3-empresa__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--c3-texto-suave);
+}
+
+.c3-empresa__selector {
+  width: auto;
+  min-height: 44px;
+}
+
+.c3-empresa__secciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.c3-empresa__seccion {
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.c3-empresa__subtitulo {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 30px);
+  line-height: 1.2;
+  font-weight: 700;
 }
 
 .c3-tarea__encabezado {
@@ -882,9 +1383,11 @@ textarea.c3-campo {
 }
 
 /* Resumen superior: saludo, estado general y conteo por estado. */
+/* Saludo de Mi C3 en claro, como las cabeceras de página del sitio público (rediseño de noviembre de 2026). */
 .c3-mi-c3__resumen {
-  background: var(--c3-navy);
-  padding-block: 4px 24px;
+  background: var(--c3-superficie);
+  border-bottom: 1px solid var(--c3-borde);
+  padding-block: 20px 24px;
 }
 
 .c3-mi-c3__resumen-interior {
@@ -904,17 +1407,17 @@ textarea.c3-campo {
   font-size: 26px;
   line-height: 1.2;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--c3-navy);
 }
 
 .c3-mi-c3__resumen-texto p {
   font-size: var(--c3-cuerpo-sm-size);
   line-height: var(--c3-cuerpo-sm-lh);
-  color: var(--c3-texto-cabecera);
+  color: var(--c3-texto-suave);
 }
 
 .c3-mi-c3__proximo strong {
-  color: #ffffff;
+  color: var(--c3-navy);
   font-weight: 600;
 }
 
@@ -928,7 +1431,8 @@ textarea.c3-campo {
 }
 
 .c3-mi-c3__conteo-item {
-  background: var(--c3-navy-claro);
+  background: var(--c3-superficie-sutil);
+  border: 1px solid var(--c3-borde);
   border-top: 3px solid transparent;
   border-radius: var(--c3-radius-md);
   padding: 8px 6px;
@@ -947,14 +1451,14 @@ textarea.c3-campo {
   font-size: 22px;
   font-weight: 700;
   line-height: 1.1;
-  color: #ffffff;
+  color: var(--c3-navy);
 }
 
 .c3-mi-c3__conteo-etiqueta {
   font-size: var(--c3-leyenda-size);
   line-height: 1.2;
   text-align: center;
-  color: var(--c3-texto-cabecera);
+  color: var(--c3-texto-suave);
 }
 
 /* Cuerpo: una columna en móvil; en escritorio, principal (2/3) y lateral (1/3). */
@@ -1396,7 +1900,7 @@ textarea.c3-campo {
 /* Cabeceras navy: foco visible y avatar de la cuenta. */
 .c3-cabecera :focus-visible,
 .c3-app__barra :focus-visible {
-  outline-color: #ffffff;
+  outline-color: var(--c3-foco);
 }
 
 .c3-cabecera__avatar {
@@ -1407,7 +1911,7 @@ textarea.c3-campo {
   align-items: center;
   justify-content: center;
   border-radius: var(--c3-radius-pill);
-  background: var(--c3-conecta);
+  background: var(--c3-accion);
   color: var(--c3-texto-inverso);
   font-family: var(--c3-font-titulo);
   font-size: 13px;
@@ -1571,7 +2075,7 @@ textarea.c3-campo {
 .c3-tray__centro {
   font-size: var(--c3-cuerpo-sm-size);
   line-height: var(--c3-cuerpo-sm-lh);
-  color: var(--c3-texto-cabecera);
+  color: var(--c3-texto-suave);
 }
 
 .c3-tray__acciones {
@@ -1605,9 +2109,11 @@ textarea.c3-campo {
   outline-color: #ffffff;
 }
 
+/* En la cabecera clara de Trayectoria el chip sin relleno lleva texto navy (el blanco de .c3-tray__chip no se leería). */
 .c3-tray__chip--editar {
   background: transparent;
-  border-color: var(--c3-texto-cabecera);
+  border-color: var(--c3-navy);
+  color: var(--c3-navy);
 }
 
 .c3-tray__chip--editar:hover {
@@ -2343,8 +2849,10 @@ textarea.c3-campo {
   height: 72px;
 }
 
-/* On the white header and the navy footer the logo needs no white plate behind it. */
+/* On the white headers (public and app) and the navy footer the logo needs no white plate behind it. */
 .c3-site-header .c3-brand-mark,
+.c3-cabecera--app .c3-brand-mark,
+.c3-app__barra .c3-brand-mark,
 .c3-footer .c3-brand-mark {
   width: auto;
   padding: 0;
@@ -2352,7 +2860,9 @@ textarea.c3-campo {
   border-radius: 0;
 }
 
-.c3-site-header .c3-brand-mark img {
+.c3-site-header .c3-brand-mark img,
+.c3-cabecera--app .c3-brand-mark img,
+.c3-app__barra .c3-brand-mark img {
   width: auto;
   height: 30px;
 }
@@ -2464,7 +2974,9 @@ textarea.c3-campo {
 }
 
 /* The account menu was built for navy headers; on the white one it switches to dark text. */
-.c3-site-header .c3-usuario__boton {
+.c3-site-header .c3-usuario__boton,
+.c3-cabecera--app .c3-usuario__boton,
+.c3-app__barra .c3-usuario__boton {
   color: var(--c3-texto);
   border: 1px solid var(--c3-borde);
   background: var(--c3-superficie);

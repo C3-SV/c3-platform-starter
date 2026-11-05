@@ -179,10 +179,20 @@ export function TalentoPanel({ challengeId }: { challengeId: string }) {
                 {visibles.map((row) => (
                   <tr key={row.submissionId} data-abierta={abiertaId === row.submissionId}>
                     <td>
-                      <button type="button" className="c3-res-nombre" aria-expanded={abiertaId === row.submissionId} aria-controls={`entrega-${row.submissionId}`} onClick={() => abrir(row)}>
+                      <button
+                        type="button"
+                        className="c3-res-nombre"
+                        aria-expanded={abiertaId === row.submissionId}
+                        aria-controls={abiertaId === row.submissionId ? `entrega-${row.submissionId}` : undefined}
+                        onClick={() => abrir(row)}
+                      >
                         {row.name ?? "Sin nombre"}
                       </button>
                       <span style={{ display: "block", fontSize: 12, color: "var(--c3-texto-suave)" }}>{row.mode === "team" ? "Equipo" : "Individual"}</span>
+                      {/* En teléfono las columnas de defensa y lista corta se ocultan: su estado va aquí para no perderlo. */}
+                      <span className="c3-res-solo-movil">
+                        Defensa {row.defense ? "registrada" : "pendiente"} · Lista corta {row.shortlist ? "sí" : "no"}
+                      </span>
                     </td>
                     <td className="c3-res-oculta-movil">
                       {formatDateTime(row.submittedAt) ?? "Sin fecha"}
@@ -307,7 +317,7 @@ function TalentoFila({ row, challengeId, onFeedbackSaved, busy, onShortlist, onU
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Ficha de la persona</span>
-          <span className="c3-titulo" style={{ fontSize: 24, fontWeight: 600 }}>{row.name ?? "Sin nombre"}</span>
+          <h3 className="c3-titulo c3-talento__nombre">{row.name ?? "Sin nombre"}</h3>
           <span style={{ fontSize: 13, color: "var(--c3-texto-suave)" }}>{isTeam ? "Equipo" : "Individual"} · Enviada {formatDateTime(row.submittedAt) ?? ""}</span>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

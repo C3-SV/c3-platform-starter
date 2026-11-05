@@ -7,13 +7,16 @@ import { StatePill } from "@/components/StatePill";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { apiRequest, ApiError, type FieldIssue } from "@/lib/client/api";
 import { formatDateTime } from "@/lib/domain/format";
+import { isWeighted, scoreOf } from "@/lib/domain/evaluation";
 import type { PresentedState } from "@/lib/domain/presentation";
 import type { evaluationWorkspace } from "@/lib/server/evaluation";
 
 type Workspace = Awaited<ReturnType<typeof evaluationWorkspace>>;
 type Solution = Workspace["solutions"][number];
+type Criterion = Workspace["challenge"]["rubric"][number];
+type SolutionStatus = "none" | "draft" | "finalized";
 
-const SOLUTION_STATE: Record<"none" | "draft" | "finalized", PresentedState> = {
+const SOLUTION_STATE: Record<SolutionStatus, PresentedState> = {
   none: { label: "Pendiente", tone: "neutro" },
   draft: { label: "En curso", tone: "advertencia" },
   finalized: { label: "Finalizada", tone: "exito" },
@@ -23,9 +26,35 @@ function issueFor(issues: FieldIssue[], field: string): string | null {
   return issues.find((issue) => issue.field === field)?.message ?? null;
 }
 
+function statusOf(solution: Solution): SolutionStatus {
+  if (!solution.mine) return "none";
+  return solution.mine.status === "finalized" ? "finalized" : "draft";
+}
+
+/**
+ * Total parcial mientras se escribe: solo cuenta los puntajes válidos (enteros dentro de su máximo).
+ * El servidor vuelve a calcularlo al guardar; esto es solo una ayuda visual.
+ */
+function totalWhileEditing(values: Record<string, string>, rubric: Criterion[]): { value: number; complete: boolean } {
+  const scores: Record<string, number> = {};
+  let complete = true;
+  for (const criterion of rubric) {
+    const raw = values[criterion.id] ?? "";
+    const value = raw === "" ? Number.NaN : Number(raw);
+    if (Number.isInteger(value) && value >= 0 && value <= criterion.maxScore) scores[criterion.id] = value;
+    else complete = false;
+  }
+  return { value: scoreOf(scores, rubric), complete };
+}
+
+function formatNumber(value: number): string {
+  return value.toLocaleString("es", { maximumFractionDigits: 1 });
+}
+
 /**
  * Espacio de evaluación para jurados asignados: rúbrica, borrador y finalización. Antes del cierre, solo lectura.
  * Es la única pantalla de evaluación (jurado externo o representante de la empresa): `/mi-c3/evaluar/[id]`.
+ * Las soluciones se muestran anónimas («Solución 1»…); no se muestra quién las entregó.
  */
 export function EvaluadorPanel({ challengeId }: { challengeId: string }) {
   return (
@@ -45,6 +74,8 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Record<string, string>>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
+  // Finalizar no tiene vuelta atrás: primero se pide confirmación en la misma solución.
+  const [confirming, setConfirming] = useState<string | null>(null);
   const signedIn = session.status === "signed-in";
 
   // Carga inicial; las actualizaciones ocurren en la respuesta.
@@ -129,24 +160,46 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
     return (
       <div className="c3-tarea">
         <Migas items={crumbs()} />
-        <p role="status" style={{ color: "var(--c3-texto-suave)" }}>Cargando el challenge…</p>
+        <p role="status" className="c3-app__cargando">Cargando el challenge…</p>
       </div>
     );
   }
 
   const pending = !workspace.canEvaluate;
-  const finalized = workspace.solutions.filter((solution) => solution.mine?.status === "finalized").length;
+  const rubric = workspace.challenge.rubric;
+  const weighted = isWeighted(rubric);
+  const finalized = workspace.solutions.filter((solution) => statusOf(solution) === "finalized").length;
+  const closes = workspace.challenge.submissionClosesAt ? formatDateTime(workspace.challenge.submissionClosesAt) : null;
+  const kindLabel = workspace.kind === "empresa" ? "representante de la empresa" : "jurado externo";
+
   return (
     <div className="c3-tarea">
       <Migas items={crumbs(workspace.challenge.title)} />
 
-      <section className="c3-tarea__encabezado">
-        <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Evaluación · {workspace.kind === "empresa" ? "representante de la empresa" : "jurado externo"}</span>
+      <section className="c3-tarea__encabezado c3-evaluacion__encabezado">
+        <span className="c3-eyebrow">Evaluación · {kindLabel}</span>
         <h1 className="c3-titulo">{workspace.challenge.title}</h1>
-        <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
-          Cada solución se evalúa con la rúbrica, sin ver quién la entregó. Máximo total: {workspace.maxTotal} puntos.
-          {workspace.solutions.length > 0 ? ` Finalizadas: ${finalized} de ${workspace.solutions.length}.` : ""}
+        <p className="c3-evaluacion__resumen">
+          Cada solución se evalúa con la rúbrica, sin ver quién la entregó. Los comentarios son internos: solo los ve C3.
         </p>
+        <dl className="c3-evaluacion__cifras" aria-label="Resumen de la evaluación">
+          <div className="c3-evaluacion__cifra">
+            <dt>Máximo total</dt>
+            <dd>{workspace.maxTotal} pts</dd>
+          </div>
+          <div className="c3-evaluacion__cifra">
+            <dt>Soluciones</dt>
+            <dd>{workspace.solutions.length}</dd>
+          </div>
+          <div className="c3-evaluacion__cifra">
+            <dt>Finalizadas</dt>
+            <dd>{finalized} de {workspace.solutions.length}</dd>
+          </div>
+          <div className="c3-evaluacion__cifra c3-evaluacion__cifra--fecha">
+            <dt>Cierre de entregas</dt>
+            <dd>{closes ?? "Sin fecha"}</dd>
+          </div>
+        </dl>
       </section>
 
       {pending ? (
@@ -161,92 +214,177 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
       {formError ? <div className="c3-alerta c3-alerta--error" role="alert"><strong>{formError}</strong></div> : null}
 
       {workspace.solutions.length === 0 ? (
-        <div className="c3-card" style={{ padding: 20 }}><p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay soluciones enviadas para este challenge.</p></div>
-      ) : null}
-
-      {workspace.solutions.map((solution) => {
-        const status = solution.mine ? (solution.mine.status === "finalized" ? "finalized" : "draft") : "none";
-        const locked = pending || status === "finalized";
-        const values = scoresFor(solution);
-        return (
-          <form
-            key={solution.id}
-            onSubmit={(event) => {
-              event.preventDefault();
-              void save(solution, false);
-            }}
-            noValidate
-            className="c3-card c3-evaluacion__solucion"
-            aria-label={solution.label}
-          >
-            <div className="c3-evaluacion__contenido">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <span className="c3-titulo" style={{ fontSize: 18, fontWeight: 600 }}>{solution.label}</span>
-                <StatePill state={SOLUTION_STATE[status]} />
-              </div>
-              <p style={{ fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{solution.text}</p>
-              {solution.links.map((link) => (
-                <a key={link} href={link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 500, wordBreak: "break-all" }}>{link}</a>
-              ))}
+        <div className="c3-card c3-evaluacion__vacio">
+          <p>Todavía no hay soluciones enviadas para este challenge.</p>
+        </div>
+      ) : (
+        <div className="c3-evaluacion__grilla">
+          <aside className="c3-evaluacion__lateral" aria-label="Rúbrica e índice de soluciones">
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <h2 className="c3-evaluacion__titulo">Rúbrica</h2>
+              <p className="c3-ayuda">{weighted ? "Con pesos: cada criterio aporta su peso según el puntaje relativo a su máximo." : "Cada punto cuenta igual."}</p>
             </div>
-
-            <fieldset className="c3-evaluacion__rubrica">
-              <legend className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Rúbrica</legend>
-              {workspace.challenge.rubric.map((criterion) => {
-                const field = `scores.${criterion.id}`;
-                return (
-                  <div key={criterion.id} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <label htmlFor={`${solution.id}-${criterion.id}`} className="c3-etiqueta-campo">{criterion.label} (0 – {criterion.maxScore})</label>
-                    <input
-                      id={`${solution.id}-${criterion.id}`}
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={criterion.maxScore}
-                      step={1}
-                      className={`c3-campo${issueFor(issues, field) ? " c3-campo--error" : ""}`}
-                      style={{ maxWidth: 140 }}
-                      disabled={locked}
-                      value={values[criterion.id] ?? ""}
-                      onChange={(event) => setDrafts((current) => ({ ...current, [solution.id]: { ...scoresFor(solution), [criterion.id]: event.target.value } }))}
-                    />
-                    {issueFor(issues, field) ? <span className="c3-error-campo">{issueFor(issues, field)}</span> : null}
-                  </div>
-                );
-              })}
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <label htmlFor={`${solution.id}-comentario`} className="c3-etiqueta-campo">Comentario interno (opcional, solo lo ve C3)</label>
-                <textarea
-                  id={`${solution.id}-comentario`}
-                  className={`c3-campo${issueFor(issues, "comment") ? " c3-campo--error" : ""}`}
-                  rows={3}
-                  maxLength={1000}
-                  disabled={locked}
-                  value={commentFor(solution)}
-                  onChange={(event) => setComments((current) => ({ ...current, [solution.id]: event.target.value }))}
-                />
-                {issueFor(issues, "comment") ? <span className="c3-error-campo">{issueFor(issues, "comment")}</span> : null}
-              </div>
-
-              {locked ? (
-                <span className="c3-ayuda">
-                  {status === "finalized" ? `Finalizada. Total: ${solution.mine?.total} de ${workspace.maxTotal}.` : "Esperá el cierre de entregas para evaluar."}
-                </span>
-              ) : (
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button type="submit" className="c3-btn c3-btn--contorno" disabled={busy !== null}>
-                    {busy === `${solution.id}-d` ? "Guardando…" : "Guardar borrador"}
-                  </button>
-                  <button type="button" className="c3-btn c3-btn--primario" disabled={busy !== null} onClick={() => void save(solution, true)}>
-                    {busy === `${solution.id}-f` ? "Finalizando…" : "Finalizar evaluación"}
-                  </button>
+            <dl className="c3-evaluacion__criterios">
+              {rubric.map((criterion) => (
+                <div key={criterion.id}>
+                  <dt>{criterion.label}</dt>
+                  <dd>
+                    0 a {criterion.maxScore}
+                    {weighted && typeof criterion.weight === "number" ? ` · ${criterion.weight} %` : ""}
+                  </dd>
                 </div>
-              )}
-            </fieldset>
-          </form>
-        );
-      })}
+              ))}
+            </dl>
+            <nav aria-label="Soluciones a evaluar" className="c3-evaluacion__indice">
+              <h2 className="c3-evaluacion__titulo">Soluciones</h2>
+              <ol>
+                {workspace.solutions.map((solution) => (
+                  <li key={solution.id}>
+                    <a href={`#solucion-${solution.id}`}>{solution.label}</a>
+                    <StatePill state={SOLUTION_STATE[statusOf(solution)]} />
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          </aside>
+
+          <div className="c3-evaluacion__soluciones">
+            {workspace.solutions.map((solution) => {
+              const status = statusOf(solution);
+              const locked = pending || status === "finalized";
+              const values = scoresFor(solution);
+              const total = status === "finalized" && solution.mine ? { value: solution.mine.total, complete: true } : totalWhileEditing(values, rubric);
+              const titleId = `solucion-${solution.id}-titulo`;
+              return (
+                <form
+                  key={solution.id}
+                  id={`solucion-${solution.id}`}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void save(solution, false);
+                  }}
+                  noValidate
+                  className="c3-card c3-evaluacion__solucion"
+                  aria-labelledby={titleId}
+                >
+                  <div className="c3-evaluacion__contenido">
+                    <div className="c3-evaluacion__cabecera">
+                      <h2 id={titleId} className="c3-evaluacion__titulo">{solution.label}</h2>
+                      <StatePill state={SOLUTION_STATE[status]} />
+                    </div>
+                    {pending ? (
+                      <p className="c3-ayuda">El contenido aparece cuando cierran las entregas.</p>
+                    ) : (
+                      <p className="c3-evaluacion__texto">{solution.text}</p>
+                    )}
+                    {!pending && solution.links.length > 0 ? (
+                      <ul className="c3-evaluacion__enlaces" aria-label={`Enlaces de ${solution.label}`}>
+                        {solution.links.map((link) => (
+                          <li key={link}>
+                            <a href={link} target="_blank" rel="noopener noreferrer">{link}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+
+                  <fieldset className="c3-evaluacion__rubrica">
+                    <legend className="c3-evaluacion__leyenda">Puntajes por criterio</legend>
+                    {rubric.map((criterion) => {
+                      const field = `scores.${criterion.id}`;
+                      const message = issueFor(issues, field);
+                      const inputId = `${solution.id}-${criterion.id}`;
+                      const helpId = `${inputId}-ayuda`;
+                      const errorId = `${inputId}-error`;
+                      return (
+                        <div key={criterion.id} className="c3-evaluacion__criterio">
+                          <label htmlFor={inputId} className="c3-etiqueta-campo">{criterion.label}</label>
+                          <span id={helpId} className="c3-ayuda">
+                            De 0 a {criterion.maxScore}
+                            {weighted && typeof criterion.weight === "number" ? ` · peso ${criterion.weight} %` : ""}
+                          </span>
+                          <input
+                            id={inputId}
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={criterion.maxScore}
+                            step={1}
+                            className={`c3-campo c3-evaluacion__puntaje${message ? " c3-campo--error" : ""}`}
+                            aria-describedby={message ? `${helpId} ${errorId}` : helpId}
+                            aria-invalid={message ? true : undefined}
+                            disabled={locked}
+                            value={values[criterion.id] ?? ""}
+                            onChange={(event) => setDrafts((current) => ({ ...current, [solution.id]: { ...scoresFor(solution), [criterion.id]: event.target.value } }))}
+                          />
+                          {message ? <span id={errorId} className="c3-error-campo">{message}</span> : null}
+                        </div>
+                      );
+                    })}
+
+                    <div className="c3-evaluacion__total">
+                      <span>{total.complete ? "Total" : "Total parcial"}</span>
+                      <strong>{formatNumber(total.value)} de {workspace.maxTotal}</strong>
+                    </div>
+
+                    <div className="c3-evaluacion__comentario">
+                      <label htmlFor={`${solution.id}-comentario`} className="c3-etiqueta-campo">Comentario interno (opcional, solo lo ve C3)</label>
+                      <textarea
+                        id={`${solution.id}-comentario`}
+                        className={`c3-campo${issueFor(issues, "comment") ? " c3-campo--error" : ""}`}
+                        rows={3}
+                        maxLength={1000}
+                        disabled={locked}
+                        aria-invalid={issueFor(issues, "comment") ? true : undefined}
+                        value={commentFor(solution)}
+                        onChange={(event) => setComments((current) => ({ ...current, [solution.id]: event.target.value }))}
+                      />
+                      {issueFor(issues, "comment") ? <span className="c3-error-campo">{issueFor(issues, "comment")}</span> : null}
+                    </div>
+
+                    {locked ? (
+                      <span className="c3-ayuda">
+                        {status === "finalized" ? `Finalizada. Total: ${solution.mine?.total} de ${workspace.maxTotal}.` : "Esperá el cierre de entregas para evaluar."}
+                      </span>
+                    ) : confirming === solution.id ? (
+                      <div className="c3-evaluacion__confirmar" role="group" aria-label={`Confirmar la finalización de ${solution.label}`}>
+                        <p>
+                          <strong>¿Finalizás esta evaluación?</strong> Después no podés cambiar los puntajes ni el comentario.
+                        </p>
+                        <div className="c3-evaluacion__acciones">
+                          <button
+                            type="button"
+                            className="c3-btn c3-btn--primario"
+                            disabled={busy !== null}
+                            onClick={() => {
+                              setConfirming(null);
+                              void save(solution, true);
+                            }}
+                          >
+                            {busy === `${solution.id}-f` ? "Finalizando…" : "Sí, finalizar"}
+                          </button>
+                          <button type="button" className="c3-btn c3-btn--contorno" disabled={busy !== null} onClick={() => setConfirming(null)}>
+                            Seguir editando
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="c3-evaluacion__acciones">
+                        <button type="submit" className="c3-btn c3-btn--contorno" disabled={busy !== null}>
+                          {busy === `${solution.id}-d` ? "Guardando…" : "Guardar borrador"}
+                        </button>
+                        <button type="button" className="c3-btn c3-btn--primario" disabled={busy !== null} onClick={() => setConfirming(solution.id)}>
+                          Finalizar evaluación
+                        </button>
+                      </div>
+                    )}
+                  </fieldset>
+                </form>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
