@@ -19,6 +19,7 @@
 | D9 | **Perfiles públicos** compartibles por enlace, opt-in, protegiendo datos privados | §8 |
 | D10 | `dev` integra y valida; `main` se promueve desde `dev` | [AGENTS §8](../AGENTS.md) |
 | D11 | **Rediseño visual** (4-nov-2026): acción violeta, cabecera blanca con «Conoce C3» (Compite · Crea · Conecta) y textos con «tú». Sin aviso global de entorno de demostración: lo inventado se marca DEMO en cada elemento | §2 |
+| D12 | **Portada por enlace** (4-nov-2026): experiencias y challenges pueden tener una imagen de portada por enlace, solo de sitios de C3 (`c3.com.sv` y subdominios), con descripción obligatoria. La pone C3 desde la consola; la representante no la cambia. Un challenge sin portada propia usa la de su experiencia; sin portada o si el enlace falla, la tarjeta muestra el ícono de la línea. Se puede corregir en una experiencia concluida. Sin subida de archivos | §2 |
 
 ## 2. Zonas y marcos
 

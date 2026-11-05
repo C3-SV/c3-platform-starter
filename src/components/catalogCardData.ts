@@ -1,4 +1,5 @@
 import type { CatalogCardData } from "@/components/CatalogCard";
+import { coverOf } from "@/lib/domain/coverImage";
 import { formatDate, modalityLabel, sessionSummary } from "@/lib/domain/format";
 import { experienceLabel, LINE_NAME, primaryLineOf } from "@/lib/domain/presentation";
 import type { ExperienceLine } from "@/lib/domain/types";
@@ -31,6 +32,7 @@ export function catalogCards(catalog: PublicExperience[], { pageLine }: { pageLi
         demoNote: pageLine ? item.experience.demoNote ?? null : null,
         source: pageLine && item.experience.sourceUrl ? item.experience.sourceLabel ?? item.experience.sourceUrl : null,
         isChallenge: false,
+        cover: coverOf(item.experience),
       }];
     }
     return item.challenges.map((challenge) => ({
@@ -48,6 +50,7 @@ export function catalogCards(catalog: PublicExperience[], { pageLine }: { pageLi
       demoNote: pageLine ? challenge.demoNote : null,
       source: pageLine && challenge.sourceUrl ? challenge.sourceLabel ?? challenge.sourceUrl : null,
       isChallenge: true,
+      cover: challenge.cover,
     }));
   });
 }

@@ -127,6 +127,27 @@ test("editar actualiza solo lo que cambió y conserva estado, autoría y demás 
   assert.equal(raw?.summary, workshop.summary);
 });
 
+test("la portada solo la cambia C3; el detalle público la muestra y el challenge sin portada propia hereda la de su experiencia", async () => {
+  const cover = { coverImageUrl: "https://copa.c3.com.sv/index/fotoHero.webp", coverImageAlt: "Equipo de la Copa frente al panel" };
+  const { db, id } = await publishedWorkshop(cover);
+  await assert.rejects(
+    updateExperience(db, joven, id, { ...workshop, coverImageUrl: "https://c3.com.sv/otra.png", coverImageAlt: "Otra portada cualquiera" }, now),
+    expectHttp(403),
+  );
+  assert.equal((await db.collection("experiences").doc(id).get()).data()?.coverImageUrl, cover.coverImageUrl);
+  await assert.rejects(
+    updateExperience(db, admin, id, { ...workshop, coverImageUrl: "https://images.ejemplo.com/foto.jpg", coverImageAlt: "Foto de un tercero" }, now),
+    (error) => error instanceof ValidationFailure && error.issues.some((issue) => issue.field === "coverImageUrl"),
+  );
+
+  assert.equal((await getPublicExperience(db, id, now)).experience.coverImageUrl, cover.coverImageUrl);
+  const challenge = await createChallenge(db, admin, challengeInput(id), now);
+  await setChallengeStatus(db, admin, challenge.id, { status: "published" }, now);
+  const inherited = { url: cover.coverImageUrl, alt: cover.coverImageAlt };
+  assert.deepEqual((await getPublicChallenge(db, challenge.id, now)).cover, inherited);
+  assert.deepEqual((await listPublicCatalog(db, now))[0].challenges[0].cover, inherited);
+});
+
 test("editar sin cambios no escribe ni deja bitácora", async () => {
   const db = testDb();
   const { id } = await publishedWorkshop();

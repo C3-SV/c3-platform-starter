@@ -2,11 +2,13 @@ import { cache, type CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CoverImage } from "@/components/CoverImage";
 import { EnrollmentCta } from "@/components/EnrollmentCta";
 import { Migas } from "@/components/Migas";
 import { SiteShell } from "@/components/SiteShell";
 import { StatePill } from "@/components/StatePill";
 import { formatDate, formatDateTime, formatSession, modalityLabel } from "@/lib/domain/format";
+import { coverOf } from "@/lib/domain/coverImage";
 import { experienceLabel, lineTextColorOf, MODALITY_LABEL, primaryLineOf } from "@/lib/domain/presentation";
 import { database } from "@/lib/server/context";
 import { getPublicExperience } from "@/lib/server/catalog";
@@ -50,6 +52,7 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
   const closedLabel = registration.full ? "Cupos completos" : "Inscripciones cerradas";
   const line = primaryLineOf(experience);
   const accent = lineTextColorOf(line);
+  const cover = coverOf(experience);
 
   return (
     <SiteShell>
@@ -80,6 +83,7 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
                 </div>
               ) : null}
             </div>
+            {cover ? <CoverImage cover={cover} frameClassName="c3-cover-band" className="c3-cover-band__img" sizes="(max-width: 1180px) 100vw, 1100px" priority /> : null}
           </div>
         </section>
 

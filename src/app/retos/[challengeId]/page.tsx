@@ -2,6 +2,7 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CoverImage } from "@/components/CoverImage";
 import { EnrollmentCta } from "@/components/EnrollmentCta";
 import { Migas } from "@/components/Migas";
 import { SiteShell } from "@/components/SiteShell";
@@ -38,7 +39,7 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
     if (error instanceof HttpError && error.status === 404) notFound();
     throw error;
   }
-  const { challenge, experience, state } = detail;
+  const { challenge, experience, cover, state } = detail;
   const winners = await publicWinners(database(), challengeId);
   const registrationOpen = state.label === "Abierto";
   const modality = modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize);
@@ -74,6 +75,7 @@ export default async function RetoPage({ params }: { params: Promise<{ challenge
                 <EnrollmentCta enrollHref={`/retos/${challenge.id}/inscripcion`} registrationOpen={registrationOpen} variant="hero" />
               </div>
             </div>
+            {cover ? <CoverImage cover={cover} frameClassName="c3-cover-band" className="c3-cover-band__img" sizes="(max-width: 1180px) 100vw, 1100px" priority /> : null}
           </div>
         </section>
 
