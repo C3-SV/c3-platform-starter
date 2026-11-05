@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { CoverImage } from "@/components/CoverImage";
 import { StatePill } from "@/components/StatePill";
+import type { CoverImage as Cover } from "@/lib/domain/coverImage";
 import type { PresentedState } from "@/lib/domain/presentation";
 import type { ExperienceKind, ExperienceLine } from "@/lib/domain/types";
 
@@ -21,6 +23,7 @@ export interface CatalogCardData {
   /** Source credit ("Fuente: …"), shown on line pages. */
   source: string | null;
   isChallenge: boolean;
+  cover: Cover | null;
 }
 
 const ICON_PATHS: Record<ExperienceKind, string[]> = {
@@ -47,7 +50,16 @@ export function CatalogCard({ card }: { card: CatalogCardData }) {
     <Link href={card.href} className={`c3-exp c3-exp--${card.line}`}>
       <div className="c3-exp__media">
         {card.demo ? <span className="c3-exp__badge">DEMO</span> : null}
-        <span className="c3-exp__icon"><KindIcon kind={card.kind} /></span>
+        {card.cover ? (
+          <CoverImage
+            cover={card.cover}
+            className="c3-exp__cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 380px"
+            fallback={<span className="c3-exp__icon"><KindIcon kind={card.kind} /></span>}
+          />
+        ) : (
+          <span className="c3-exp__icon"><KindIcon kind={card.kind} /></span>
+        )}
       </div>
       <div className="c3-exp__body">
         <div className="c3-exp__meta">

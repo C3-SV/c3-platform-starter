@@ -3175,8 +3175,23 @@ textarea.c3-campo {
   position: relative;
   display: grid;
   place-items: center;
-  height: 88px;
+  height: 132px;
 }
+
+/* Cover by link: next/image fills the media box; the DEMO badge moves to the corner so it never sits on a face. */
+.c3-exp__cover { object-fit: cover; object-position: center 20%; }
+.c3-exp__media:has(.c3-exp__cover) .c3-exp__badge { top: 12px; transform: none; z-index: 1; }
+
+.c3-cover-band {
+  position: relative;
+  height: 340px;
+  margin: 28px 0 0;
+  overflow: hidden;
+  border-radius: var(--c3-radius-block);
+  background: var(--c3-superficie-sutil);
+}
+
+.c3-cover-band__img { object-fit: cover; object-position: center 25%; }
 
 .c3-exp--compite .c3-exp__media { background: var(--c3-compite-tint); color: var(--c3-compite); }
 .c3-exp--crea .c3-exp__media { background: var(--c3-crea-tint); color: var(--c3-crea-texto); }
@@ -3295,7 +3310,6 @@ textarea.c3-campo {
 }
 
 /* Catalog cards are taller: bigger media and three summary lines. */
-.c3-catalog .c3-exp__media { height: 132px; }
 .c3-catalog .c3-exp__icon { width: 58px; height: 58px; }
 .c3-catalog .c3-exp__body { gap: 8px; padding: 18px 20px 16px; }
 .c3-sitio .c3-catalog .c3-exp h3 { font-size: 18px; }
@@ -4479,4 +4493,8 @@ textarea.c3-campo {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+@media (max-width: 640px) {
+  .c3-cover-band { height: auto; aspect-ratio: 16 / 9; margin-top: 20px; }
 }

@@ -1,6 +1,7 @@
-/** Validaciones PURAS de entradas. Se usan en el servidor antes de cualquier escritura. */
+/** PURE input validation. The server runs it before any write. */
 import { fallbackLineOf } from "./catalog.ts";
 import { parseCommercialPackageId, type CommercialPackageId } from "./commercial.ts";
+import { parseCoverFields } from "./coverImage.ts";
 import type { ExperienceKind, ExperienceLine, ExperienceModality, ExperienceStatus, ParticipationMode } from "./types.ts";
 
 export const EXPERIENCE_KINDS: readonly ExperienceKind[] = ["competencia", "hackathon", "challenge_empresarial", "taller", "charla", "encuentro"];
@@ -14,7 +15,7 @@ export interface FieldIssue {
   message: string;
 }
 
-/** Error de entrada que el servidor devuelve como 400 con los motivos por campo. */
+/** Input error the server returns as 400 with the reasons per field. */
 export class ValidationFailure extends Error {
   readonly issues: FieldIssue[];
   constructor(issues: FieldIssue[]) {
@@ -41,9 +42,11 @@ export interface ExperienceInput {
   demoNote: string | null;
   sourceUrl: string | null;
   sourceLabel: string | null;
+  coverImageUrl: string | null;
+  coverImageAlt: string | null;
 }
 
-/** Apertura o cierre manual de inscripciones de una experiencia publicada. */
+/** Manual opening or closing of enrollments for a published experience. */
 export interface RegistrationActionInput {
   action: "open" | "close";
   registrationClosesAt: string | null;
@@ -52,7 +55,7 @@ export interface RegistrationActionInput {
 export interface RubricInputCriterion {
   label: string;
   maxScore: number;
-  /** Peso en porcentaje, o null si la rúbrica no es ponderada. */
+  /** Weight in percent, or null if the rubric isn't weighted. */
   weight: number | null;
 }
 
@@ -70,6 +73,8 @@ export interface ChallengeInput {
   teamMinSize: number | null;
   teamMaxSize: number | null;
   submissionClosesAt: string;
+  coverImageUrl: string | null;
+  coverImageAlt: string | null;
 }
 
 export interface StatusInput {
@@ -184,6 +189,8 @@ export function parseExperienceInput(input: unknown): ExperienceInput {
   }
   const sourceLabel = optionalText(raw, "sourceLabel", 120, issues, "Nombre de la fuente");
   const demoNote = optionalText(raw, "demoNote", 240, issues, "Nota de demostración");
+  const { cover, issues: coverIssues } = parseCoverFields(raw);
+  issues.push(...coverIssues);
 
   if (issues.length) throw new ValidationFailure(issues);
   const experienceKind = kind as ExperienceKind;
@@ -211,6 +218,7 @@ export function parseExperienceInput(input: unknown): ExperienceInput {
     demoNote,
     sourceUrl: sourceUrl || null,
     sourceLabel,
+    ...cover,
   };
 }
 
@@ -234,7 +242,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
   const summary = text(raw, "summary", 10, 280, issues, "Resumen");
   const problem = text(raw, "problem", 20, 4000, issues, "Problema");
   const organizationName = text(raw, "organizationName", 2, 120, issues, "Organización responsable");
-  // El paquete es opcional: un challenge sin paquete declarado sigue siendo válido (p. ej. convocatorias no comerciales).
+  // The package is optional: a challenge without one is still valid (e.g. non-commercial calls).
   const commercialPackage = parseCommercialPackageId(raw.commercialPackage);
 
   const deliverables = Array.isArray(raw.deliverables)
@@ -264,7 +272,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
     issues.push({ field: "rubric", message: "El puntaje máximo de cada criterio debe ser un entero de 1 a 10." });
   }
 
-  // Pesos: si un criterio tiene peso, todos lo tienen, son enteros de 1 a 100 y suman 100.
+  // Weights: if one criterion has a weight, all do; they're integers from 1 to 100 and add up to 100.
   const weighted = rubric.length > 0 && rubric.every((criterion) => criterion.weight !== null);
   if (!weighted && rubric.some((criterion) => criterion.weight !== null)) {
     issues.push({ field: "rubric", message: "Si usás pesos, poné un peso a cada criterio." });
@@ -299,6 +307,8 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
   if (submissionClosesAt && Date.parse(submissionClosesAt) <= now.getTime()) {
     issues.push({ field: "submissionClosesAt", message: "El cierre de entregas debe ser una fecha futura." });
   }
+  const { cover, issues: coverIssues } = parseCoverFields(raw);
+  issues.push(...coverIssues);
 
   if (issues.length) throw new ValidationFailure(issues);
   return {
@@ -315,6 +325,7 @@ export function parseChallengeInput(input: unknown, now: Date): ChallengeInput {
     teamMinSize: uniqueAllows.includes("team") ? teamMinSize : null,
     teamMaxSize: uniqueAllows.includes("team") ? teamMaxSize : null,
     submissionClosesAt: submissionClosesAt as string,
+    ...cover,
   };
 }
 
