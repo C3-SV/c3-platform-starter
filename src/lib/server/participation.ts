@@ -17,7 +17,7 @@ import { recordAudit } from "./audit.ts";
 import { requireAdmin, type Actor } from "./auth.ts";
 import { CHALLENGES, EXPERIENCES, loadChallenge, loadExperience, windowOf } from "./catalog.ts";
 import { HttpError, notFound } from "./errors.ts";
-import { resultForSubmission } from "./evaluation.ts";
+import { EVALUATIONS, resultForSubmission } from "./evaluation.ts";
 import {
   ENROLLMENTS,
   PARTICIPATIONS,
@@ -95,6 +95,8 @@ export interface DeliveryView {
   team: TeamSummary | null;
   eligible: boolean;
   canEdit: boolean;
+  /** Un jurado ya evaluó la entrega enviada: su texto y sus enlaces quedaron fijos (AGENTS §5). */
+  evaluada: boolean;
   state: DeliveryState;
   submission: SubmissionView | null;
   /** Estado de la evaluación para la persona: pendiente hasta el cierre, en revisión mientras evalúa el jurado, publicado cuando C3 publica. */
@@ -330,9 +332,10 @@ export async function listMyEnrollments(db: Firestore, actor: Actor, now: Date):
     if (context.eligible && context.submissionId) {
       const submissionSnapshot = await db.collection(SUBMISSIONS).doc(context.submissionId).get();
       const submission = toSubmission(submissionSnapshot.data());
+      const evaluada = submission?.status === "submitted" && (await evaluatedSubmission(db, context.submissionId));
       delivery = {
         state: deliveryState(submission, challenge.submissionClosesAt, now),
-        canEdit: context.canEdit,
+        canEdit: context.canEdit && !evaluada,
         text: submission?.text ?? "",
         links: submission?.links ?? [],
         updatedAt: submission?.updatedAt ?? null,
@@ -484,6 +487,11 @@ export async function listEnrollmentsForExperience(db: Firestore, actor: Actor, 
   };
 }
 
+/** Una evaluación (borrador o finalizada) fija el texto y los enlaces de la entrega enviada (AGENTS §5). */
+async function evaluatedSubmission(db: Firestore, submissionId: string): Promise<boolean> {
+  return !(await db.collection(EVALUATIONS).where("submissionId", "==", submissionId).limit(1).get()).empty;
+}
+
 /** Vista de la entrega para la persona inscrita. Solo lee la entrega de su propio contexto. */
 export async function getDelivery(db: Firestore, actor: Actor, challengeId: string, now: Date): Promise<DeliveryView> {
   const challenge = await loadChallenge(db, challengeId);
@@ -497,6 +505,7 @@ export async function getDelivery(db: Firestore, actor: Actor, challengeId: stri
     ? await db.collection(SUBMISSIONS).doc(context.submissionId).get()
     : null;
   const submission = toSubmission(submissionSnapshot?.data());
+  const evaluada = submission?.status === "submitted" && context.submissionId ? await evaluatedSubmission(db, context.submissionId) : false;
   const result = context.eligible ? await resultForSubmission(db, challenge.id, context.submissionId) : null;
   const closed = challenge.submissionClosesAt !== null && now.getTime() >= Date.parse(challenge.submissionClosesAt);
   const evaluationState = result ? "publicado" : submission?.status === "submitted" && closed ? "en_revision" : "pendiente";
@@ -517,7 +526,8 @@ export async function getDelivery(db: Firestore, actor: Actor, challengeId: stri
     mode: enrollment ? (enrollment.mode === "team" ? "team" : "individual") : null,
     team: context.team,
     eligible: context.eligible,
-    canEdit: context.canEdit,
+    canEdit: context.canEdit && !evaluada,
+    evaluada,
     state: deliveryState(submission, challenge.submissionClosesAt, now),
     submission,
     evaluation: { state: evaluationState, result },
@@ -552,22 +562,33 @@ export async function saveDelivery(db: Firestore, actor: Actor, challengeId: str
     throw new HttpError(409, "plazo_cerrado", "El plazo de entregas ya cerró. La entrega queda como está.");
   }
 
-  const ref = db.collection(SUBMISSIONS).doc(context.submissionId);
-  const existing = (await ref.get()).data();
-  const alreadySubmitted = existing?.status === "submitted";
-  const status: "draft" | "submitted" = input.submit || alreadySubmitted ? "submitted" : "draft";
+  const submissionId = context.submissionId;
+  const ref = db.collection(SUBMISSIONS).doc(submissionId);
   const stamp = now.toISOString();
-  await ref.set({
-    participationId: ref.id,
-    challengeId: challenge.id,
-    userId: actor.uid,
-    mode: context.mode,
-    status,
-    text: input.text,
-    links: input.links,
-    createdAt: existing?.createdAt ?? stamp,
-    updatedAt: stamp,
-    submittedAt: status === "submitted" ? (existing?.submittedAt ?? stamp) : null,
+  // La lectura de la entrega y de sus evaluaciones va en la misma transacción que la escritura: una evaluación
+  // guardada a la vez hace reintentar esta escritura, que entonces ve la evaluación y se rechaza.
+  await db.runTransaction(async (transaction) => {
+    const existing = (await transaction.get(ref)).data();
+    const alreadySubmitted = existing?.status === "submitted";
+    if (alreadySubmitted) {
+      const evaluations = await transaction.get(db.collection(EVALUATIONS).where("submissionId", "==", submissionId).limit(1));
+      if (!evaluations.empty) {
+        throw new HttpError(409, "entrega_evaluada", "Un jurado ya evaluó esta entrega: el texto y los enlaces no pueden cambiar.");
+      }
+    }
+    const status: "draft" | "submitted" = input.submit || alreadySubmitted ? "submitted" : "draft";
+    transaction.set(ref, {
+      participationId: ref.id,
+      challengeId: challenge.id,
+      userId: actor.uid,
+      mode: context.mode,
+      status,
+      text: input.text,
+      links: input.links,
+      createdAt: existing?.createdAt ?? stamp,
+      updatedAt: stamp,
+      submittedAt: status === "submitted" ? (existing?.submittedAt ?? stamp) : null,
+    });
   });
   return getDelivery(db, actor, challengeId, now);
 }

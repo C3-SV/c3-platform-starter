@@ -3,7 +3,7 @@
  * entiende de un vistazo. Reglas PURAS: no consultan Firebase ni reemplazan la autorización del servidor.
  *
  * - atencion: algo que le toca hacer a la persona (entregar, armar el equipo, evaluar).
- * - espera: depende de C3 u de otro proceso (revisión de una inscripción, cierre de entregas).
+ * - espera: depende de C3 u de otro proceso (revisión de una inscripción, llegada de soluciones).
  * - en_curso: participación activa sin nada urgente (entrega enviada, entrega a cargo de la líder, lugar confirmado).
  * - finalizada: ya terminó (resultado, plazo cerrado, inscripción rechazada o cancelada).
  */
@@ -17,7 +17,7 @@ export const GROUP_ORDER: readonly ParticipationGroup[] = ["atencion", "espera",
 
 export const GROUP_COPY: Record<ParticipationGroup, { title: string; short: string; description: string }> = {
   atencion: { title: "Requiere tu atención", short: "Atención", description: "Lo que te toca hacer a vos." },
-  espera: { title: "En espera", short: "En espera", description: "Esperan una respuesta de C3 o el cierre de las entregas." },
+  espera: { title: "En espera", short: "En espera", description: "Esperan una respuesta de C3 o que lleguen soluciones." },
   en_curso: { title: "En curso", short: "En curso", description: "Participaciones activas, sin nada urgente por ahora." },
   finalizada: { title: "Finalizadas", short: "Finalizadas", description: "Participaciones e inscripciones que ya terminaron." },
 };
@@ -37,7 +37,7 @@ export type EnrollmentReason =
   | "rechazada"
   | "cancelada";
 
-export type AssignmentReason = "evaluar" | "esperando_cierre" | "completa" | "sin_soluciones";
+export type AssignmentReason = "evaluar" | "esperando_soluciones" | "completa" | "sin_soluciones" | "no_disponible" | "al_dia";
 
 /** Lo mínimo que se necesita saber de una inscripción; MyEnrollmentView lo cumple tal cual. */
 export interface EnrollmentFacts {
@@ -53,7 +53,10 @@ export interface EnrollmentFacts {
 
 /** Lo mínimo que se necesita saber de un challenge asignado como jurado. */
 export interface AssignmentFacts {
+  /** El challenge está publicado: el jurado puede evaluar. */
   canEvaluate: boolean;
+  /** Las entregas siguen abiertas: todavía pueden llegar o cambiar soluciones. */
+  entregasAbiertas: boolean;
   solutions: number;
   finalized: number;
 }
@@ -93,9 +96,18 @@ export function classifyEnrollment(item: EnrollmentFacts, now: Date): { group: P
 }
 
 export function classifyAssignment(item: AssignmentFacts): { group: ParticipationGroup; reason: AssignmentReason } {
-  if (!item.canEvaluate) return { group: "espera", reason: "esperando_cierre" };
-  if (item.solutions === 0) return { group: "finalizada", reason: "sin_soluciones" };
-  if (item.finalized >= item.solutions) return { group: "finalizada", reason: "completa" };
+  if (!item.canEvaluate) return { group: "finalizada", reason: "no_disponible" };
+  if (item.solutions === 0) {
+    return item.entregasAbiertas
+      ? { group: "espera", reason: "esperando_soluciones" }
+      : { group: "finalizada", reason: "sin_soluciones" };
+  }
+  if (item.finalized >= item.solutions) {
+    // Con entregas abiertas puede llegar otra solución: está al día, pero no completa.
+    return item.entregasAbiertas
+      ? { group: "en_curso", reason: "al_dia" }
+      : { group: "finalizada", reason: "completa" };
+  }
   return { group: "atencion", reason: "evaluar" };
 }
 
@@ -121,9 +133,11 @@ export function enrollmentReasonState(reason: EnrollmentReason, item: Pick<Enrol
 export function assignmentReasonState(reason: AssignmentReason): PresentedState {
   switch (reason) {
     case "evaluar": return { label: "Disponible", tone: "info" };
-    case "esperando_cierre": return { label: "Esperando el cierre", tone: "neutro" };
+    case "esperando_soluciones": return { label: "Esperando soluciones", tone: "neutro" };
     case "completa": return { label: "Completa", tone: "exito" };
     case "sin_soluciones": return { label: "Sin soluciones", tone: "neutro" };
+    case "no_disponible": return { label: "No disponible", tone: "neutro" };
+    case "al_dia": return { label: "Al día por ahora", tone: "exito" };
   }
 }
 

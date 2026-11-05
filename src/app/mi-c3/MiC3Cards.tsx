@@ -80,7 +80,7 @@ function enrollmentContent(item: MyEnrollmentView, reason: EnrollmentReason): Ca
     case "entregada":
       return {
         ...base,
-        text: `Tu entrega quedó registrada${item.delivery?.submittedAt ? ` el ${formatDate(item.delivery.submittedAt)}` : ""}. Se evalúa cuando cierra el plazo.`,
+        text: `Tu entrega quedó registrada${item.delivery?.submittedAt ? ` el ${formatDate(item.delivery.submittedAt)}` : ""}.`,
         primary: action(miRetoHref, "Ver mi entrega"),
       };
     case "entrega_del_equipo":
@@ -125,12 +125,16 @@ function assignmentContent(item: Assignment, reason: AssignmentReason): CardCont
       return {
         ...base,
         headline: "Hay soluciones por evaluar.",
-        text: `${pending} de ${item.solutions} ${item.solutions === 1 ? "solución" : "soluciones"} sin finalizar. Evaluás sin ver quién entregó.`,
+        text: `${pending} de ${item.solutions} ${item.solutions === 1 ? "solución" : "soluciones"} sin finalizar. Evaluás con la rúbrica; los comentarios son internos.${item.entregasAbiertas ? " Las entregas siguen abiertas: pueden llegar más soluciones." : ""}`,
         primary: { href, label: "Evaluar" },
         secondary: null,
       };
-    case "esperando_cierre":
-      return { ...base, text: "Las evaluaciones se habilitan cuando cierra el plazo de entregas.", primary: null, secondary: { href, label: "Ver detalle" } };
+    case "esperando_soluciones":
+      return { ...base, text: "Todavía no llegaron soluciones. Cuando se envíen, podrás evaluarlas.", primary: null, secondary: { href, label: "Ver detalle" } };
+    case "no_disponible":
+      return { ...base, text: "Este challenge no está disponible para evaluar.", primary: null, secondary: { href, label: "Ver detalle" } };
+    case "al_dia":
+      return { ...base, text: `Finalizaste las ${item.solutions} ${item.solutions === 1 ? "evaluación" : "evaluaciones"} de las soluciones enviadas hasta ahora. Pueden llegar más.`, primary: null, secondary: { href, label: "Ver evaluaciones" } };
     case "completa":
       return { ...base, text: `Finalizaste las ${item.solutions} ${item.solutions === 1 ? "evaluación" : "evaluaciones"} de este challenge.`, primary: null, secondary: { href, label: "Ver evaluaciones" } };
     case "sin_soluciones":

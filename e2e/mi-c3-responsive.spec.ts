@@ -339,7 +339,7 @@ test.describe.serial("Mi C3 responsive", () => {
     }
   });
 
-  test("jurado: el challenge asignado aparece como espera hasta el cierre y como acción cuando hay que evaluar", async ({ browser, page }) => {
+  test("jurado: el challenge asignado aparece en espera sin soluciones y como acción cuando hay soluciones por evaluar", async ({ browser, page }) => {
     await withAdmin(browser, async (admin) => {
       await openAdminSection(admin, "Jurados y rúbricas");
       await admin.locator("#jur-reto").selectOption({ label: alfa.challenge });
@@ -349,25 +349,27 @@ test.describe.serial("Mi C3 responsive", () => {
       await expect(admin.getByRole("status").filter({ hasText: "Jurado asignado" })).toBeVisible();
     });
 
+    // Las entregas reales de alfa cambian durante este archivo (otras pruebas envían entregas): la respuesta de la consulta de jurado se fija aquí.
+    let assignment = { challengeId: alfaId, title: alfa.challenge, kind: "externo", canEvaluate: true, entregasAbiertas: true, solutions: 0, finalized: 0 };
+    await page.route("**/api/evaluaciones", (route) =>
+      route.fulfill({ contentType: "application/json", body: JSON.stringify({ assignments: [assignment] }) }),
+    );
+
     await loginAt(page, jurado.email, password, "/mi-c3");
     await openMiC3(page, { width: 1280, height: 800 });
     await expect(page.getByRole("heading", { level: 2, name: "En espera" })).toBeVisible();
     await expect(page.getByText("Como jurado", { exact: true })).toBeVisible();
-    await expect(page.getByText("Esperando el cierre", { exact: true })).toBeVisible();
+    await expect(page.getByText("Esperando soluciones", { exact: true })).toBeVisible();
 
-    // El cierre de entregas no se puede adelantar en el navegador: se simula solo la respuesta de la consulta de jurado.
-    await page.route("**/api/evaluaciones", (route) =>
-      route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({ assignments: [{ challengeId: alfaId, title: alfa.challenge, kind: "externo", canEvaluate: true, solutions: 3, finalized: 1 }] }),
-      }),
-    );
+    // Con soluciones enviadas, el jurado ya puede evaluar aunque las entregas sigan abiertas.
+    assignment = { ...assignment, solutions: 3, finalized: 1 };
     for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
       await openMiC3(page, viewport);
       await expect(page.getByRole("heading", { level: 2, name: "Requiere tu atención" })).toBeVisible();
       await expect(page.locator(".c3-mi-c3__resumen-texto")).toContainText("Tenés 1 acción que requiere tu atención.");
       const card = page.getByRole("article").filter({ hasText: alfa.challenge });
       await expect(card.getByText("2 de 3 soluciones sin finalizar")).toBeVisible();
+      await expect(card.getByText("Las entregas siguen abiertas")).toBeVisible();
       await expect(card.getByRole("link", { name: "Evaluar", exact: true })).toHaveAttribute("href", `/mi-c3/evaluar/${alfaId}`);
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
     }

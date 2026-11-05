@@ -67,7 +67,7 @@ export function JuradosPanel({ challenges }: { challenges: ChallengeOption[] }) 
     try {
       await apiRequest(`/api/admin/retos/${challengeId}/jurados`, { method: "POST", body: { email, kind } });
       setEmail("");
-      setNotice("Jurado asignado. Podrá evaluar cuando cierren las entregas.");
+      setNotice("Jurado asignado. Ya puede evaluar las soluciones del challenge.");
       setJudges(await fetchJudges(challengeId));
     } catch (error) {
       if (error instanceof ApiError) {
@@ -104,7 +104,7 @@ export function JuradosPanel({ challenges }: { challenges: ChallengeOption[] }) 
     <>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Jurados y rúbricas</h1>
-        <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>Asigná jurados por correo. Solo ven las soluciones de sus challenges, y solo después del cierre de entregas.</p>
+        <p style={{ fontSize: 16, color: "var(--c3-texto-suave)" }}>Asigná jurados por correo. Solo ven las soluciones de sus challenges publicados, y pueden evaluar aunque las entregas sigan abiertas. Los resultados se publican después del cierre.</p>
       </div>
 
       <label htmlFor="jur-reto" className="c3-etiqueta-campo">Challenge</label>

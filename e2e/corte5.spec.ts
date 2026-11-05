@@ -3,10 +3,9 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./constants";
 import { expectSignedIn, openAdminSection } from "./helpers";
 
 /**
- * Corte 5 en el navegador: C3 asigna un jurado por correo, el jurado ve que debe esperar el cierre de entregas,
+ * Corte 5 en el navegador: C3 asigna un jurado por correo, el jurado ve el challenge en espera de soluciones,
  * la publicación queda bloqueada sin soluciones, y C3 revoca el acceso. La evaluación completa, el promedio y la
- * publicación con ganadores se prueban en el emulador con reloj controlado (tests/emulator/evaluation.test.ts),
- * porque en el navegador el cierre de entregas no puede adelantarse.
+ * publicación con ganadores se prueban en el emulador con reloj controlado (tests/emulator/evaluation.test.ts).
  */
 const BASE = "http://localhost:3100";
 const stamp = Date.now().toString(36);
@@ -99,15 +98,15 @@ test.describe.serial("Corte 5: jurados y resultados", () => {
     });
   });
 
-  test("el jurado ve el challenge en Mi C3 y que debe esperar el cierre de entregas", async ({ page }) => {
+  test("el jurado ve el challenge en Mi C3 en espera de soluciones, con las entregas abiertas", async ({ page }) => {
     await loginAt(page, jurado.email, jurado.password, "/mi-c3");
     await expect(page.getByText("Como jurado", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "En espera" })).toBeVisible();
     await expect(page.getByText(challengeTitle)).toBeVisible();
-    await expect(page.getByText("Esperando el cierre", { exact: true })).toBeVisible();
+    await expect(page.getByText("Esperando soluciones", { exact: true })).toBeVisible();
 
     await page.getByRole("link", { name: "Ver detalle", exact: true }).click();
-    await expect(page.getByText("Esperá el cierre de entregas")).toBeVisible();
+    await expect(page.getByText("Las entregas siguen abiertas")).toBeVisible();
     await expect(page.getByText("Todavía no hay soluciones enviadas para este challenge.")).toBeVisible();
   });
 
