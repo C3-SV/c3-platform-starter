@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { C3BrandMark } from "@/components/BrandMark";
-import { loginHref } from "@/lib/domain/navigation";
+import { FooterAccountLinks } from "@/components/FooterAccountLinks";
 
 /** Site footer: brand and founding date, then links to participate, for companies and for the account. */
 export function Footer() {
@@ -32,10 +32,7 @@ export function Footer() {
           </nav>
           <nav aria-label="Tu cuenta">
             <h2>Tu cuenta</h2>
-            <ul>
-              <li><Link href={loginHref()}>Iniciar sesión</Link></li>
-              <li><Link href={loginHref({ mode: "registro" })}>Crear cuenta</Link></li>
-            </ul>
+            <FooterAccountLinks />
           </nav>
         </div>
         <div className="c3-footer__base">

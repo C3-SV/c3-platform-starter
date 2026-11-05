@@ -107,6 +107,7 @@ export default async function ExperienciaPage({ params }: { params: Promise<{ ex
                       <li key={challenge.id}>
                         <span>
                           <Link href={`/retos/${challenge.id}`}>{challenge.title}</Link>
+                          <span className="c3-record-list__summary">{challenge.summary}</span>
                           <small>{challenge.organizationName} · {modalityLabel(challenge.allows, challenge.teamMinSize, challenge.teamMaxSize)}</small>
                         </span>
                         <StatePill state={challenge.state} />

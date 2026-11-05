@@ -115,7 +115,9 @@ test.describe.serial("Corte 1: primer challenge", () => {
 
   test("la recuperación de contraseña figura como próximamente y no envía correos desde la demo", async ({ page }) => {
     await page.goto("/acceso");
-    await expect(page.getByText("Recuperar contraseña: próximamente")).toBeVisible();
+    const recovery = page.locator(".c3-auth__soon");
+    await expect(recovery).toContainText("Recuperar contraseña");
+    await expect(recovery).toContainText("Próximamente");
     await expect(page.locator("#rec-correo")).toHaveCount(0);
   });
 

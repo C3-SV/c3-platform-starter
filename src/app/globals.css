@@ -252,6 +252,18 @@ p {
   font-size: var(--c3-cuerpo-size);
 }
 
+/* Own chevron so the arrow keeps the same inset from the edge in every browser. */
+select.c3-campo {
+  appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23536178' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+}
+
+select.c3-campo:disabled { opacity: 0.6; }
+
 textarea.c3-campo {
   padding: 10px 14px;
   min-height: 96px;
@@ -1396,6 +1408,7 @@ textarea.c3-campo {
   justify-content: center;
   border-radius: var(--c3-radius-pill);
   background: var(--c3-conecta);
+  color: var(--c3-texto-inverso);
   font-family: var(--c3-font-titulo);
   font-size: 13px;
   font-weight: 700;
@@ -3245,6 +3258,9 @@ textarea.c3-campo {
   -webkit-box-orient: vertical;
 }
 
+.c3-exp__note { font-size: 12px; line-height: 1.45; color: var(--c3-advertencia); }
+.c3-exp__source { font-size: 12px; color: var(--c3-texto-suave); }
+
 .c3-exp__detail {
   display: inline-flex;
   align-items: center;
@@ -4169,6 +4185,14 @@ textarea.c3-campo {
   text-decoration: underline;
 }
 
+.c3-record-list__summary {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c3-texto-suave);
+}
+
 .c3-record-list small {
   display: block;
   margin-top: 2px;
@@ -4343,9 +4367,10 @@ textarea.c3-campo {
     display: inline-flex;
   }
 
+  /* 63 px plus the 1 px bottom border keeps the whole mobile header at 64 px. */
   .c3-site-header__row {
     justify-content: space-between;
-    height: 64px;
+    height: 63px;
   }
 
   .c3-hero__grid,

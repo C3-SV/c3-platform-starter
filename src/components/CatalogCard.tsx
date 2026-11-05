@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { StatePill } from "@/components/StatePill";
-import { LINE_NAME, type PresentedState } from "@/lib/domain/presentation";
+import type { PresentedState } from "@/lib/domain/presentation";
 import type { ExperienceKind, ExperienceLine } from "@/lib/domain/types";
 
 /** Serializable data for one catalog card, built on the server from the public catalog. */
@@ -9,12 +9,17 @@ export interface CatalogCardData {
   href: string;
   kind: ExperienceKind;
   line: ExperienceLine;
+  /** "Compite · Taller" in the catalog, just the line name on a line page. */
+  label: string;
   state: PresentedState;
   title: string;
   summary: string;
   footer: string;
   detail: string | null;
   demo: boolean;
+  demoNote: string | null;
+  /** Source credit ("Fuente: …"), shown on line pages. */
+  source: string | null;
   isChallenge: boolean;
 }
 
@@ -46,11 +51,12 @@ export function CatalogCard({ card }: { card: CatalogCardData }) {
       </div>
       <div className="c3-exp__body">
         <div className="c3-exp__meta">
-          <span className="c3-exp__line"><span className={`c3-dot c3-dot--${card.line}`} aria-hidden="true" />{LINE_NAME[card.line]}</span>
+          <span className="c3-exp__line"><span className={`c3-dot c3-dot--${card.line}`} aria-hidden="true" />{card.label}</span>
           <StatePill state={card.state} />
         </div>
         <h3>{card.title}</h3>
         <p className="c3-exp__summary">{card.summary}</p>
+        {card.demoNote ? <p className="c3-exp__note">{card.demoNote}</p> : null}
         {card.detail ? (
           <span className="c3-exp__detail">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -60,6 +66,7 @@ export function CatalogCard({ card }: { card: CatalogCardData }) {
             {card.detail}
           </span>
         ) : null}
+        {card.source ? <span className="c3-exp__source">Fuente: {card.source}</span> : null}
         <div className="c3-exp__footer">
           <span>{card.footer}</span>
           <span className="c3-exp__go">{card.isChallenge ? "Ver challenge" : "Ver experiencia"} <span aria-hidden="true">↗</span></span>

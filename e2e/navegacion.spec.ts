@@ -128,7 +128,7 @@ test.describe("Referencias básicas de cada página", () => {
   test("el llamado a empresas del challenge lleva a Proponer, sin «Próximamente»", async ({ page }) => {
     await page.goto(`/retos/${challenge.challengeId}`);
     await expect(page.getByText("Próximamente")).toHaveCount(0);
-    await page.getByRole("link", { name: "Proponer un challenge", exact: true }).click();
+    await page.getByRole("main").getByRole("link", { name: "Proponer un challenge", exact: true }).click();
     await expect(page).toHaveURL(/\/empresa\/proponer$/);
   });
 });

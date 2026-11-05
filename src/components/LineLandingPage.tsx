@@ -24,8 +24,8 @@ export async function LineLandingPage({ line }: { line: ExperienceLine }) {
   const content = LINE_LANDING[line];
   const catalog = await listPublicCatalog(database(), new Date());
   const items = catalog.filter((item) => experienceLinesOf(item.experience).includes(line));
-  const active = catalogCards(items.filter((item) => item.experience.status !== "closed" && item.experience.status !== "cancelled"));
-  const historical = catalogCards(items.filter((item) => item.experience.status === "closed"));
+  const active = catalogCards(items.filter((item) => item.experience.status !== "closed" && item.experience.status !== "cancelled"), { pageLine: line });
+  const historical = catalogCards(items.filter((item) => item.experience.status === "closed"), { pageLine: line });
   const accent = {
     "--c3-line-accent": lineColorOf(line),
     "--c3-line-text": lineTextColorOf(line),
