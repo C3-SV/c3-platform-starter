@@ -10,7 +10,7 @@
 | Participación | Se registra, se inscribe, recibe estado real, participa y entrega según reglas | Joven, equipo; acceso, inscripción, Mi C3, entrega |
 | Empresa | Presenta una necesidad y, si C3 la vincula, ve únicamente challenges y resultados autorizados | Propuesta pública, representante, espacio de empresa |
 | Operación C3 | Admin crea y publica experiencias/retos, revisa inscripciones, asigna jurados y publica resultados | Admin, permisos, trazabilidad |
-| Evaluación | Jurados autorizados evalúan anónimamente tras cierre y resultados se publican solo con dos evaluaciones | Jurado, representante habilitado, C3 |
+| Evaluación | Jurados autorizados evalúan tras cierre (con nombres desde el cierre, decisión del 5-nov-2026) y resultados se publican solo con dos evaluaciones | Jurado, representante habilitado, C3 |
 | Evidencia | Trayectoria muestra hechos de participación y resultados publicados, separados del perfil editable | Participante, C3 |
 
 ## Prioridad de trabajo

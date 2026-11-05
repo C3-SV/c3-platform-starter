@@ -189,7 +189,11 @@ export async function myAssignments(db: Firestore, actor: Actor, now: Date) {
   }));
 }
 
-/** Espacio de evaluación: soluciones anónimas del challenge, rúbrica y mis evaluaciones. Solo jurados asignados. */
+/**
+ * Espacio de evaluación: soluciones del challenge, rúbrica y mis evaluaciones. Solo jurados asignados.
+ * Antes del cierre, el jurado ve solo «Solución N» sin contenido ni nombre; después, el nombre de la persona o del equipo.
+ * Nunca se devuelve el uid de quien entregó.
+ */
 export async function evaluationWorkspace(db: Firestore, actor: Actor, challengeId: string, now: Date) {
   const challenge = await loadChallenge(db, challengeId);
   if (challenge.status !== "published") throw notFound();
@@ -197,6 +201,7 @@ export async function evaluationWorkspace(db: Firestore, actor: Actor, challenge
   if (!assignment) throw new HttpError(403, "sin_asignacion", "No tenés asignado este challenge como jurado.");
   const canEvaluate = challenge.submissionClosesAt !== null && now.getTime() >= Date.parse(challenge.submissionClosesAt);
   const solutions = await submittedSubmissions(db, challengeId);
+  const names = canEvaluate ? await Promise.all(solutions.map((solution) => nameOf(db, solution))) : solutions.map(() => null);
   const mine = await db.collection(EVALUATIONS).where("challengeId", "==", challengeId).where("judgeUserId", "==", actor.uid).get();
   const byId = new Map(mine.docs.map((doc) => [doc.data().submissionId as string, doc.data()]));
   return {
@@ -210,6 +215,8 @@ export async function evaluationWorkspace(db: Firestore, actor: Actor, challenge
         // Alias estable: el id real de la solución lleva el uid de quien la entregó.
         id: solutionAlias(index),
         label: `Solución ${index + 1}`,
+        // Nombre real (persona o equipo) solo después del cierre, con el mismo criterio que el contenido.
+        name: names[index],
         // Hasta el cierre de entregas el jurado no ve el contenido de las soluciones.
         text: canEvaluate ? solution.text : null,
         links: canEvaluate ? solution.links : [],

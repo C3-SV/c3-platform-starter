@@ -31,6 +31,11 @@ function statusOf(solution: Solution): SolutionStatus {
   return solution.mine.status === "finalized" ? "finalized" : "draft";
 }
 
+/** Nombre de quien entregó (persona o equipo), disponible después del cierre; antes, la etiqueta «Solución N». */
+function tituloDe(solution: Solution): string {
+  return solution.name ?? solution.label;
+}
+
 /**
  * Total parcial mientras se escribe: solo cuenta los puntajes válidos (enteros dentro de su máximo).
  * El servidor vuelve a calcularlo al guardar; esto es solo una ayuda visual.
@@ -54,7 +59,7 @@ function formatNumber(value: number): string {
 /**
  * Espacio de evaluación para jurados asignados: rúbrica, borrador y finalización. Antes del cierre, solo lectura.
  * Es la única pantalla de evaluación (jurado externo o representante de la empresa): `/mi-c3/evaluar/[id]`.
- * Las soluciones se muestran anónimas («Solución 1»…); no se muestra quién las entregó.
+ * Antes del cierre las soluciones aparecen como «Solución 1»…; después del cierre, con el nombre de la persona o del equipo.
  */
 export function EvaluadorPanel({ challengeId }: { challengeId: string }) {
   return (
@@ -132,7 +137,7 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
         delete next[solution.id];
         return next;
       });
-      setNotice(finalize ? `${solution.label}: evaluación finalizada. Ya no se puede cambiar.` : `${solution.label}: borrador guardado.`);
+      setNotice(finalize ? `${tituloDe(solution)}: evaluación finalizada. Ya no se puede cambiar.` : `${tituloDe(solution)}: borrador guardado.`);
       await reload();
     } catch (error) {
       if (error instanceof ApiError) {
@@ -180,7 +185,7 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
         <span className="c3-eyebrow">Evaluación · {kindLabel}</span>
         <h1 className="c3-titulo">{workspace.challenge.title}</h1>
         <p className="c3-evaluacion__resumen">
-          Cada solución se evalúa con la rúbrica, sin ver quién la entregó. Los comentarios son internos: solo los ve C3.
+          Cada solución se evalúa con la rúbrica. Los comentarios son internos: solo los ve C3.
         </p>
         <dl className="c3-evaluacion__cifras" aria-label="Resumen de la evaluación">
           <div className="c3-evaluacion__cifra">
@@ -240,7 +245,7 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
               <ol>
                 {workspace.solutions.map((solution) => (
                   <li key={solution.id}>
-                    <a href={`#solucion-${solution.id}`}>{solution.label}</a>
+                    <a href={`#solucion-${solution.id}`}>{tituloDe(solution)}</a>
                     <StatePill state={SOLUTION_STATE[statusOf(solution)]} />
                   </li>
                 ))}
@@ -269,7 +274,10 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
                 >
                   <div className="c3-evaluacion__contenido">
                     <div className="c3-evaluacion__cabecera">
-                      <h2 id={titleId} className="c3-evaluacion__titulo">{solution.label}</h2>
+                      <div className="c3-evaluacion__identidad">
+                        {solution.name ? <p className="c3-evaluacion__ordinal">{solution.label}</p> : null}
+                        <h2 id={titleId} className="c3-evaluacion__titulo">{tituloDe(solution)}</h2>
+                      </div>
                       <StatePill state={SOLUTION_STATE[status]} />
                     </div>
                     {pending ? (
@@ -278,7 +286,7 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
                       <p className="c3-evaluacion__texto">{solution.text}</p>
                     )}
                     {!pending && solution.links.length > 0 ? (
-                      <ul className="c3-evaluacion__enlaces" aria-label={`Enlaces de ${solution.label}`}>
+                      <ul className="c3-evaluacion__enlaces" aria-label={`Enlaces de ${tituloDe(solution)}`}>
                         {solution.links.map((link) => (
                           <li key={link}>
                             <a href={link} target="_blank" rel="noopener noreferrer">{link}</a>
@@ -347,7 +355,7 @@ function EvaluadorContenido({ challengeId }: { challengeId: string }) {
                         {status === "finalized" ? `Finalizada. Total: ${solution.mine?.total} de ${workspace.maxTotal}.` : "Esperá el cierre de entregas para evaluar."}
                       </span>
                     ) : confirming === solution.id ? (
-                      <div className="c3-evaluacion__confirmar" role="group" aria-label={`Confirmar la finalización de ${solution.label}`}>
+                      <div className="c3-evaluacion__confirmar" role="group" aria-label={`Confirmar la finalización de ${tituloDe(solution)}`}>
                         <p>
                           <strong>¿Finalizás esta evaluación?</strong> Después no podés cambiar los puntajes ni el comentario.
                         </p>

@@ -1012,6 +1012,25 @@ textarea.c3-campo {
   flex-wrap: wrap;
 }
 
+.c3-evaluacion__identidad {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.c3-evaluacion__identidad .c3-evaluacion__titulo {
+  overflow-wrap: anywhere;
+}
+
+.c3-evaluacion__ordinal {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c3-texto-suave);
+}
+
 .c3-evaluacion__texto {
   margin: 0;
   font-size: 15px;
