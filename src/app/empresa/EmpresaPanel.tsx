@@ -72,7 +72,7 @@ function EmpresaContenido() {
     return (
       <Pagina>
         <div className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 12 }}>
-          <h1 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tu cuenta todavía no está vinculada a una organización</h1>
+          <h1 className="c3-titulo c3-empresa__subtitulo">Tu cuenta todavía no está vinculada a una organización</h1>
           <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>C3 revisa tu solicitud y te vincula cuando corresponda. Mientras tanto, podés proponer un problema.</p>
           <Link href="/empresa/proponer" className="c3-btn c3-btn--primario" style={{ alignSelf: "flex-start" }}>Proponer un challenge</Link>
         </div>
@@ -87,48 +87,46 @@ function EmpresaContenido() {
 
   return (
     <Pagina>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 20, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>Conecta · Para empresas</span>
-          <h1 className="c3-titulo" style={{ fontSize: 40, lineHeight: 1.1, fontWeight: 700 }}>{current.name}</h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>
+      <header className="c3-empresa__cabecera">
+        <div className="c3-empresa__identidad">
+          <span className="c3-eyebrow">Conecta · Para empresas</span>
+          <h1 className="c3-titulo c3-empresa__titulo">{current.name}</h1>
+          <div className="c3-empresa__meta">
+            <span>
               Representás a {organizations.length} {organizations.length === 1 ? "organización" : "organizaciones"}.
             </span>
             {organizations.length > 1 ? (
               <>
                 <label htmlFor="org" className="c3-visualmente-oculto">Organización activa</label>
-                <select id="org" value={current.id} onChange={(event) => setActiveId(event.target.value)} className="c3-campo" style={{ width: "auto", minHeight: 40 }}>
+                <select id="org" value={current.id} onChange={(event) => setActiveId(event.target.value)} className="c3-campo c3-empresa__selector">
                   {organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
                 </select>
               </>
             ) : null}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div className="c3-actions">
           {challenges.some((challenge) => challenge.submissions.length > 0) ? (
             <a href="#tus-challenges" className="c3-btn c3-btn--contorno">Ver entregas</a>
           ) : null}
           <Link href="/empresa/proponer" className="c3-btn c3-btn--primario">Proponer un challenge</Link>
         </div>
-      </div>
+      </header>
 
-      <nav aria-label="Secciones del espacio de empresa" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <a href="#tus-challenges" className="c3-btn c3-btn--contorno" style={{ minHeight: 40, padding: "0 16px" }}>Resumen</a>
+      <nav aria-label="Secciones del espacio de empresa" className="c3-empresa__secciones">
+        <a href="#tus-challenges" className="c3-btn c3-btn--contorno c3-empresa__seccion">Resumen</a>
         <button
           type="button"
-          className="c3-btn c3-btn--contorno"
-          style={{ minHeight: 40, padding: "0 16px" }}
+          className="c3-btn c3-btn--contorno c3-empresa__seccion"
           disabled={!challenges.some((challenge) => challenge.submissions.length > 0)}
           onClick={() => setTalentoId(challenges.find((challenge) => challenge.submissions.length > 0)?.id ?? null)}
         >
           Talento
         </button>
-        <a href="#tus-propuestas" className="c3-btn c3-btn--contorno" style={{ minHeight: 40, padding: "0 16px" }}>Propuestas</a>
+        <a href="#tus-propuestas" className="c3-btn c3-btn--contorno c3-empresa__seccion">Propuestas</a>
         <button
           type="button"
-          className="c3-btn c3-btn--contorno"
-          style={{ minHeight: 40, padding: "0 16px" }}
+          className="c3-btn c3-btn--contorno c3-empresa__seccion"
           disabled={challenges.length === 0}
           onClick={() => {
             setTalentoId(null);
@@ -140,7 +138,7 @@ function EmpresaContenido() {
       </nav>
 
       <section id="tus-challenges" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tus challenges</h2>
+        <h2 className="c3-titulo c3-empresa__subtitulo">Tus challenges</h2>
         {challenges.length === 0 ? (
           <div style={{ background: "var(--c3-superficie)", border: "1px dashed var(--c3-borde-fuerte)", borderRadius: 12, padding: 24, display: "flex", flexDirection: "column", gap: 10 }}>
             <span style={{ fontSize: 16, fontWeight: 500 }}>Todavía no tenés challenges publicados</span>
@@ -222,7 +220,7 @@ function EmpresaContenido() {
       {talentoId ? (
         <section id="talento-seccion" style={{ display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: 16 }} aria-labelledby="talento-titulo">
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <h2 id="talento-titulo" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Resultados y talento</h2>
+            <h2 id="talento-titulo" className="c3-titulo c3-empresa__subtitulo">Resultados y talento</h2>
             <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
               {challenges.find((item) => item.id === talentoId)?.title}. Compará entregable, proceso y defensa. Agregá a la lista corta a quienes destacan y pedí contacto: la persona decide si acepta.
             </p>
@@ -234,7 +232,7 @@ function EmpresaContenido() {
       {configId ? (
         <section id="configuracion-seccion" style={{ display: "flex", flexDirection: "column", gap: 16, scrollMarginTop: 16 }} aria-labelledby="configuracion-titulo">
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <h2 id="configuracion-titulo" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Configuración del challenge</h2>
+            <h2 id="configuracion-titulo" className="c3-titulo c3-empresa__subtitulo">Configuración del challenge</h2>
             <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
               {challenges.find((item) => item.id === configId)?.title}. La editan quien representa a la empresa y C3, mientras el challenge está publicado y antes del cierre de entregas.
             </p>
@@ -244,7 +242,7 @@ function EmpresaContenido() {
       ) : null}
 
       <section id="tus-propuestas" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Tus propuestas</h2>
+        <h2 className="c3-titulo c3-empresa__subtitulo">Tus propuestas</h2>
         {proposals.length === 0 ? (
           <div className="c3-card" style={{ padding: 24 }}>
             <p style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Todavía no hay propuestas vinculadas a esta organización.</p>
@@ -280,7 +278,7 @@ function Pagina({ children }: { children: ReactNode }) {
 function Como() {
   return (
     <section className="c3-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24 }}>
-      <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Cómo funciona</h2>
+      <h2 className="c3-titulo c3-empresa__subtitulo">Cómo funciona</h2>
       <div className="c3-dos-columnas-cuatro" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 24 }}>
         {[
           ["Proponés la necesidad", "Con tus palabras, sin brief perfecto."],
@@ -289,7 +287,7 @@ function Como() {
           ["Evaluás y C3 publica", "Resultado oficial sobre la misma rúbrica."],
         ].map(([title, text], index) => (
           <div key={title} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 999, background: "var(--c3-conecta)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600 }}>{index + 1}</div>
+            <div className="c3-empresa__paso-numero" aria-hidden="true">{index + 1}</div>
             <span style={{ fontSize: 16, fontWeight: 600 }}>{title}</span>
             <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>{text}</span>
           </div>

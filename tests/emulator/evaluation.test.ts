@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createChallenge, createExperience, setChallengeStatus, setExperienceStatus } from "../../src/lib/server/catalog.ts";
 import { getCapabilities } from "../../src/lib/server/capabilities.ts";
 import { createOrganization, linkRepresentative } from "../../src/lib/server/companies.ts";
+import { USERS } from "../../src/lib/server/ids.ts";
 import { HttpError } from "../../src/lib/server/errors.ts";
 import { ValidationFailure } from "../../src/lib/domain/validation.ts";
 import { enrollInChallenge, getDelivery, reviewEnrollment, saveDelivery } from "../../src/lib/server/participation.ts";
@@ -71,7 +72,8 @@ async function scenario() {
   const challenge = await createChallenge(db, admin, challengeInput(experience.id), now);
   await setExperienceStatus(db, admin, experience.id, { status: "published" }, now);
   await setChallengeStatus(db, admin, challenge.id, { status: "published" }, now);
-  for (const person of [joven, otra]) {
+  for (const [person, displayName] of [[joven, "Ana Martínez"], [otra, "Luis Herrera"]] as const) {
+    await db.collection(USERS).doc(person.uid).set({ displayName }, { merge: true });
     const enrollment = await enrollInChallenge(db, person, challenge.id, "individual", now);
     await reviewEnrollment(db, admin, enrollment.id, "approved", now);
     await saveDelivery(db, person, challenge.id, delivery, duringDeadline);
@@ -107,11 +109,13 @@ test("una persona sin asignación no ve el espacio de evaluación; antes del cie
   assert.equal(beforeClose.canEvaluate, false);
   const [solution] = beforeClose.solutions;
   assert.equal(solution.text, null, "antes del cierre el jurado no ve el contenido de la solución");
+  assert.deepEqual(beforeClose.solutions.map((item) => item.name), [null, null], "antes del cierre tampoco ve el nombre");
+  assert.equal(JSON.stringify(beforeClose).includes("Ana Martínez"), false);
   assert.deepEqual(solution.links, []);
   await assert.rejects(saveEvaluation(db, juez1, challengeId, solution.id, { scores: { c1: 5, c2: 5 } }, duringDeadline), expectHttp(409, "entregas_abiertas"));
 });
 
-test("después del cierre el jurado ve soluciones anónimas, guarda borradores y finaliza una sola vez", async () => {
+test("después del cierre el jurado ve las soluciones con nombre, guarda borradores y finaliza una sola vez", async () => {
   const { db, challengeId } = await scenario();
   const auth = testAuth();
   await createAuthUser(juez1.email, juez1.uid);
@@ -119,7 +123,8 @@ test("después del cierre el jurado ve soluciones anónimas, guarda borradores y
   const workspace = await evaluationWorkspace(db, juez1, challengeId, afterDeadline);
   assert.equal(workspace.canEvaluate, true);
   assert.deepEqual(workspace.solutions.map((item) => item.label), ["Solución 1", "Solución 2"]);
-  assert.equal(JSON.stringify(workspace).includes(joven.uid), false, "la evaluación no muestra quién entregó");
+  assert.deepEqual([...workspace.solutions.map((item) => item.name)].sort(), ["Ana Martínez", "Luis Herrera"], "después del cierre se ven los nombres");
+  assert.equal(JSON.stringify(workspace).includes(joven.uid), false, "la evaluación no muestra el uid de quien entregó");
   assert.deepEqual(workspace.solutions.map((item) => item.id), ["s1", "s2"]);
 
   const [first, second] = workspace.solutions;
