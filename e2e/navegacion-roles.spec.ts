@@ -164,7 +164,7 @@ test.describe("Un solo marco para toda la app", () => {
     await page.getByRole("main").getByRole("link", { name: "Entrar", exact: true }).click();
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/mi-c3/retos/${challenge.challengeId}$`));
   });
 });
@@ -180,15 +180,19 @@ test.describe("Cabecera pública", () => {
     for (const nombre of ["Explorar", "Compite", "Crea", "Conecta", "Para empresas"]) {
       await expect(principal.getByRole("link", { name: nombre, exact: true })).toBeVisible();
     }
-    await expect(principal.getByText("Líneas", { exact: true })).toBeVisible();
+    await expect(principal.getByText("Conoce C3", { exact: true })).toBeVisible();
   });
 
-  test("en escritorio la navegación va en línea, sin «Inicio»", async ({ page }, testInfo) => {
+  test("en escritorio la navegación va en línea, sin «Inicio», con las líneas en «Conoce C3»", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "escritorio", "La navegación en línea se comprueba en escritorio.");
     await page.goto("/explorar");
     const principal = page.getByRole("navigation", { name: "Principal" });
-    await expect(principal.getByRole("link")).toHaveText(["Explorar", "Compite", "Crea", "Conecta", "Para empresas"]);
+    await expect(principal.getByRole("link")).toHaveText(["Explorar", "Para empresas"]);
     await expect(principal.getByRole("link", { name: "Inicio" })).toHaveCount(0);
+    await principal.getByRole("button", { name: "Conoce C3", exact: true }).click();
+    for (const nombre of ["Compite", "Crea", "Conecta"]) {
+      await expect(principal.getByRole("link", { name: nombre, exact: true })).toBeVisible();
+    }
   });
 });
 

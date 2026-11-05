@@ -19,7 +19,7 @@ async function loginAt(page: Page, email: string, password: string, next: string
   await page.goto(`/acceso?next=${encodeURIComponent(next)}`);
   await page.locator("#l-correo").fill(email);
   await page.locator("#l-pass").fill(password);
-  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
   await expectSignedIn(page);
 }
 

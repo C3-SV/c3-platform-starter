@@ -18,6 +18,7 @@
 | D8 | **«Challenge»** es el término oficial | §7 |
 | D9 | **Perfiles públicos** compartibles por enlace, opt-in, protegiendo datos privados | §8 |
 | D10 | `dev` integra y valida; `main` se promueve desde `dev` | [AGENTS §8](../AGENTS.md) |
+| D11 | **Rediseño visual** (4-nov-2026): acción violeta, cabecera blanca con «Conoce C3» (Compite · Crea · Conecta) y textos con «tú». Sin aviso global de entorno de demostración: lo inventado se marca DEMO en cada elemento | §2 |
 
 ## 2. Zonas y marcos
 
@@ -25,11 +26,12 @@
 
 | Zona | Componente | Rutas | Navegación |
 | --- | --- | --- | --- |
-| **Sitio** (público) | `SiteShell` + `SiteHeader` + `Footer` | `/`, `/explorar`, `/compite`, `/crea`, `/conecta`, `/retos/[id]`, `/experiencias/[id]`, `/empresa/proponer`, `/personas/[slug]`, `/acceso`, 404 | Logo (inicio) · Explorar · Compite · Crea · Conecta · Para empresas · Entrar / Crear cuenta, o el menú de la cuenta |
+| **Sitio** (público) | `SiteShell` + `SiteHeader` + `Footer` | `/`, `/explorar`, `/compite`, `/crea`, `/conecta`, `/retos/[id]`, `/experiencias/[id]`, `/empresa/proponer`, `/personas/[slug]`, `/acceso`, 404 | Logo (inicio) · Explorar · Conoce C3 (Compite · Crea · Conecta) · Para empresas · Iniciar sesión / Crear cuenta, o el menú de la cuenta |
 | **App** (autenticada) | `AppShell` | `/mi-c3`, `/mi-c3/retos/[id]`, `/mi-c3/evaluar/[id]`, `/trayectoria`, `/cuenta`, `/empresa`, `/retos/[id]/inscripcion`, `/experiencias/[id]/inscripcion` | ≥ 1024 px: cabecera con Mi C3 · Explorar · Trayectoria (+ Mi empresa, Admin si corresponde) y menú de la cuenta. < 1024 px: barra superior mínima y tab bar de cuatro: Mi C3 · Explorar · Trayectoria · Cuenta |
 | **Consola** (admin) | `AdminFrame` | `/admin/[seccion]` | Logo · Admin › sección · Ver sitio · Mi C3 · menú de la cuenta; menú lateral con contadores (< 1024 px se pliega) |
 
-- **Cabecera pública en móvil:** una fila (~60 px) con logo, «Entrar» y «Menú»; el panel agrupa Compite · Crea · Conecta.
+- **Cabecera pública en móvil:** una fila (~64 px) con logo, «Iniciar sesión» y «Menú»; el panel agrupa Compite · Crea · Conecta bajo «Conoce C3».
+- **Acceso:** iniciar sesión (`/acceso`) y crear cuenta (`/acceso?modo=registro`) son pantallas separadas que se enlazan entre sí y conservan `next`.
 - **Menú de la cuenta** (igual en las tres zonas): Mi C3 · Trayectoria · Cuenta · *Espacio de empresa* (si hay vínculo) · *Administración* (si es admin) · Salir.
 - **Ancho:** fluido hasta `--c3-ancho-pagina` (1440 px). Entrega, inscripción y evaluación usan dos columnas desde 1024 px y una en móvil.
 - «Inicio» no es un ítem: el logo lleva a `/`.
@@ -52,13 +54,13 @@ Una cuenta puede participar, evaluar, representar una organización y administra
 | Regla | Comportamiento |
 | --- | --- |
 | Destino tras acceso | `next` si es una ruta interna; si no, **`/mi-c3`**. `safeNext` rechaza direcciones externas, `//`, `\`, controles, rutas largas y la propia pantalla de acceso |
-| «Entrar» / «Crear cuenta» | Añaden `next=<ruta actual>`; las pantallas privadas sin sesión (`RequiereSesion`) también |
+| «Iniciar sesión» / «Crear cuenta» | Añaden `next=<ruta actual>`; las pantallas privadas sin sesión (`RequiereSesion`) también |
 | «Salir» | Cierra la sesión y vuelve a `/` |
 | «Volver» | Migas (`Migas`) en pantallas de dos o más niveles |
 | Sin permiso o sin sesión | Mensaje con una acción («Entrar», «Ir a Mi C3») dentro del marco que corresponde; nunca datos |
 | Título de pestaña | «Mi C3 · C3 Platform»; el detalle lleva el nombre; Admin, «Propuestas · Admin · C3 Platform» |
 | Accesibilidad básica | Un `<main id="contenido">` por página y enlace «Saltar al contenido». No sustituye una auditoría con lector de pantalla |
-| 404 | Con cabecera y pie del sitio; con sesión, ofrece «Ir a Mi C3» |
+| 404 | Con cabecera y pie del sitio; ofrece «Explorar experiencias» y, con sesión, «Ir a Mi C3» (sin sesión, «Volver al inicio») |
 
 ## 5. Mapa de rutas
 
@@ -92,7 +94,7 @@ Toda ruta o pantalla nueva se registra aquí con rol, tarea, entrada, salida, me
 - **Challenge** es el término oficial en interfaz, mensajes y documentos (D8). «Reto» no se usa en textos visibles.
 - Las **direcciones e identificadores técnicos no cambian** (`/retos/[id]`, `/api/retos/…`, `challengeId`, colecciones, claves de estado): cambiarlos rompería enlaces sin beneficio.
 - «Para empresas» es el menú público hacia `/empresa/proponer`; «Espacio de empresa» / «Mi empresa» es el área privada de la representante. Cuenta se rotula «Mi cuenta».
-- La demo usa voseo y marca los datos inventados **DEMO**.
+- La interfaz usa «tú» (D11) y marca los datos inventados **DEMO**.
 
 ## 8. Perfil público (D9)
 

@@ -25,14 +25,14 @@ test.describe("Después de entrar", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
-  test("«Entrar» de la cabecera recuerda la página donde estaba la persona", async ({ page }) => {
+  test("«Iniciar sesión» de la cabecera recuerda la página donde estaba la persona", async ({ page }) => {
     const persona = await createAccount("desde-cabecera");
     await page.goto(`/retos/${challenge.challengeId}`);
-    await page.getByRole("banner").getByRole("link", { name: "Entrar", exact: true }).click();
+    await page.getByRole("banner").getByRole("link", { name: "Iniciar sesión", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/acceso\\?next=${encodeURIComponent(`/retos/${challenge.challengeId}`)}`));
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/retos/${challenge.challengeId}$`));
     await expect(page.getByRole("heading", { level: 1, name: challenge.title })).toBeVisible();
   });
@@ -42,7 +42,7 @@ test.describe("Después de entrar", () => {
     await page.goto(`/acceso?next=${encodeURIComponent("https://example.org/robo")}`);
     await page.locator("#l-correo").fill(persona.email);
     await page.locator("#l-pass").fill(persona.password);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expect(page).toHaveURL(/\/mi-c3$/);
   });
 });
@@ -54,7 +54,7 @@ test.describe("El enlace de un jurado invitado", () => {
     await page.getByRole("main").getByRole("link", { name: "Entrar", exact: true }).click();
     await page.locator("#l-correo").fill(jurado.email);
     await page.locator("#l-pass").fill(jurado.password);
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/mi-c3/evaluar/${challenge.challengeId}$`));
     await expect(page.getByRole("heading", { level: 1, name: challenge.title })).toBeVisible();
     await expect(page.getByText("No encontramos esta página")).toHaveCount(0);
@@ -128,7 +128,7 @@ test.describe("Referencias básicas de cada página", () => {
   test("el llamado a empresas del challenge lleva a Proponer, sin «Próximamente»", async ({ page }) => {
     await page.goto(`/retos/${challenge.challengeId}`);
     await expect(page.getByText("Próximamente")).toHaveCount(0);
-    await page.getByRole("link", { name: "Proponer un challenge", exact: true }).click();
+    await page.getByRole("main").getByRole("link", { name: "Proponer un challenge", exact: true }).click();
     await expect(page).toHaveURL(/\/empresa\/proponer$/);
   });
 });

@@ -1,33 +1,34 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useSession } from "@/lib/auth/AuthProvider";
 import { getClientAuth } from "@/lib/firebase/client";
 import { apiRequest, ApiError } from "@/lib/client/api";
-import { safeNext } from "@/lib/domain/navigation";
+import { loginHref, safeNext } from "@/lib/domain/navigation";
 
 const LOGIN_ERRORS: Record<string, string> = {
-  "auth/invalid-credential": "El correo o la contraseña no coinciden. Revisalos e intentá de nuevo.",
-  "auth/wrong-password": "El correo o la contraseña no coinciden. Revisalos e intentá de nuevo.",
-  "auth/user-not-found": "El correo o la contraseña no coinciden. Revisalos e intentá de nuevo.",
-  "auth/invalid-email": "Revisá el formato del correo.",
-  "auth/user-disabled": "Esta cuenta está deshabilitada. Escribinos para revisarla.",
-  "auth/too-many-requests": "Hubo demasiados intentos. Esperá unos minutos antes de volver a intentar.",
-  "auth/network-request-failed": "No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.",
+  "auth/invalid-credential": "El correo o la contraseña no coinciden. Revísalos e intenta de nuevo.",
+  "auth/wrong-password": "El correo o la contraseña no coinciden. Revísalos e intenta de nuevo.",
+  "auth/user-not-found": "El correo o la contraseña no coinciden. Revísalos e intenta de nuevo.",
+  "auth/invalid-email": "Revisa el formato del correo.",
+  "auth/user-disabled": "Esta cuenta está deshabilitada. Escríbenos para revisarla.",
+  "auth/too-many-requests": "Hubo demasiados intentos. Espera unos minutos antes de volver a intentar.",
+  "auth/network-request-failed": "No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.",
 };
 
 const REGISTER_ERRORS: Record<string, string> = {
-  "auth/email-already-in-use": "Ya existe una cuenta con ese correo. Entrá con tu contraseña.",
-  "auth/invalid-email": "Revisá el formato del correo.",
+  "auth/email-already-in-use": "Ya existe una cuenta con ese correo. Inicia sesión con tu contraseña.",
+  "auth/invalid-email": "Revisa el formato del correo.",
   "auth/weak-password": "La contraseña debe tener al menos 8 caracteres.",
-  "auth/network-request-failed": "No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.",
+  "auth/network-request-failed": "No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.",
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** La recuperación por correo no está disponible en la demo: el update pide que no se envíen correos desde ella. Se activa con un buzón controlado. */
+/** Password recovery is off in the demo: no emails may be sent from it. It turns on once a controlled mailbox exists. */
 const PASSWORD_RECOVERY_ENABLED = false;
 
 function errorCode(error: unknown): string {
@@ -81,16 +82,16 @@ export function AccesoPanel() {
     event.preventDefault();
     setLoginError(null);
     if (!EMAIL_PATTERN.test(loginEmail.trim())) {
-      setLoginError("Revisá el formato del correo.");
+      setLoginError("Revisa el formato del correo.");
       return;
     }
     setLoginBusy(true);
     try {
       await signInWithEmailAndPassword(getClientAuth(), loginEmail.trim(), loginPassword);
-      // El perfil se crea al pedir las capacidades de la sesión (/api/me): no retrasa la entrada.
+      // The profile is created when the session asks for its capabilities (/api/me); it never delays sign in.
       router.replace(next);
     } catch (error) {
-      setLoginError(LOGIN_ERRORS[errorCode(error)] ?? "No pudimos iniciar sesión. Intentá de nuevo en unos minutos.");
+      setLoginError(LOGIN_ERRORS[errorCode(error)] ?? "No pudimos iniciar sesión. Intenta de nuevo en unos minutos.");
       setLoginBusy(false);
     }
   }
@@ -99,10 +100,10 @@ export function AccesoPanel() {
     event.preventDefault();
     setRegisterError(null);
     const issues: Record<string, string> = {};
-    if (name.trim().length < 3) issues.name = "Escribí tu nombre completo (al menos 3 caracteres).";
-    if (!EMAIL_PATTERN.test(registerEmail.trim())) issues.email = "Revisá el formato del correo.";
+    if (name.trim().length < 3) issues.name = "Escribe tu nombre completo (al menos 3 caracteres).";
+    if (!EMAIL_PATTERN.test(registerEmail.trim())) issues.email = "Revisa el formato del correo.";
     if (registerPassword.length < 8) issues.password = "La contraseña debe tener al menos 8 caracteres.";
-    if (!terms) issues.terms = "Para crear la cuenta tenés que aceptar los términos.";
+    if (!terms) issues.terms = "Para crear la cuenta tienes que aceptar los términos.";
     setRegisterIssues(issues);
     if (Object.keys(issues).length) return;
 
@@ -113,13 +114,13 @@ export function AccesoPanel() {
       try {
         await apiRequest("/api/me", { method: "PUT", body: { displayName: name.trim() } });
       } catch {
-        setRegisterError("Tu cuenta se creó, pero no pudimos guardar tu nombre. Entrá de nuevo para completarlo.");
+        setRegisterError("Tu cuenta se creó, pero no pudimos guardar tu nombre. Inicia sesión de nuevo para completarlo.");
         setRegisterBusy(false);
         return;
       }
       router.replace(next);
     } catch (error) {
-      setRegisterError(REGISTER_ERRORS[errorCode(error)] ?? (error instanceof ApiError ? error.message : "No pudimos crear la cuenta. Intentá de nuevo."));
+      setRegisterError(REGISTER_ERRORS[errorCode(error)] ?? (error instanceof ApiError ? error.message : "No pudimos crear la cuenta. Intenta de nuevo."));
       setRegisterBusy(false);
     }
   }
@@ -129,7 +130,7 @@ export function AccesoPanel() {
     setRecoverError(null);
     setRecoverMessage(null);
     if (!EMAIL_PATTERN.test(recoverEmail.trim())) {
-      setRecoverError("Escribí el correo de tu cuenta para enviarte el enlace.");
+      setRecoverError("Escribe el correo de tu cuenta para enviarte el enlace.");
       return;
     }
     setRecoverBusy(true);
@@ -138,9 +139,9 @@ export function AccesoPanel() {
       setRecoverMessage("Si el correo está registrado, te enviamos un enlace para cambiar la contraseña.");
     } catch (error) {
       if (errorCode(error) === "auth/network-request-failed") {
-        setRecoverError("No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.");
+        setRecoverError("No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.");
       } else if (errorCode(error) === "auth/invalid-email") {
-        setRecoverError("Revisá el formato del correo.");
+        setRecoverError("Revisa el formato del correo.");
       } else {
         setRecoverMessage("Si el correo está registrado, te enviamos un enlace para cambiar la contraseña.");
       }
@@ -149,65 +150,18 @@ export function AccesoPanel() {
     }
   }
 
-  return (
-    <>
-      {params.get("next") ? (
-        <div style={{ background: "var(--c3-superficie-sutil)", borderRadius: 12, padding: "20px 24px", display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 14, fontWeight: 600 }}>Entrá o creá tu cuenta para continuar</span>
-          <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Al terminar volvés directo a donde estabas.</span>
+  const switchHref = registerFirst ? loginHref({ next: params.get("next") }) : loginHref({ mode: "registro", next: params.get("next") });
+
+  if (registerFirst) {
+    return (
+      <>
+        <div className="c3-auth__head">
+          <span className="c3-eyebrow">Tu cuenta C3</span>
+          <h1>Crea tu cuenta</h1>
+          <p>Solo pedimos lo mínimo. Tu perfil lo completas después.</p>
         </div>
-      ) : null}
 
-      <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
-        <section className="c3-card" style={{ flex: "1 1 400px", minWidth: 0, padding: 32, display: "flex", flexDirection: "column", gap: 20 }} aria-labelledby="titulo-entrar">
-          <h1 id="titulo-entrar" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Entrar</h1>
-
-          {loginError ? (
-            <div className="c3-alerta c3-alerta--error" role="alert">
-              <strong>No pudimos iniciar sesión</strong>
-              <span style={{ fontSize: 14, lineHeight: 1.5 }}>{loginError}</span>
-            </div>
-          ) : null}
-
-          <form onSubmit={handleLogin} noValidate style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label htmlFor="l-correo" className="c3-etiqueta-campo">Correo</label>
-              <input id="l-correo" className="c3-campo" type="email" autoComplete="email" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label htmlFor="l-pass" className="c3-etiqueta-campo">Contraseña</label>
-              <input id="l-pass" className={`c3-campo${loginError ? " c3-campo--error" : ""}`} type="password" autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <button type="submit" className="c3-btn c3-btn--primario" disabled={loginBusy} style={{ padding: "0 24px" }}>
-                {loginBusy ? "Entrando…" : "Entrar"}
-              </button>
-              {PASSWORD_RECOVERY_ENABLED ? (
-                <a href="#recuperar" style={{ fontSize: 14, fontWeight: 500 }}>Olvidé mi contraseña</a>
-              ) : (
-                <span style={{ fontSize: 14, color: "var(--c3-texto-suave)" }}>Recuperar contraseña: próximamente</span>
-              )}
-            </div>
-          </form>
-
-          {PASSWORD_RECOVERY_ENABLED ? (
-          <form id="recuperar" onSubmit={handleRecover} noValidate style={{ display: "flex", flexDirection: "column", gap: 12, borderTop: "1px solid var(--c3-borde)", paddingTop: 20 }}>
-            <span className="c3-etiqueta" style={{ color: "var(--c3-texto-suave)" }}>Recuperar contraseña</span>
-            <label htmlFor="rec-correo" className="c3-etiqueta-campo">Correo de tu cuenta</label>
-            <input id="rec-correo" className="c3-campo" type="email" autoComplete="email" value={recoverEmail} onChange={(event) => setRecoverEmail(event.target.value)} />
-            {recoverError ? <p className="c3-error-campo" role="alert">{recoverError}</p> : null}
-            {recoverMessage ? <p role="status" style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-exito)" }}>{recoverMessage}</p> : null}
-            <button type="submit" className="c3-btn c3-btn--contorno" disabled={recoverBusy}>
-              {recoverBusy ? "Enviando…" : "Enviar enlace"}
-            </button>
-          </form>
-          ) : null}
-        </section>
-
-        <section className="c3-card" style={{ flex: "1 1 400px", minWidth: 0, padding: 32, display: "flex", flexDirection: "column", gap: 20 }} aria-labelledby="titulo-crear">
-          <h2 id="titulo-crear" className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Crear cuenta</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>Solo pedimos lo mínimo. Tu perfil lo completás después.</p>
-
+        <section className="c3-block" aria-label="Crear cuenta">
           {registerError ? (
             <div className="c3-alerta c3-alerta--error" role="alert">
               <strong>No pudimos crear la cuenta</strong>
@@ -215,26 +169,26 @@ export function AccesoPanel() {
             </div>
           ) : null}
 
-          <form onSubmit={handleRegister} noValidate style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <form onSubmit={handleRegister} noValidate className="c3-form">
+            <div className="c3-field-group">
               <label htmlFor="r-nombre" className="c3-etiqueta-campo">Nombre completo</label>
               <input ref={nameRef} id="r-nombre" className={`c3-campo${registerIssues.name ? " c3-campo--error" : ""}`} type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} aria-invalid={Boolean(registerIssues.name)} aria-describedby={registerIssues.name ? "e-nombre" : undefined} />
               {registerIssues.name ? <span id="e-nombre" className="c3-error-campo">{registerIssues.name}</span> : null}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div className="c3-field-group">
               <label htmlFor="r-correo" className="c3-etiqueta-campo">Correo</label>
               <input id="r-correo" className={`c3-campo${registerIssues.email ? " c3-campo--error" : ""}`} type="email" autoComplete="email" value={registerEmail} onChange={(event) => setRegisterEmail(event.target.value)} aria-invalid={Boolean(registerIssues.email)} aria-describedby={registerIssues.email ? "e-correo" : undefined} />
               {registerIssues.email ? <span id="e-correo" className="c3-error-campo">{registerIssues.email}</span> : null}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div className="c3-field-group">
               <label htmlFor="r-pass" className="c3-etiqueta-campo">Contraseña</label>
               <input id="r-pass" className={`c3-campo${registerIssues.password ? " c3-campo--error" : ""}`} type="password" autoComplete="new-password" value={registerPassword} onChange={(event) => setRegisterPassword(event.target.value)} aria-invalid={Boolean(registerIssues.password)} aria-describedby={registerIssues.password ? "e-pass" : "ayuda-pass"} />
               {registerIssues.password ? <span id="e-pass" className="c3-error-campo">{registerIssues.password}</span> : <span id="ayuda-pass" className="c3-ayuda">Mínimo 8 caracteres.</span>}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ display: "flex", alignItems: "flex-start", gap: 12, fontSize: 14, lineHeight: 1.5 }}>
-                <input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} style={{ width: 20, height: 20, accentColor: "var(--c3-accion)", marginTop: 2, flexShrink: 0 }} aria-invalid={Boolean(registerIssues.terms)} />
+            <div className="c3-field-group">
+              <label className="c3-checkbox">
+                <input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} aria-invalid={Boolean(registerIssues.terms)} />
                 <span>Acepto los términos y la política de privacidad de C3.</span>
               </label>
               {registerIssues.terms ? <span className="c3-error-campo">{registerIssues.terms}</span> : <span className="c3-ayuda">Los textos legales se publican antes del piloto.</span>}
@@ -245,14 +199,72 @@ export function AccesoPanel() {
             </button>
           </form>
         </section>
+
+        <p className="c3-auth__switch">¿Ya tienes cuenta? <Link href={switchHref}>Inicia sesión</Link></p>
+
+        <div className="c3-auth__company">
+          <span className="c3-dot c3-dot--conecta" aria-hidden="true" />
+          <div>
+            <b>¿Representas a una empresa?</b>
+            <span>Usas esta misma cuenta. C3 te vincula a tu organización después de revisar tu solicitud; no se hace creando otro tipo de cuenta.</span>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="c3-auth__head">
+        <span className="c3-eyebrow">Tu cuenta C3</span>
+        <h1>Inicia sesión</h1>
+        <p>Entra para seguir tus inscripciones, tus entregas y tu trayectoria.</p>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 760 }}>
-        <span className="c3-etiqueta" style={{ color: "var(--c3-conecta)" }}>¿Representás a una empresa?</span>
-        <span style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-texto-suave)" }}>
-          Usás esta misma cuenta. C3 te vincula a tu organización después de revisar tu solicitud; no se hace creando otro tipo de cuenta.
-        </span>
-      </div>
+      <section className="c3-block" aria-label="Iniciar sesión">
+        {loginError ? (
+          <div className="c3-alerta c3-alerta--error" role="alert">
+            <strong>No pudimos iniciar sesión</strong>
+            <span style={{ fontSize: 14, lineHeight: 1.5 }}>{loginError}</span>
+          </div>
+        ) : null}
+
+        <form onSubmit={handleLogin} noValidate className="c3-form">
+          <div className="c3-field-group">
+            <label htmlFor="l-correo" className="c3-etiqueta-campo">Correo</label>
+            <input id="l-correo" className="c3-campo" type="email" autoComplete="email" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} />
+          </div>
+          <div className="c3-field-group">
+            <label htmlFor="l-pass" className="c3-etiqueta-campo">Contraseña</label>
+            <input id="l-pass" className={`c3-campo${loginError ? " c3-campo--error" : ""}`} type="password" autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} />
+          </div>
+          <button type="submit" className="c3-btn c3-btn--primario" disabled={loginBusy}>
+            {loginBusy ? "Iniciando sesión…" : "Iniciar sesión"}
+          </button>
+          {PASSWORD_RECOVERY_ENABLED ? (
+            <a href="#recuperar" className="c3-auth__soon">Olvidé mi contraseña</a>
+          ) : (
+            <p className="c3-auth__soon">Recuperar contraseña <span className="c3-pill c3-pill--neutro">Próximamente</span></p>
+          )}
+        </form>
+
+        {PASSWORD_RECOVERY_ENABLED ? (
+          <form id="recuperar" onSubmit={handleRecover} noValidate className="c3-form" style={{ borderTop: "1px solid var(--c3-borde)", paddingTop: 20 }}>
+            <span className="c3-eyebrow">Recuperar contraseña</span>
+            <div className="c3-field-group">
+              <label htmlFor="rec-correo" className="c3-etiqueta-campo">Correo de tu cuenta</label>
+              <input id="rec-correo" className="c3-campo" type="email" autoComplete="email" value={recoverEmail} onChange={(event) => setRecoverEmail(event.target.value)} />
+            </div>
+            {recoverError ? <p className="c3-error-campo" role="alert">{recoverError}</p> : null}
+            {recoverMessage ? <p role="status" style={{ fontSize: 14, lineHeight: 1.5, color: "var(--c3-exito)" }}>{recoverMessage}</p> : null}
+            <button type="submit" className="c3-btn c3-btn--contorno" disabled={recoverBusy}>
+              {recoverBusy ? "Enviando…" : "Enviar enlace"}
+            </button>
+          </form>
+        ) : null}
+      </section>
+
+      <p className="c3-auth__switch">¿Todavía no tienes cuenta? <Link href={switchHref}>Crear cuenta</Link></p>
     </>
   );
 }

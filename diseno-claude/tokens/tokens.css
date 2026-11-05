@@ -1,18 +1,18 @@
 /* C3 · tokens de diseño. Generado desde tokens.json (sistema de marca C3). */
 /* Tema claro por defecto; oscuro con data-theme="oscuro". */
 :root {
-  --c3-fondo: #f2f6fb;
+  --c3-fondo: #ffffff;
   --c3-superficie: #ffffff;
-  --c3-superficie-sutil: #eaf0f8;
+  --c3-superficie-sutil: #f6f8fb;
   --c3-texto: #0f203e;
-  --c3-texto-suave: #475569;
+  --c3-texto-suave: #536178;
   --c3-texto-inverso: #ffffff;
-  --c3-borde: #d9e1ec;
+  --c3-borde: #dce3ed;
   --c3-borde-fuerte: #7c8ba0;
-  --c3-accion: #205298;
-  --c3-accion-intensa: #19406f;
-  --c3-enlace: #205298;
-  --c3-foco: #2c62b0;
+  --c3-accion: #6548c7;
+  --c3-accion-intensa: #5236b0;
+  --c3-enlace: #6548c7;
+  --c3-foco: #6548c7;
   --c3-navy: #0f203e;
   --c3-compite: #205298;
   --c3-crea: #33beac;
@@ -86,10 +86,10 @@
   --c3-texto-inverso: #eaf0f8;
   --c3-borde: #2c3f63;
   --c3-borde-fuerte: #4a5f85;
-  --c3-accion: #2c62b0;
-  --c3-accion-intensa: #3f74c2;
-  --c3-enlace: #7fb0ea;
-  --c3-foco: #7fb0ea;
+  --c3-accion: #7a5fd6;
+  --c3-accion-intensa: #8f78e0;
+  --c3-enlace: #b9a8f0;
+  --c3-foco: #b9a8f0;
   --c3-crea-texto: #4fd6c4;
   --c3-exito: #4fd99e;
   --c3-advertencia: #e8b15c;

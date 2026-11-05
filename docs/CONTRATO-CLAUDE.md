@@ -7,6 +7,7 @@ Claude Code y Codex pueden contribuir al **mismo repositorio y sistema visual**.
 - `diseno-claude/` aporta HTML de referencia V01–V12, `fuente-canvas/` y tokens `--c3-*`. Son referencias visuales; no sustituyen las rutas, permisos ni reglas de negocio vigentes.
 - `src/app/globals.css`, `src/components/` y rutas de `src/app/` contienen la implementación real que se debe revisar antes de proponer componentes.
 - [PRODUCTO-Y-NAVEGACION](PRODUCTO-Y-NAVEGACION.md) fija preguntas y evidencia necesarias para cambios de arquitectura de información; [README](../README.md) contiene rutas actuales.
+- **Rediseño de noviembre de 2026 (D11):** la referencia vigente son los canvas del responsable (páginas públicas, participante y empresa). Los tokens cambiaron en `diseno-claude/tokens/`: `--c3-accion`, `--c3-enlace` y `--c3-foco` pasan a violeta (`#6548c7`) y los neutros a `--c3-fondo` `#ffffff`, `--c3-superficie-sutil` `#f6f8fb`, `--c3-texto-suave` `#536178` y `--c3-borde` `#dce3ed`; los colores de las líneas no cambian. Los tintes y sombras que el manual no define están en `src/app/globals.css` (`--c3-action-tint`, `--c3-shadow-soft` y afines).
 
 ## Acuerdos de colaboración
 

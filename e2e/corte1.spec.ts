@@ -17,7 +17,7 @@ async function login(page: Page, email: string, password: string, next = "/") {
   await page.goto(`/acceso?next=${encodeURIComponent(next)}`);
   await page.locator("#l-correo").fill(email);
   await page.locator("#l-pass").fill(password);
-  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 }
 
 test.describe.serial("Corte 1: primer challenge", () => {
@@ -108,14 +108,16 @@ test.describe.serial("Corte 1: primer challenge", () => {
     await page.goto("/acceso");
     await page.locator("#l-correo").fill(joven.email);
     await page.locator("#l-pass").fill("contraseña-equivocada");
-    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
     await expect(page.getByRole("alert").filter({ hasText: "No pudimos iniciar sesión" })).toBeVisible();
     await expect(page.getByText("El correo o la contraseña no coinciden.")).toBeVisible();
   });
 
   test("la recuperación de contraseña figura como próximamente y no envía correos desde la demo", async ({ page }) => {
     await page.goto("/acceso");
-    await expect(page.getByText("Recuperar contraseña: próximamente")).toBeVisible();
+    const recovery = page.locator(".c3-auth__soon");
+    await expect(recovery).toContainText("Recuperar contraseña");
+    await expect(recovery).toContainText("Próximamente");
     await expect(page.locator("#rec-correo")).toHaveCount(0);
   });
 

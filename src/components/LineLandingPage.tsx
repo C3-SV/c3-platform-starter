@@ -1,93 +1,132 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { LineBrandMark } from "@/components/BrandMark";
-import { ExperienceCard } from "@/components/ExperienceCard";
+import { CatalogCard } from "@/components/CatalogCard";
 import { SiteShell } from "@/components/SiteShell";
+import { catalogCards } from "@/components/catalogCardData";
 import { LINE_LANDING } from "@/lib/content/lineLanding";
 import { experienceLinesOf } from "@/lib/domain/catalog";
+import { lineColorOf, lineTextColorOf } from "@/lib/domain/presentation";
 import type { ExperienceLine } from "@/lib/domain/types";
 import { database } from "@/lib/server/context";
 import { listPublicCatalog } from "@/lib/server/catalog";
 
 export const dynamic = "force-dynamic";
 
+const LINE_TINT: Record<ExperienceLine, string> = {
+  compite: "#f3f6fc",
+  crea: "#f1faf8",
+  conecta: "#f4f5fb",
+};
+
+/** Shared template for the Compite, Crea and Conecta pages; the accent follows the line. */
 export async function LineLandingPage({ line }: { line: ExperienceLine }) {
   const content = LINE_LANDING[line];
   const catalog = await listPublicCatalog(database(), new Date());
   const items = catalog.filter((item) => experienceLinesOf(item.experience).includes(line));
-  const active = items.filter((item) => item.experience.status !== "closed" && item.experience.status !== "cancelled");
-  const historical = items.filter((item) => item.experience.status === "closed");
-  const cards = (group: typeof items) => group.flatMap((item) => (
-    item.challenges.length > 0
-      ? item.challenges.map((challenge) => <ExperienceCard key={challenge.id} item={item} challenge={challenge} line={line} />)
-      : [<ExperienceCard key={item.experience.id} item={item} line={line} />]
-  ));
+  const active = catalogCards(items.filter((item) => item.experience.status !== "closed" && item.experience.status !== "cancelled"), { pageLine: line });
+  const historical = catalogCards(items.filter((item) => item.experience.status === "closed"), { pageLine: line });
+  const accent = {
+    "--c3-line-accent": lineColorOf(line),
+    "--c3-line-text": lineTextColorOf(line),
+    "--c3-line-tint": LINE_TINT[line],
+  } as CSSProperties;
 
   return (
     <SiteShell>
-      <main id="contenido">
-        <section className="c3-line-hero" style={{ "--c3-line-accent": content.accent } as CSSProperties}>
-          <div className="c3-container c3-line-hero__inner">
-            <div className="c3-line-hero__copy">
-              <span className="c3-etiqueta" style={{ color: content.accent }}>{content.eyebrow}</span>
-              <h1 className="c3-titulo" style={{ color: "#ffffff", fontSize: "clamp(40px, 8vw, 72px)", lineHeight: 1, fontWeight: 800 }}>{content.title}</h1>
-              <p style={{ maxWidth: 760, color: "var(--c3-texto-cabecera)", fontSize: 20, lineHeight: 1.55 }}>{content.intro}</p>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", paddingTop: 8 }}>
-                <Link href="/explorar" className="c3-btn" style={{ background: content.accent, color: "#ffffff" }}>{content.ctaLabel}</Link>
-                <Link href="#como-funciona" className="c3-btn c3-btn--contorno" style={{ background: "transparent", color: "#ffffff", borderColor: "#617595" }}>Conocer la línea</Link>
+      <main id="contenido" style={accent}>
+        <section className="c3-line-intro">
+          <div className="c3-frame c3-hero__grid">
+            <div className="c3-hero__text">
+              <span className="c3-etiqueta">{content.eyebrow}</span>
+              <h1><span className="c3-line-intro__dot" aria-hidden="true" />{content.title}</h1>
+              <p className="c3-lead">{content.intro}</p>
+              <div className="c3-actions">
+                <Link href={content.ctaHref} className="c3-btn c3-btn--primario">{content.ctaLabel} <span className="c3-arrow" aria-hidden="true">↗</span></Link>
+                <Link href="#como-funciona" className="c3-btn c3-btn--contorno">Conocer la línea</Link>
               </div>
             </div>
-            <div className="c3-line-hero__mark" aria-hidden="true">
-              <LineBrandMark line={line} decorative />
-              <span className="c3-line-hero__mark-label">{content.title}</span>
+            <div className="c3-orbit-visual" aria-hidden="true">
+              <div className="c3-orbit">
+                <span className="c3-orbit__ring c3-orbit__ring--outer" />
+                <span className="c3-orbit__ring c3-orbit__ring--inner" />
+                <span className="c3-orbit__spin c3-orbit__spin--outer">
+                  <span className="c3-orbit__satellite" />
+                  <span className="c3-orbit__satellite c3-orbit__satellite--bottom" />
+                </span>
+                <span className="c3-orbit__spin c3-orbit__spin--inner">
+                  <span className="c3-orbit__satellite c3-orbit__satellite--bottom" />
+                </span>
+                <div className="c3-orbit__mark"><LineBrandMark line={line} decorative eager /></div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section id="como-funciona" className="c3-page">
-          <div className="c3-container c3-dos-columnas" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 24 }}>
-            <article className="c3-card" style={{ padding: 28, borderTop: "6px solid " + content.accent }}>
-              <h2 className="c3-titulo" style={{ fontSize: 26, lineHeight: 1.2, fontWeight: 700 }}>{content.whatTitle}</h2>
-              <p style={{ marginTop: 14, fontSize: 16, lineHeight: 1.65, color: "var(--c3-texto-suave)" }}>{content.what}</p>
+        <section id="como-funciona" className="c3-soft-section">
+          <div className="c3-frame c3-two-cards">
+            <article className="c3-path-card">
+              <div className="c3-path-card__brand"><span className={`c3-dot c3-dot--${line}`} aria-hidden="true" /><span className="c3-etiqueta" style={{ color: "var(--c3-line-text)" }}>La línea</span></div>
+              <h2>{content.whatTitle}</h2>
+              <p>{content.what}</p>
             </article>
-            <article className="c3-card" style={{ padding: 28 }}>
-              <h2 className="c3-titulo" style={{ fontSize: 26, lineHeight: 1.2, fontWeight: 700 }}>{content.participateTitle}</h2>
-              <p style={{ marginTop: 14, fontSize: 16, lineHeight: 1.65, color: "var(--c3-texto-suave)" }}>{content.participate}</p>
+            <article className={`c3-path-card${line === "conecta" ? " c3-path-card--dark" : ""}`}>
+              <div className="c3-path-card__brand"><span className={`c3-dot c3-dot--${line}`} aria-hidden="true" /><span className="c3-etiqueta" style={line === "conecta" ? undefined : { color: "var(--c3-line-text)" }}>{line === "conecta" ? "Para organizaciones" : "Tu recorrido"}</span></div>
+              <h2>{content.participateTitle}</h2>
+              <p>{content.participate}</p>
+              {line === "conecta" ? (
+                <div className="c3-path-card__action"><Link href="/empresa/proponer" className="c3-btn c3-btn--blanco">Proponer un challenge</Link></div>
+              ) : null}
             </article>
           </div>
         </section>
 
-        <section className="c3-page" style={{ paddingTop: 8 }}>
-          <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            <div>
-              <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias destacadas</h2>
-              <p style={{ marginTop: 8, color: "var(--c3-texto-suave)" }}>Experiencias y challenges de {content.title} que podés explorar desde el catálogo compartido.</p>
+        <section className="c3-featured" aria-labelledby="titulo-convocatorias">
+          <div className="c3-frame">
+            <div className="c3-featured__head">
+              <div className="c3-section-head">
+                <span className="c3-eyebrow">Convocatorias de {content.title}</span>
+                <h2 id="titulo-convocatorias">Experiencias destacadas</h2>
+                <p>Experiencias y challenges de {content.title} que puedes explorar desde el catálogo compartido.</p>
+              </div>
+              <Link href="/explorar" className="c3-featured__all">Ver todo el catálogo <span aria-hidden="true">↗</span></Link>
             </div>
-            {active.length > 0 ? <div className="c3-grilla-tarjetas">{cards(active)}</div> : (
-              <div className="c3-card" style={{ padding: 24 }}><p style={{ color: "var(--c3-texto-suave)" }}>Todavía no hay convocatorias activas en esta línea.</p></div>
+            {active.length > 0 ? (
+              <div className="c3-featured__grid">{active.map((card) => <CatalogCard key={card.key} card={card} />)}</div>
+            ) : (
+              <p className="c3-empty-card">Todavía no hay convocatorias activas en esta línea.</p>
             )}
           </div>
         </section>
 
         {historical.length > 0 ? (
-          <section className="c3-page" style={{ paddingTop: 8 }}>
-            <div className="c3-container" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              <div>
-                <h2 className="c3-titulo" style={{ fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Experiencias pasadas</h2>
-                <p style={{ marginTop: 8, color: "var(--c3-texto-suave)" }}>Historia visible para aprender de lo que ya ocurrió. Las experiencias concluidas no aceptan nuevas inscripciones.</p>
+          <section className="c3-featured c3-featured--flush" aria-labelledby="titulo-pasadas">
+            <div className="c3-frame">
+              <div className="c3-featured__head">
+                <div className="c3-section-head">
+                  <span className="c3-eyebrow">Historia de {content.title}</span>
+                  <h2 id="titulo-pasadas">Experiencias pasadas</h2>
+                  <p>Historia visible para aprender de lo que ya ocurrió. Las experiencias concluidas no aceptan nuevas inscripciones.</p>
+                </div>
               </div>
-              <div className="c3-grilla-tarjetas">{cards(historical)}</div>
+              <div className="c3-featured__grid">{historical.map((card) => <CatalogCard key={card.key} card={card} />)}</div>
             </div>
           </section>
         ) : null}
 
-        <section style={{ background: content.accent, padding: "52px clamp(16px, 4vw, 48px)" }}>
-          <div className="c3-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-            <div style={{ maxWidth: 680, display: "flex", flexDirection: "column", gap: 10 }}>
-              <h2 className="c3-titulo" style={{ color: "#ffffff", fontSize: 30, lineHeight: 1.2, fontWeight: 700 }}>Encontrá tu próxima experiencia</h2>
-              <p style={{ color: "#ffffff", lineHeight: 1.6 }}>El catálogo C3 reúne competencia, creación y comunidad en un mismo recorrido.</p>
+        <section className="c3-cta">
+          <div className="c3-frame">
+            <div className="c3-cta__panel">
+              <div className="c3-rings" aria-hidden="true"><span /><span /><span /><i /><i /><i /></div>
+              <div className="c3-cta__text">
+                <span className="c3-etiqueta">Catálogo C3</span>
+                <h2>Encuentra tu próxima experiencia</h2>
+                <p>El catálogo C3 reúne competencia, creación y comunidad en un mismo recorrido.</p>
+              </div>
+              <div className="c3-cta__action">
+                <Link href={content.ctaHref} className="c3-btn c3-btn--blanco">{content.ctaLabel} <span className="c3-arrow" aria-hidden="true">↗</span></Link>
+              </div>
             </div>
-            <Link href={content.ctaHref} className="c3-btn c3-btn--blanco">{content.ctaLabel}</Link>
           </div>
         </section>
       </main>
