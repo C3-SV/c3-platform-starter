@@ -111,13 +111,15 @@ test.describe("Evaluar desde el espacio de empresa", () => {
     await expect(page.getByText("Como jurado", { exact: true })).toBeVisible();
   });
 
-  test("la representante sin asignación ve las soluciones pero no puede evaluarlas", async ({ page }) => {
+  test("la representante vinculada evalúa los challenges de su organización sin asignación", async ({ page }) => {
     await loginAt(page, representante, "/empresa");
-    // Las soluciones se ven en la ficha del talento, no volcadas en la tarjeta del challenge.
+    // Solutions live in the talent panel, not dumped into the challenge card.
     await page.getByRole("button", { name: "Ver talento y lista corta" }).first().click();
     await expect(page.getByText("Solución de prueba: ruteo con ventanas horarias")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Evaluar soluciones", exact: true })).toHaveCount(0);
-    await expect(page.getByText("C3 te asigna como jurado de este challenge.")).toBeVisible();
+    /* Since #27 a linked representative evaluates as the company judge without an assignment;
+       revocation is covered in tests/emulator/evaluation.test.ts. */
+    await expect(page.getByRole("link", { name: "Evaluar soluciones", exact: true })).toHaveAttribute("href", `/mi-c3/evaluar/${orgChallenge.challengeId}`);
+    await expect(page.getByText("C3 te asigna como jurado de este challenge.")).toHaveCount(0);
   });
 });
 

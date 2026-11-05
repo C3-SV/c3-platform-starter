@@ -76,10 +76,44 @@ async function nameOf(db: Firestore, submission: SubmissionRow): Promise<string 
   return ((await db.collection(USERS).doc(submission.userId).get()).data()?.displayName as string | undefined) ?? null;
 }
 
+// Mismo nombre que `ORGANIZATION_MEMBERS` de companies.ts (que importa este módulo: se repite para evitar el ciclo).
+const MEMBERS = "organizationMembers";
+
+/** Jurado de un challenge: la asignación activa hecha por C3 o, si no la hay, la representante vinculada a la organización del challenge. */
 async function activeAssignment(db: Firestore, challengeId: string, uid: string): Promise<DocumentData | null> {
   const snapshot = await db.collection(JUDGE_ASSIGNMENTS).doc(assignmentDocId(challengeId, uid)).get();
   const data = snapshot.data();
-  return data && data.status === "active" ? data : null;
+  if (data && data.status === "active") return data;
+  // Una asignación revocada por C3 es explícita: el vínculo con la empresa no la reabre.
+  if (data && data.status === "revoked") return null;
+  const organizationId = (await db.collection("challenges").doc(challengeId).get()).data()?.organizationId;
+  if (typeof organizationId !== "string" || !organizationId) return null;
+  const member = await db.collection(MEMBERS).doc(`${organizationId}__${uid}`).get();
+  return member.exists ? { challengeId, userId: uid, kind: "empresa", status: "active" } : null;
+}
+
+/** Challenges publicados de las organizaciones a las que pertenece la persona. */
+async function representedChallengeIds(db: Firestore, uid: string): Promise<string[]> {
+  const memberships = await db.collection(MEMBERS).where("userId", "==", uid).get();
+  const ids = new Set<string>();
+  for (const membership of memberships.docs) {
+    const challenges = await db.collection("challenges").where("organizationId", "==", membership.data().organizationId).get();
+    for (const doc of challenges.docs) if (doc.data().status === "published") ids.add(doc.id);
+  }
+  return [...ids];
+}
+
+/** Challenges que la persona puede evaluar: asignaciones activas más los de su empresa, salvo asignaciones revocadas por C3. */
+export async function evaluableChallenges(db: Firestore, uid: string): Promise<Map<string, JudgeKind>> {
+  const result = new Map<string, JudgeKind>();
+  const revoked = new Set<string>();
+  const assignments = await db.collection(JUDGE_ASSIGNMENTS).where("userId", "==", uid).get();
+  for (const doc of assignments.docs) {
+    if (doc.data().status === "active") result.set(doc.data().challengeId, doc.data().kind as JudgeKind);
+    else revoked.add(doc.data().challengeId);
+  }
+  for (const id of await representedChallengeIds(db, uid)) if (!result.has(id) && !revoked.has(id)) result.set(id, "empresa");
+  return result;
 }
 
 /** Asigna un jurado a un challenge por correo. La cuenta debe existir. Solo C3. */
@@ -137,10 +171,9 @@ export async function revokeJudge(db: Firestore, actor: Actor, assignmentId: str
 
 /** Challenges asignados a la persona autenticada, con su avance de evaluación. */
 export async function myAssignments(db: Firestore, actor: Actor, now: Date) {
-  const snapshot = await db.collection(JUDGE_ASSIGNMENTS).where("userId", "==", actor.uid).get();
-  const active = snapshot.docs.filter((doc) => doc.data().status === "active");
-  return Promise.all(active.map(async (doc) => {
-    const data = doc.data();
+  const evaluable = await evaluableChallenges(db, actor.uid);
+  return Promise.all([...evaluable].map(async ([challengeId, kind]) => {
+    const data = { challengeId, kind };
     const challenge = await loadChallenge(db, data.challengeId).catch(() => null);
     const solutions = challenge ? await submittedSubmissions(db, challenge.id) : [];
     const evaluations = await db.collection(EVALUATIONS).where("challengeId", "==", data.challengeId).where("judgeUserId", "==", actor.uid).get();
